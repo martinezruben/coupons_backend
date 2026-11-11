@@ -17,8 +17,8 @@ class MailConfigurationTest extends TestCase
 
         SystemParameter::factory()->create([
             'mail_driver' => 'smtp',
-            'mail_from_address' => 'noreply@tapandgo.local',
-            'mail_from_name' => 'Tap&Go',
+            'mail_from_address' => 'noreply@coupify.local',
+            'mail_from_name' => 'Coupify',
             'smtp_host' => null,
             'smtp_port' => null,
             'smtp_username' => null,

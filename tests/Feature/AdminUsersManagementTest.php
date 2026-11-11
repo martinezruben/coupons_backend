@@ -43,7 +43,7 @@ class AdminUsersManagementTest extends TestCase
     {
         return $extra + [
             'name' => 'Nuevo Admin',
-            'email' => 'nuevo@tapandgo.test',
+            'email' => 'nuevo@coupify.test',
             'is_active' => '1',
             'password' => 'Clave-Segura-123!',
         ];
@@ -112,7 +112,7 @@ class AdminUsersManagementTest extends TestCase
             ->assertRedirect(route('admin.screens.index', 'admin-users'))
             ->assertSessionHasNoErrors();
 
-        $created = AdminUser::where('email', 'nuevo@tapandgo.test')->first();
+        $created = AdminUser::where('email', 'nuevo@coupify.test')->first();
         $this->assertNotNull($created);
         $this->assertTrue(Hash::check('Clave-Segura-123!', $created->password));
         $this->assertTrue($created->is_active);
@@ -123,17 +123,17 @@ class AdminUsersManagementTest extends TestCase
 
     public function test_validation_rejects_bad_email_duplicates_weak_password_and_unknown_roles(): void
     {
-        $existing = AdminUser::factory()->create(['email' => 'ya@tapandgo.test']);
+        $existing = AdminUser::factory()->create(['email' => 'ya@coupify.test']);
         $this->actingAs($this->superAdmin(), 'admin');
 
         $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['email' => 'no-es-correo']))->assertSessionHasErrors('email');
-        $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['email' => 'ya@tapandgo.test']))->assertSessionHasErrors('email');
+        $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['email' => 'ya@coupify.test']))->assertSessionHasErrors('email');
         $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['password' => '123']))->assertSessionHasErrors('password');
         $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['password' => '']))->assertSessionHasErrors('password');
         $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['role_names' => ['no-existe']]))->assertSessionHasErrors('role_names.0');
         $this->post(route('admin.screens.store', 'admin-users'), $this->payload(['name' => '']))->assertSessionHasErrors('name');
 
-        $this->assertSame(0, AdminUser::where('email', 'nuevo@tapandgo.test')->count());
+        $this->assertSame(0, AdminUser::where('email', 'nuevo@coupify.test')->count());
         $this->assertTrue($existing->exists);
     }
 
@@ -150,13 +150,13 @@ class AdminUsersManagementTest extends TestCase
     {
         Role::findOrCreate('gerente', 'admin');
         Role::findOrCreate('soporte', 'admin');
-        $target = AdminUser::factory()->create(['email' => 'edit@tapandgo.test', 'password' => 'Original-123!', 'is_active' => true]);
+        $target = AdminUser::factory()->create(['email' => 'edit@coupify.test', 'password' => 'Original-123!', 'is_active' => true]);
         $target->assignRole('gerente');
         $super = $this->superAdmin();
         $this->actingAs($super, 'admin');
 
         $this->put(route('admin.screens.update', ['admin-users', $target->id]), [
-            'name' => 'Nombre Nuevo', 'email' => 'edit@tapandgo.test', 'is_active' => '1', 'password' => '', 'role_names' => ['soporte'],
+            'name' => 'Nombre Nuevo', 'email' => 'edit@coupify.test', 'is_active' => '1', 'password' => '', 'role_names' => ['soporte'],
         ])->assertSessionHasNoErrors();
 
         $fresh = $target->fresh();
@@ -171,11 +171,11 @@ class AdminUsersManagementTest extends TestCase
 
     public function test_changing_another_users_password_revokes_their_sessions(): void
     {
-        $target = AdminUser::factory()->create(['email' => 'pw@tapandgo.test', 'password' => 'Original-123!', 'is_active' => true]);
+        $target = AdminUser::factory()->create(['email' => 'pw@coupify.test', 'password' => 'Original-123!', 'is_active' => true]);
         $this->actingAs($this->superAdmin(), 'admin');
 
         $this->put(route('admin.screens.update', ['admin-users', $target->id]), [
-            'name' => $target->name, 'email' => 'pw@tapandgo.test', 'is_active' => '1', 'password' => 'Nueva-Clave-456!',
+            'name' => $target->name, 'email' => 'pw@coupify.test', 'is_active' => '1', 'password' => 'Nueva-Clave-456!',
         ])->assertSessionHasNoErrors();
 
         $fresh = $target->fresh();
@@ -203,14 +203,14 @@ class AdminUsersManagementTest extends TestCase
 
     public function test_inactive_admin_cannot_log_in_and_gets_the_generic_error(): void
     {
-        AdminUser::factory()->create(['email' => 'off@tapandgo.test', 'password' => 'Clave-Activa-1!', 'is_active' => false]);
-        AdminUser::factory()->create(['email' => 'on@tapandgo.test', 'password' => 'Clave-Activa-1!', 'is_active' => true]);
+        AdminUser::factory()->create(['email' => 'off@coupify.test', 'password' => 'Clave-Activa-1!', 'is_active' => false]);
+        AdminUser::factory()->create(['email' => 'on@coupify.test', 'password' => 'Clave-Activa-1!', 'is_active' => true]);
 
-        $this->post(route('admin.login.store'), ['email' => 'off@tapandgo.test', 'password' => 'Clave-Activa-1!'])
+        $this->post(route('admin.login.store'), ['email' => 'off@coupify.test', 'password' => 'Clave-Activa-1!'])
             ->assertSessionHasErrors(['email' => 'Credenciales inválidas.']);
         $this->assertGuest('admin');
 
-        $this->post(route('admin.login.store'), ['email' => 'on@tapandgo.test', 'password' => 'Clave-Activa-1!'])
+        $this->post(route('admin.login.store'), ['email' => 'on@coupify.test', 'password' => 'Clave-Activa-1!'])
             ->assertRedirect();
         $this->assertAuthenticated('admin');
     }
@@ -345,7 +345,7 @@ class AdminUsersManagementTest extends TestCase
     public function test_grid_shows_roles_two_factor_and_last_login(): void
     {
         Role::findOrCreate('gerente', 'admin');
-        $user = AdminUser::factory()->create(['name' => 'Gerente Uno', 'email' => 'g1@tapandgo.test']);
+        $user = AdminUser::factory()->create(['name' => 'Gerente Uno', 'email' => 'g1@coupify.test']);
         $user->assignRole('gerente');
         $user->forceFill(['totp_enabled' => true])->save();
         AdminAuditLog::record('login', 'AdminUser', (string) $user->id, null, $user);

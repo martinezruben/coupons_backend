@@ -155,8 +155,8 @@ class MailConfigurationService
                 return ['success' => false, 'message' => 'Configuración SMTP incompleta'];
             }
 
-            Mail::raw('Este es un correo de prueba de la configuración SMTP de Tap&Go.', function ($message) use ($toAddress): void {
-                $message->to($toAddress)->subject('Prueba de conexión - Tap&Go');
+            Mail::raw('Este es un correo de prueba de la configuración SMTP de Coupify.', function ($message) use ($toAddress): void {
+                $message->to($toAddress)->subject('Prueba de conexión - Coupify');
             });
 
             return ['success' => true, 'message' => "Correo de prueba enviado a {$toAddress}"];

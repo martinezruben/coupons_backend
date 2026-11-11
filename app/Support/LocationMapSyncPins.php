@@ -4,8 +4,6 @@ namespace App\Support;
 
 use App\Models\Device;
 use App\Models\Location;
-use App\Models\SyncLog;
-use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -16,6 +14,9 @@ use Illuminate\Support\Collection;
  */
 final class LocationMapSyncPins
 {
+    /** Horas sin sincronizar a partir de las cuales un dispositivo se considera atrasado. */
+    public const STALE_SYNC_HOURS = 4;
+
     public const STATUS_LABELS = [
         'online' => 'En línea',
         'stale' => 'Sin sincronizar',
@@ -44,7 +45,7 @@ final class LocationMapSyncPins
     /**
      * Estado de la localidad. Prioridad: inactiva > contingencia > en línea > sin sincronizar.
      * «En línea» = algún dispositivo habilitado sincronizó dentro de la ventana
-     * ({@see DashboardService::STALE_SYNC_HOURS}), el mismo criterio del dashboard técnico.
+     * ({@see self::STALE_SYNC_HOURS}).
      */
     public static function statusFor(bool $isActive, bool $inContingency, int $freshDevices): string
     {
@@ -132,7 +133,7 @@ final class LocationMapSyncPins
             return [];
         }
 
-        $cutoff = now()->subHours(DashboardService::STALE_SYNC_HOURS);
+        $cutoff = now()->subHours(self::STALE_SYNC_HOURS);
 
         return Device::query()
             ->where('is_enabled', true)
@@ -154,10 +155,10 @@ final class LocationMapSyncPins
             return collect();
         }
 
-        return SyncLog::query()
+        // Sin bitácora de sync: se usa la última actividad registrada de cada dispositivo.
+        return Device::query()
             ->whereIn('location_id', $locationIds)
-            ->where('status', 'SUCCESS')
-            ->whereBetween('started_at', [$from, $to])
+            ->whereBetween('last_sync_at', [$from, $to])
             ->distinct()
             ->pluck('location_id')
             ->map(static fn ($id): string => (string) $id)

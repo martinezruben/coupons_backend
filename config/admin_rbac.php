@@ -7,7 +7,7 @@
  * (`recurso` = clave de pantalla con `-` → `_`, p. ej. `transaction-items` → `transaction_items`).
  *
  * - super-admin: todos los permisos (generado en seeder).
- * - ops-manager: operación POS + sync; lectura/escritura/borrado en esas pantallas.
+ * - ops-manager: operación (localidades, dispositivos, licencias, usuarios); lectura/escritura/borrado en esas pantallas.
  * - ops-viewer: solo lectura (`view`) en las mismas pantallas que ops-manager.
  */
 return [
@@ -21,15 +21,6 @@ return [
         'devices',
         'licenses',
         'android-users',
-        'families',
-        'subfamilies',
-        'products',
-        'shifts',
-        'transactions',
-        'transaction-items',
-        'transaction-payments',
-        'sync-states',
-        'sync-logs',
         'api-request-logs',
     ],
 

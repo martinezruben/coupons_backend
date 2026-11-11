@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Models\Subfamily;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -34,19 +33,6 @@ class AdminGridQuery
             if (isset($def['model'])) {
                 /** @var class-string<Model> $modelClass */
                 $modelClass = $def['model'];
-                if ($modelClass === Subfamily::class) {
-                    $rows = Subfamily::query()->with('family')->get()
-                        ->sortBy(fn (Model $row) => [data_get($row, 'family.name', ''), data_get($row, 'name', '')])
-                        ->values()
-                        ->map(fn (Model $row) => [
-                            'id' => (string) $row->getKey(),
-                            'label' => $row->admin_label,
-                            'parent' => (string) $row->family_id,
-                        ]);
-                    $out[$key] = collect([['id' => '', 'label' => 'Todos']])->merge($rows);
-
-                    continue;
-                }
                 $orderBy = $def['order_by'] ?? 'name';
                 $labelCol = $def['label_column'] ?? 'name';
                 $fallback = $def['fallback_column'] ?? null;
@@ -145,7 +131,7 @@ class AdminGridQuery
             return;
         }
 
-        $skipLike = ['is_active', 'is_synced', 'qty', 'total', 'opening_balance', 'closing_balance', 'tax_rate', 'price', 'cost', 'unit_cost', 'discount', 'tax', 'line_amount', 'shift_number', 'turn_number', 'records_count', 'latitude', 'longitude', 'created_at', 'response_status', 'duration_ms', 'items_count', 'occurred_at', 'last_activity_at', 'location_id'];
+        $skipLike = ['is_active', 'is_synced', 'records_count', 'latitude', 'longitude', 'created_at', 'response_status', 'duration_ms', 'last_activity_at', 'location_id'];
         $fkFields = array_keys($cfg['foreign_labels'] ?? []);
         $grid = $cfg['grid'] ?? [];
         if (! empty($grid['search_columns']) && is_array($grid['search_columns'])) {
@@ -298,12 +284,6 @@ class AdminGridQuery
         return match ($screen) {
             'licenses' => self::sortLicenses($query, $table, $sort, $dir),
             'devices' => self::sortDevices($query, $table, $sort, $dir),
-            'shifts' => self::sortShifts($query, $table, $sort, $dir),
-            'transactions' => self::sortTransactions($query, $table, $sort, $dir),
-            'transaction-items' => self::sortTransactionItems($query, $table, $sort, $dir),
-            'transaction-payments' => self::sortTransactionPayments($query, $table, $sort, $dir),
-            'sync-states' => self::sortSyncStates($query, $table, $sort, $dir),
-            'sync-logs' => self::sortSyncLogs($query, $table, $sort, $dir),
             'api-request-logs' => self::sortApiRequestLogs($query, $table, $sort, $dir),
             'android-users' => self::sortAndroidUsers($query, $table, $sort, $dir),
             default => false,
@@ -311,17 +291,12 @@ class AdminGridQuery
     }
 
     /**
-     * Subconsulta correlacionada: última actividad (transacciones, sync_logs o api_request_logs en localidades del usuario).
+     * Subconsulta correlacionada: última actividad (api_request_logs en localidades del usuario).
      */
     public static function androidUsersLastActivitySql(): string
     {
-        return '(SELECT MAX(activity_dt) FROM (
-            SELECT MAX(COALESCE(transactions.synced_at, transactions.occurred_at)) AS activity_dt FROM transactions WHERE transactions.user_id = users.id
-            UNION ALL
-            SELECT MAX(sync_logs.finished_at) AS activity_dt FROM sync_logs INNER JOIN user_locations ul_sl ON ul_sl.location_id = sync_logs.location_id AND ul_sl.user_id = users.id
-            UNION ALL
-            SELECT MAX(api_request_logs.created_at) AS activity_dt FROM api_request_logs INNER JOIN user_locations ul_ar ON ul_ar.location_id = api_request_logs.location_id AND ul_ar.user_id = users.id
-        ) AS activity_union)';
+        return '(SELECT MAX(api_request_logs.created_at) FROM api_request_logs
+            INNER JOIN user_locations ul_ar ON ul_ar.location_id = api_request_logs.location_id AND ul_ar.user_id = users.id)';
     }
 
     private static function sortAndroidUsers(Builder $query, string $table, string $sort, string $dir): bool
@@ -340,46 +315,6 @@ class AdminGridQuery
             $query->leftJoin('locations as ag_au_l', $table.'.location_id', '=', 'ag_au_l.id')
                 ->orderBy('ag_au_l.name', $dir);
             $preserveLastActivity($query);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortSyncStates(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'location_id') {
-            $query->leftJoin('locations as ag_ss_l', $table.'.location_id', '=', 'ag_ss_l.id')
-                ->orderBy('ag_ss_l.name', $dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-        if ($sort === 'device_id') {
-            $query->leftJoin('devices as ag_ss_d', $table.'.device_id', '=', 'ag_ss_d.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_ss_d.name, ""), ag_ss_d.device_fingerprint) '.$dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortSyncLogs(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'location_id') {
-            $query->leftJoin('locations as ag_sl_l', $table.'.location_id', '=', 'ag_sl_l.id')
-                ->orderBy('ag_sl_l.name', $dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-        if ($sort === 'device_id') {
-            $query->leftJoin('devices as ag_sl_d', $table.'.device_id', '=', 'ag_sl_d.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_sl_d.name, ""), ag_sl_d.device_fingerprint) '.$dir)
-                ->select($table.'.*');
 
             return true;
         }
@@ -440,111 +375,6 @@ class AdminGridQuery
         if ($sort === 'location_id') {
             $query->leftJoin('locations as ag_dev_l', $table.'.location_id', '=', 'ag_dev_l.id')
                 ->orderBy('ag_dev_l.name', $dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortShifts(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'location_id') {
-            $query->leftJoin('locations as ag_sh_l', $table.'.location_id', '=', 'ag_sh_l.id')
-                ->orderBy('ag_sh_l.name', $dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-        if ($sort === 'device_id') {
-            $query->leftJoin('devices as ag_sh_d', $table.'.device_id', '=', 'ag_sh_d.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_sh_d.name, ""), ag_sh_d.device_fingerprint) '.$dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-        if ($sort === 'user_id') {
-            $query->leftJoin('users as ag_sh_u', $table.'.user_id', '=', 'ag_sh_u.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_sh_u.full_name, ""), ag_sh_u.username) '.$dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortTransactions(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'items_count') {
-            $query->orderBy('items_count', $dir);
-
-            return true;
-        }
-
-        $preserveItemsCount = static function (Builder $q) use ($table): void {
-            $q->select($table.'.*')
-                ->selectRaw('(select count(*) from `transaction_items` where `transaction_items`.`transaction_id` = `'.$table.'`.`id`) as `items_count`');
-        };
-
-        if ($sort === 'location_id') {
-            $query->leftJoin('locations as ag_tr_l', $table.'.location_id', '=', 'ag_tr_l.id')
-                ->orderBy('ag_tr_l.name', $dir);
-            $preserveItemsCount($query);
-
-            return true;
-        }
-        if ($sort === 'device_id') {
-            $query->leftJoin('devices as ag_tr_d', $table.'.device_id', '=', 'ag_tr_d.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_tr_d.name, ""), ag_tr_d.device_fingerprint) '.$dir);
-            $preserveItemsCount($query);
-
-            return true;
-        }
-        if ($sort === 'shift_id') {
-            $query->leftJoin('shifts as ag_tr_s', $table.'.shift_id', '=', 'ag_tr_s.id')
-                ->orderBy('ag_tr_s.shift_number', $dir);
-            $preserveItemsCount($query);
-
-            return true;
-        }
-        if ($sort === 'user_id') {
-            $query->leftJoin('users as ag_tr_u', $table.'.user_id', '=', 'ag_tr_u.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_tr_u.full_name, ""), ag_tr_u.username) '.$dir);
-            $preserveItemsCount($query);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortTransactionItems(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'transaction_id') {
-            $query->leftJoin('transactions as ag_ti_tr', $table.'.transaction_id', '=', 'ag_ti_tr.id')
-                ->orderBy('ag_ti_tr.external_id', $dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-        if ($sort === 'product_id') {
-            $query->leftJoin('products as ag_ti_p', $table.'.product_id', '=', 'ag_ti_p.id')
-                ->orderByRaw('COALESCE(NULLIF(ag_ti_p.name, ""), ag_ti_p.sku) '.$dir)
-                ->select($table.'.*');
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private static function sortTransactionPayments(Builder $query, string $table, string $sort, string $dir): bool
-    {
-        if ($sort === 'transaction_id') {
-            $query->leftJoin('transactions as ag_tp_tr', $table.'.transaction_id', '=', 'ag_tp_tr.id')
-                ->orderBy('ag_tp_tr.external_id', $dir)
                 ->select($table.'.*');
 
             return true;

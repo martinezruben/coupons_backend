@@ -7,11 +7,9 @@ use App\Http\Middleware\EnsureAdminActive;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\Device;
-use App\Models\Family;
 use App\Models\Location;
 use App\Models\User;
 use App\Services\AdminUserGuard;
-use App\Services\ImageThumbnailService;
 use App\Support\AdminGridCell;
 use App\Support\AdminGridQuery;
 use App\Support\AdminRbac;
@@ -21,9 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
@@ -81,10 +77,6 @@ class ScreenCrudController extends Controller
             $query->with($with);
         }
 
-        if ($screen === 'transactions' || $screen === 'transactions-report') {
-            $query->withCount('items');
-        }
-
         if ($screen === 'android-users') {
             $query->selectRaw('users.*, '.AdminGridQuery::androidUsersLastActivitySql().' as last_activity_at');
         }
@@ -100,21 +92,6 @@ class ScreenCrudController extends Controller
         $p = AdminRbac::permissionsForScreen($screen);
         $user = auth('admin')->user();
 
-        $transactionExportLocations = [];
-        if ($screen === 'transactions' || $screen === 'transactions-report') {
-            $transactionExportLocations = Location::query()
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(static function (Location $loc): array {
-                    return [
-                        'id' => (string) $loc->getKey(),
-                        'name' => $loc->name,
-                    ];
-                })
-                ->values()
-                ->all();
-        }
-
         $locationsMapPins = [];
         if ($screen === 'locations') {
             $locationsMapPins = LocationMapSyncPins::forRequest($request, $user->can($p['edit']));
@@ -128,9 +105,6 @@ class ScreenCrudController extends Controller
             'canEdit' => $user->can($p['edit']) && empty($cfg['readonly']),
             'canDelete' => $user->can($p['delete']) && empty($cfg['readonly']) && empty($cfg['disable_delete']),
             'locationsMapPins' => $locationsMapPins,
-            'showTransactionExcelExport' => $screen === 'transactions' && $user->can($p['view']),
-            'showTransactionReportExport' => $screen === 'transactions-report' && $user->can($p['view']),
-            'transactionExportLocations' => $transactionExportLocations,
         ]);
     }
 
@@ -157,12 +131,6 @@ class ScreenCrudController extends Controller
         $this->assertScreenWritable($cfg);
         abort_if(! empty($cfg['disable_create']), 404);
         $data = $this->validatedData($request, $cfg, false, $screen);
-
-        if ($screen === 'families') {
-            $this->applyImageUpload($request, $data, null, 'families');
-        } elseif ($screen === 'products') {
-            $this->applyImageUpload($request, $data, null, 'products');
-        }
 
         $model = $cfg['model'];
         $created = $model::create($data);
@@ -233,12 +201,6 @@ class ScreenCrudController extends Controller
 
         $data = $this->validatedData($request, $cfg, true, $screen);
 
-        if ($screen === 'families' && $item instanceof Family) {
-            $this->applyImageUpload($request, $data, $item, 'families');
-        } elseif ($screen === 'products') {
-            $this->applyImageUpload($request, $data, $item, 'products');
-        }
-
         if ($item instanceof AdminUser) {
             $this->updateAdminUser($request, $item, $data);
         } else {
@@ -288,7 +250,6 @@ class ScreenCrudController extends Controller
     /**
      * Toggle rápido de `status` desde el grid.
      * - licenses: ACTIVE ↔ INACTIVE (EXPIRED / REVOKED son inmutables)
-     * - transactions: PAID ↔ VOIDED
      */
     public function toggleStatus(Request $request, string $screen, string $id)
     {
@@ -306,16 +267,6 @@ class ScreenCrudController extends Controller
                 default => $current, // EXPIRED / REVOKED: inmutables vía toggle
             };
             $item->forceFill(['status' => $next])->save();
-        } elseif ($screen === 'transactions') {
-            $current = $item->status;
-            $next = $current === 'PAID' ? 'VOIDED' : 'PAID';
-            $item->forceFill(['status' => $next])->save();
-
-            // Acción financiera del panel: registrar manualmente (Transaction no está en el observer
-            // para no ensuciar el log con cada sync del POS)
-            AdminAuditLog::record('updated', 'Transaction', (string) $item->getKey(), [
-                'status' => [$current, $next],
-            ]);
         }
 
         return back()->with('status', 'Estado actualizado.');
@@ -355,74 +306,6 @@ class ScreenCrudController extends Controller
         }
     }
 
-    /**
-     * Subida de imagen genérica para familias y productos.
-     * Usa el disco «public» y guarda la URL relativa en `image_url`.
-     *
-     * @param  array<string,mixed>  $data  Datos validados (se muta para set image_url)
-     */
-    private function applyImageUpload(Request $request, array &$data, ?Model $existing, string $folder): void
-    {
-        $request->validate([
-            ($folder === 'families' ? 'family_image' : 'product_image') => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'],
-        ], [
-            ($folder === 'families' ? 'family_image' : 'product_image').'.image' => 'El archivo debe ser una imagen.',
-        ]);
-
-        $fieldName = $folder === 'families' ? 'family_image' : 'product_image';
-
-        // No fallar en silencio: si el navegador envió un archivo que PHP rechazó
-        // (upload_max_filesize) o llegó corrupto, informarlo claramente.
-        if ($request->files->has($fieldName) && ! $request->file($fieldName)?->isValid()) {
-            throw ValidationException::withMessages([
-                $fieldName => 'La imagen no se pudo subir (puede superar el límite del servidor). Intenta con una de menor tamaño.',
-            ]);
-        }
-
-        if ($request->hasFile($fieldName)) {
-            if ($existing?->image_url) {
-                $this->deleteStoredPublicFile($existing->image_url);
-                ImageThumbnailService::deleteFor($existing->image_url);
-            }
-            $path = $request->file($fieldName)->store($folder, 'public');
-            if ($path === false || $path === null || $path === '') {
-                // store() retorna false (config throw=false) cuando el disco no
-                // es escribible: sin este check quedaría una URL sin archivo.
-                throw ValidationException::withMessages([
-                    $fieldName => 'No se pudo guardar la imagen en el almacenamiento del servidor (permisos de escritura).',
-                ]);
-            }
-            $data['image_url'] = Storage::disk('public')->url($path);
-
-            // Comprimir el original en el lugar (máx 1600px): el fallback del
-            // POS cuando no hay miniatura nunca entrega un archivo de MBs.
-            ImageThumbnailService::compressOriginal($path);
-
-            if (ImageThumbnailService::generate($path) === null) {
-                // La imagen original se guardó; la miniatura no (ej. GD sin WebP en el host)
-                Log::warning('No se pudo generar miniatura', ['path' => $path]);
-            }
-
-            return;
-        }
-
-        if ($request->boolean('remove_image') && $existing?->image_url) {
-            $this->deleteStoredPublicFile($existing->image_url);
-            ImageThumbnailService::deleteFor($existing->image_url);
-            $data['image_url'] = null;
-        }
-    }
-
-    private function deleteStoredPublicFile(?string $publicUrl): void
-    {
-        if ($publicUrl === null || $publicUrl === '') {
-            return;
-        }
-        if (preg_match('#/storage/(.+)$#', $publicUrl, $m)) {
-            Storage::disk('public')->delete($m[1]);
-        }
-    }
-
     private function validatedData(Request $request, array $cfg, bool $updating = false, ?string $screen = null): array
     {
         foreach (array_keys($cfg['foreign_labels'] ?? []) as $field) {
@@ -440,9 +323,6 @@ class ScreenCrudController extends Controller
             }
         }
 
-        if (in_array('cost', $cfg['fields'] ?? [], true) && $request->input('cost') === '') {
-            $request->merge(['cost' => null]);
-        }
 
         if (in_array('barcode', $cfg['fields'] ?? [], true) && $request->input('barcode') === '') {
             $request->merge(['barcode' => null]);
@@ -467,7 +347,7 @@ class ScreenCrudController extends Controller
                 } else {
                     $rules[$field] = [$updating ? 'nullable' : 'required', 'string', 'min:8'];
                 }
-            } elseif (str_ends_with($field, '_at') || in_array($field, ['valid_from', 'valid_to', 'start_time', 'end_time', 'occurred_at', 'synced_at'], true)) {
+            } elseif (str_ends_with($field, '_at') || in_array($field, ['valid_from', 'valid_to'], true)) {
                 $rules[$field] = ['nullable', 'date'];
             } elseif (str_starts_with($field, 'is_')) {
                 $rules[$field] = ['nullable', 'boolean'];
@@ -480,14 +360,6 @@ class ScreenCrudController extends Controller
                 $modelClass = AdminGridCell::relationModel($meta['relation']);
                 $m = new $modelClass;
                 $rules[$field] = ['nullable', 'uuid', Rule::exists($m->getTable(), $m->getKeyName())];
-            } elseif ($screen === 'products' && $field === 'cost') {
-                $rules[$field] = ['nullable', 'numeric', 'min:0', 'max:99999999.99'];
-            } elseif ($screen === 'products' && $field === 'barcode') {
-                $rule = Rule::unique('products', 'barcode');
-                if ($updating && $request->route('id')) {
-                    $rule = $rule->ignore($request->route('id'));
-                }
-                $rules[$field] = ['nullable', 'string', 'max:64', $rule];
             } else {
                 $rules[$field] = ['nullable'];
             }
@@ -536,33 +408,8 @@ class ScreenCrudController extends Controller
             $rules['role_names.*'] = ['string', Rule::exists('roles', 'name')->where('guard_name', 'admin')];
         }
 
-        if ($screen === 'families') {
-            $rules['description'] = ['nullable', 'string', 'max:255'];
-        }
-
-        if ($screen === 'promotions') {
-            $rules['name'] = ['required', 'string', 'max:120'];
-            $rules['description'] = ['nullable', 'string', 'max:255'];
-            $rules['value'] = ['nullable', 'numeric', 'min:0'];
-            $rules['buy_qty'] = ['nullable', 'numeric', 'min:1'];
-            $rules['pay_qty'] = ['nullable', 'numeric', 'min:1'];
-            $rules['starts_at'] = ['nullable', 'date'];
-            $rules['ends_at'] = ['nullable', 'date', 'after_or_equal:starts_at'];
-            $rules['product_id'] = ['nullable', 'uuid', Rule::exists('products', 'id')];
-            $rules['subfamily_id'] = ['nullable', 'uuid', Rule::exists('subfamilies', 'id')];
-            $rules['family_id'] = ['nullable', 'uuid', Rule::exists('families', 'id')];
-        }
-
         // Etiquetas de la pantalla como nombres de atributo en los mensajes de error
         $data = $request->validate($rules, [], AdminGridCell::validationAttributes($cfg));
-
-        if ($screen === 'families') {
-            $rules['description'] = ['nullable', 'string', 'max:255'];
-        }
-
-        if ($screen === 'promotions') {
-            $this->validatePromotionBusinessRules($request, $data);
-        }
 
         // Los roles se sincronizan aparte (no son columnas de admin_users)
         unset($data['role_names']);
@@ -633,47 +480,4 @@ class ScreenCrudController extends Controller
             ->all();
     }
 
-    private function validatePromotionBusinessRules(Request $request, array $data): void
-    {
-        $fail = function (string $field, string $message): void {
-            throw ValidationException::withMessages([$field => $message]);
-        };
-
-        // PERCENT: valor expresado en %
-        if (($data['type'] ?? null) === 'PERCENT' && (float) ($data['value'] ?? 0) > 100) {
-            $fail('value', 'El porcentaje no puede superar 100.');
-        }
-
-        // BUNDLE no usa «valor» (usa cantidades); el resto exige valor > 0
-        if (($data['type'] ?? null) === 'BUNDLE') {
-            $data['value'] = 0;
-        } elseif (! isset($data['value']) || (float) $data['value'] <= 0) {
-            $fail('value', 'El valor de la promoción es requerido y debe ser mayor que cero.');
-        }
-
-        $scopeCount = collect(['product_id', 'subfamily_id', 'family_id'])
-            ->filter(fn ($f) => ! empty($data[$f]))
-            ->count();
-
-        if ($scopeCount > 1) {
-            $fail('family_id', 'La promoción debe aplicar a un solo objetivo: producto, subfamilia o familia.');
-        }
-
-        if (in_array($data['type'] ?? null, ['PRICE', 'BUNDLE'], true) && $scopeCount === 0) {
-            $fail('family_id', 'Este tipo de promoción requiere definir un producto, subfamilia o familia (no puede ser global).');
-        }
-
-        if (($data['type'] ?? null) === 'BUNDLE') {
-            $buy = isset($data['buy_qty']) ? (float) $data['buy_qty'] : 0.0;
-            $pay = isset($data['pay_qty']) ? (float) $data['pay_qty'] : 0.0;
-            if ($buy < 1 || $pay < 1 || floor($buy) != $buy || floor($pay) != $pay || $pay >= $buy) {
-                $fail('buy_qty', 'Para «lleva N paga M» ambas cantidades deben ser enteros ≥ 1 y «lleva» mayor que «paga» (ej. 2x1).');
-            }
-        }
-
-        if (! empty($data['starts_at']) && ! empty($data['ends_at'])
-            && strtotime((string) $data['ends_at']) < strtotime((string) $data['starts_at'])) {
-            $fail('ends_at', 'La fecha final no puede ser anterior a la inicial.');
-        }
-    }
 }

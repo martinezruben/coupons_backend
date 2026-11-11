@@ -1,5 +1,5 @@
 @php
-    $badgeFields = ['status', 'is_active', 'is_enabled', 'is_favorite', 'is_synced', 'role', 'payment_method', 'operation', 'response_status'];
+    $badgeFields = ['status', 'is_active', 'is_enabled', 'is_synced', 'role', 'response_status'];
     $visibleLimit = (int) ($cfg['grid']['visible_limit'] ?? 8);
     $gridExclude = $cfg['grid']['exclude_from_grid'] ?? [];
     $gridFieldList = array_values(array_filter($cfg['fields'] ?? [], static fn (string $f): bool => ! in_array($f, $gridExclude, true)));
@@ -14,8 +14,6 @@
     $locationPairing = $screen === 'locations' && ($canEdit ?? false);
     $apiLogDetail = $screen === 'api-request-logs';
     $auditLogDetail = $screen === 'audit-log';
-    $transactionLineItems = $screen === 'transactions';
-    $productExcel = $screen === 'products' && ($canEdit ?? false);
 @endphp
 
 <x-admin.layouts.app :title="$cfg['label']">
@@ -25,41 +23,11 @@
 <div x-data="apiRequestLogDetail(@js(url('/admin/api-request-logs')))">
 @elseif($auditLogDetail)
 <div x-data="auditLogDetail(@js(url('/admin/audit-logs')))">
-@elseif($transactionLineItems)
-<div x-data="transactionLineItemsDetail(@js(url('/admin/transactions')))">
 @endif
     <div class="snow-card overflow-hidden">
         <form method="GET" action="{{ route('admin.screens.index', $screen) }}" class="border-b border-slate-100">
             <div class="flex flex-col gap-1.5 bg-white px-2 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:px-3">
                 <div class="flex flex-wrap items-center gap-0.5">
-                    @if(($showTransactionExcelExport ?? false))
-                        <div x-data="transactionExcelModal(@js($transactionExportLocations ?? []))" class="inline-flex items-center gap-0.5">
-                            <button
-                                type="button"
-                                class="inline-flex h-7 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] font-semibold text-slate-600 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
-                                title="Exportar transacciones a Excel"
-                                @click="open = true"
-                            >
-                                <svg class="h-3 w-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                                Excel
-                            </button>
-                            @include('admin.crud.partials.transaction-excel-export-modal')
-                        </div>
-                    @endif
-                    @if(($showTransactionReportExport ?? false))
-                        <div x-data="transactionsReportModal(@js($transactionExportLocations ?? []))" class="inline-flex items-center gap-0.5">
-                            <button
-                                type="button"
-                                class="inline-flex h-7 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] font-semibold text-slate-600 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
-                                title="Descargar reporte de transacciones (opcional: detalle de líneas)"
-                                @click="open = true"
-                            >
-                                <svg class="h-3 w-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                                Descargar
-                            </button>
-                            @include('admin.crud.partials.transactions-report-export-modal')
-                        </div>
-                    @endif
                     @if(($canEdit ?? false) && empty($cfg['disable_create'] ?? false))
                         <a
                             href="{{ route('admin.screens.create', $screen) }}"
@@ -68,24 +36,6 @@
                         >
                             <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                         </a>
-                        @if($productExcel ?? false)
-                            <a
-                                href="{{ route('admin.products.excel.export') }}"
-                                class="inline-flex h-7 items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] font-semibold text-slate-600 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
-                                title="Exportar todos los productos a Excel"
-                            >
-                                <svg class="h-3 w-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                                Excel
-                            </a>
-                            <form method="POST" action="{{ route('admin.products.excel.import') }}" enctype="multipart/form-data" class="inline-flex items-center">
-                                @csrf
-                                <label class="inline-flex h-7 cursor-pointer items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1.5 text-[10px] font-semibold text-slate-600 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700" title="Importar Excel (actualiza o crea por product_id)">
-                                    <svg class="h-3 w-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
-                                    Importar
-                                    <input type="file" name="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="sr-only" onchange="this.form.submit()">
-                                </label>
-                            </form>
-                        @endif
                     @endif
                 </div>
                 <div class="relative flex w-full min-w-0 flex-1 sm:max-w-[220px] md:max-w-sm">
@@ -241,13 +191,7 @@
                     <tr class="transition-colors hover:bg-slate-50/90">
                         @foreach($visibleFields as $f)
                             <td class="max-w-[12rem] px-2 py-1 align-middle text-slate-800">
-                                @if($f === 'image_url' && ! empty($item->image_url))
-                                                                <img src="{{ \App\Services\ImageThumbnailService::displayUrl($item->image_url) }}" alt="" class="h-7 w-7 shrink-0 rounded object-cover ring-1 ring-slate-200" width="28" height="28">
-                                                            @elseif($f === 'image_url')
-                                                                <span class="inline-flex h-7 w-7 items-center justify-center rounded bg-slate-100/80 ring-1 ring-slate-200/80" title="Sin imagen" aria-label="Sin imagen">
-                                                                    <svg class="h-3.5 w-3.5 text-slate-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5v9l9 5.25M3 7.5l9 5.25m0-9v9"/></svg>
-                                                                </span>
-                                @elseif($f === 'pin_status' && $item instanceof \App\Models\User)
+                                @if($f === 'pin_status' && $item instanceof \App\Models\User)
                                     @if($item->hasOfflinePin())
                                         <span class="snow-tag bg-emerald-50 text-emerald-800">✓ Listo</span>
                                     @else

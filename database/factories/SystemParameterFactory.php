@@ -24,10 +24,9 @@ class SystemParameterFactory extends Factory
             'pos_password_require_symbol' => false,
             'admin_max_failed_login_attempts' => 5,
             'admin_lockout_minutes' => 15,
-            'sync_paused' => false,
             'mail_driver' => 'smtp',
-            'mail_from_address' => 'noreply@tapandgo.local',
-            'mail_from_name' => 'Tap&Go',
+            'mail_from_address' => 'noreply@coupify.local',
+            'mail_from_name' => 'Coupify',
         ];
     }
 }

@@ -13,14 +13,14 @@
         <div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(circle at 15% 25%, white 0%, transparent 42%), radial-gradient(circle at 85% 75%, rgba(255,255,255,0.12) 0%, transparent 45%);"></div>
         <div class="relative">
             <div class="flex items-center gap-3">
-                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-lg font-bold shadow-lg backdrop-blur">{{ mb_strtoupper(mb_substr(config('app.name', 'Tap&Go'), 0, 1)) }}</span>
-                <span class="text-sm font-semibold tracking-wide text-white/95">{{ config('app.name', 'Tap&Go') }}</span>
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-lg font-bold shadow-lg backdrop-blur">{{ mb_strtoupper(mb_substr(config('app.name', 'Coupify'), 0, 1)) }}</span>
+                <span class="text-sm font-semibold tracking-wide text-white/95">{{ config('app.name', 'Coupify') }}</span>
             </div>
             <h1 class="mt-14 max-w-md text-3xl font-bold leading-tight tracking-tight lg:text-4xl">
                 Panel de administración
             </h1>
             <p class="mt-4 max-w-sm text-sm leading-relaxed text-primary-100/95">
-                Localidades, dispositivos, licencias y sincronización — gestión completa de tu POS Tap&Go.
+                Localidades, dispositivos, licencias y sincronización — gestión completa de tu POS Coupify.
             </p>
         </div>
         <p class="relative text-xs text-primary-200/80">© {{ date('Y') }} · Acceso seguro</p>

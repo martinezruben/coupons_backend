@@ -4,7 +4,7 @@
 <div class="flex h-full min-h-0 flex-col text-slate-300">
     <div class="flex shrink-0 items-center gap-2.5 border-b border-slate-700 px-3 py-3">
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-600 text-[13px] font-bold text-white">
-            {{ strtoupper(substr(config('app.name', 'Tap&Go'), 0, 1)) }}
+            {{ strtoupper(substr(config('app.name', 'Coupify'), 0, 1)) }}
         </span>
         <div class="min-w-0 flex-1 leading-tight">
             <p class="truncate text-[12.5px] font-semibold text-white">{{ auth('admin')->user()->name }}</p>
@@ -33,7 +33,7 @@
     <div class="mt-auto shrink-0 border-t border-slate-700 px-3 py-2.5">
         <div class="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-slate-400">
             <span class="flex h-5 w-5 items-center justify-center rounded bg-primary-600 text-[9px] font-bold text-white">P</span>
-            Tap&Go
+            Coupify
         </div>
     </div>
 </div>

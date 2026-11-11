@@ -136,19 +136,6 @@
 
             <section>
                 <h2 class="mb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Sincronización</h2>
-                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-100 bg-white p-3 text-[11px] text-slate-700">
-                    <input
-                        type="checkbox"
-                        name="sync_paused"
-                        value="1"
-                        class="h-3.5 w-3.5 rounded border-slate-300 text-primary-600"
-                        @checked(old('sync_paused', $params->sync_paused))
-                    >
-                    <span>
-                        <span class="font-semibold">Pausar sincronización del POS</span>
-                        <span class="block text-[9px] text-slate-500">Detiene push/pull de los dispositivos (login y reportes siguen operativos). Útil durante migraciones o incidencias.</span>
-                    </span>
-                </label>
                 <div class="mt-2 rounded-lg border border-slate-100 bg-white p-3">
                     <label for="min_app_version" class="snow-label">Versión mínima de la app</label>
                     <input
@@ -202,7 +189,7 @@
                             </div>
                             <div class="flex flex-col gap-0.5">
                                 <label for="mail_from_name" class="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-500">Nombre del remitente</label>
-                                <input type="text" name="mail_from_name" id="mail_from_name" placeholder="Tap&Go" value="{{ old('mail_from_name', $params->mail_from_name) }}" class="snow-input text-xs">
+                                <input type="text" name="mail_from_name" id="mail_from_name" placeholder="Coupify" value="{{ old('mail_from_name', $params->mail_from_name) }}" class="snow-input text-xs">
                                 @error('mail_from_name')
                                     <p class="text-[10px] text-red-600">{{ $message }}</p>
                                 @enderror

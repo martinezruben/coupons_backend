@@ -20,7 +20,7 @@
         <button type="button" class="rounded-md p-1.5 text-white/70 hover:bg-white/10" @click="mobileNav = true" aria-label="Abrir menú">
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
         </button>
-        <span class="font-mono text-[11px] font-semibold uppercase tracking-widest text-white/90">{{ config('app.name', 'Tap&Go') }}</span>
+        <span class="font-mono text-[11px] font-semibold uppercase tracking-widest text-white/90">{{ config('app.name', 'Coupify') }}</span>
         <span class="w-8"></span>
     </div>
     <div

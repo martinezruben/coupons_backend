@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\Device;
-use App\Models\SystemParameter;
 use App\Support\AppVersion;
 use Closure;
 use Illuminate\Http\Request;
@@ -35,14 +34,6 @@ class EnsureDeviceOperational
 
         if (! $device->activeLicense) {
             return response()->json(['message' => 'Device license is not active.'], 403);
-        }
-
-        // Modo mantenimiento del sync: pausa solo /api/sync/* (auth/me y reports siguen operativos)
-        if ($request->is('api/sync/*') && SystemParameter::query()->value('sync_paused')) {
-            return response()->json([
-                'message' => 'Sync paused by administrator.',
-                'error' => 'SYNC_PAUSED',
-            ], 503);
         }
 
         AppVersion::record($device, $request);

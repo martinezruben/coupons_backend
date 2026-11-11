@@ -156,10 +156,10 @@ class RoleManagementTest extends TestCase
         $this->post(route('admin.roles.store'), ['name' => 'auditor']);
 
         $this->post(route('admin.screens.store', 'admin-users'), [
-            'name' => 'Aud Itor', 'email' => 'auditor@tapandgo.test', 'is_active' => '1', 'password' => 'Clave-Segura-123!', 'role_names' => ['auditor'],
+            'name' => 'Aud Itor', 'email' => 'auditor@coupify.test', 'is_active' => '1', 'password' => 'Clave-Segura-123!', 'role_names' => ['auditor'],
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame(['auditor'], AdminUser::where('email', 'auditor@tapandgo.test')->first()->getRoleNames()->all());
+        $this->assertSame(['auditor'], AdminUser::where('email', 'auditor@coupify.test')->first()->getRoleNames()->all());
     }
 
     public function test_matrix_only_lists_editable_roles_and_links_to_role_management(): void
