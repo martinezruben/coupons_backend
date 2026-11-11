@@ -7,7 +7,6 @@ use App\Http\Middleware\EnsureAdminActive;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\Device;
-use App\Models\Location;
 use App\Models\User;
 use App\Services\AdminUserGuard;
 use App\Support\AdminGridCell;
@@ -323,7 +322,6 @@ class ScreenCrudController extends Controller
             }
         }
 
-
         if (in_array('barcode', $cfg['fields'] ?? [], true) && $request->input('barcode') === '') {
             $request->merge(['barcode' => null]);
         }
@@ -479,5 +477,4 @@ class ScreenCrudController extends Controller
             ->pluck('name')
             ->all();
     }
-
 }

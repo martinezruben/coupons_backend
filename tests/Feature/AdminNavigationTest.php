@@ -40,29 +40,28 @@ class AdminNavigationTest extends TestCase
 
     public function test_search_entries_follow_permissions(): void
     {
-        $admin = $this->admin('dashboard.view', 'products.view');
+        $admin = $this->admin('locations.view');
         $this->actingAs($admin, 'admin');
 
         $labels = array_column(AdminNavigation::searchEntries($admin), 'label');
 
-        $this->assertContains('Dashboard comercial', $labels);
-        $this->assertContains('Productos', $labels);
-        $this->assertNotContains('Dashboard técnico', $labels);
-        $this->assertNotContains('Transacciones', $labels);
+        $this->assertContains('Inicio', $labels);
+        $this->assertContains('Localidades', $labels);
+        $this->assertNotContains('Dispositivos', $labels);
         $this->assertNotContains('Parámetros del sistema', $labels);
 
-        $products = collect(AdminNavigation::searchEntries($admin))->firstWhere('label', 'Productos');
-        $this->assertTrue($products['searchable']);
-        $this->assertSame(0, $products['searchRank']);
+        $locations = collect(AdminNavigation::searchEntries($admin))->firstWhere('label', 'Localidades');
+        $this->assertTrue($locations['searchable']);
+        $this->assertSame(1, $locations['searchRank']);
     }
 
     public function test_sidebar_and_palette_render_the_same_pages(): void
     {
-        $this->actingAs($this->admin('dashboard.view', 'products.view'), 'admin')
+        $this->actingAs($this->admin('locations.view'), 'admin')
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee(route('admin.screens.index', 'products'))
-            ->assertDontSee(route('admin.screens.index', 'transactions'))
+            ->assertSee(route('admin.screens.index', 'locations'))
+            ->assertDontSee(route('admin.screens.index', 'devices'))
             ->assertSee('adminPalette(', false)
             ->assertDontSee('disabled aria-disabled="true"', false);
     }

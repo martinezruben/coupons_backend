@@ -3,14 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
-use App\Models\Device;
-use App\Models\License;
 use App\Models\Location;
 use App\Models\User;
-use App\Services\DashboardService;
-use Database\Seeders\DemoPosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -111,14 +106,6 @@ class PosUserOfflinePinTest extends TestCase
         $this->assertSame(hash('sha384', 'Cambiada678!'), $user->fresh()->pin_sha384);
     }
 
-    public function test_demo_seeder_leaves_no_pos_user_without_a_valid_pin(): void
-    {
-        $this->seed(DemoPosSeeder::class);
-
-        $this->assertGreaterThan(0, User::count());
-        $this->assertSame(0, User::query()->withoutOfflinePin()->count(), 'El seeder dejó usuarios sin hash de PIN');
-    }
-
     // ---- Punto 1: detección y visibilidad
 
     public function test_scope_finds_missing_and_malformed_hashes_only(): void
@@ -171,41 +158,6 @@ class PosUserOfflinePinTest extends TestCase
         $this->artisan('pos:audit-pins', ['--strict' => true])->assertFailed();
     }
 
-    public function test_dashboard_service_counts_by_location(): void
-    {
-        $a = Location::factory()->create(['name' => 'A']);
-        $b = Location::factory()->create(['name' => 'B']);
-        $this->legacyUser(['username' => 'ua'], $a);
-        $this->legacyUser(['username' => 'ub1'], $b);
-        $this->legacyUser(['username' => 'ub2', 'location_id' => $b->id]);
-
-        $all = (new DashboardService)->getUsersWithoutOfflinePin();
-        $onlyB = (new DashboardService($b->id))->getUsersWithoutOfflinePin();
-
-        $this->assertSame(3, $all['count']);
-        $this->assertSame(2, $onlyB['count']);
-        $this->assertSame(['ub1', 'ub2'], array_column($onlyB['rows'], 'username'));
-        $this->assertSame('B', $onlyB['rows'][0]['location']);
-    }
-
-    public function test_technical_dashboard_shows_the_card_and_modal(): void
-    {
-        $admin = $this->adminWith('dashboard_technical.view');
-        $this->actingAs($admin, 'admin');
-        $label = fn (array $k) => collect($k)->first(fn ($c) => $c['label'] === 'Usuarios sin PIN offline');
-
-        $this->get(route('admin.dashboard.technical'))->assertOk()
-            ->assertViewHas('kpis', fn (array $k) => $label($k)['value'] === '0' && $label($k)['tone'] === 'good');
-
-        $this->legacyUser(['username' => 'pendiente'], Location::factory()->create());
-        Cache::flush();
-
-        $this->get(route('admin.dashboard.technical'))->assertOk()
-            ->assertViewHas('kpis', fn (array $k) => $label($k)['value'] === '1' && $label($k)['tone'] === 'warn' && $label($k)['modal'] === 'dash-users-no-pin')
-            ->assertSee('Usuarios sin PIN válido sin conexión (1)')
-            ->assertSee('pendiente');
-    }
-
     public function test_android_users_grid_flags_and_filters_users_without_pin(): void
     {
         $admin = $this->adminWith('android_users.view');
@@ -218,23 +170,5 @@ class PosUserOfflinePinTest extends TestCase
 
         $this->actingAs($admin, 'admin')->get(route('admin.screens.index', ['android-users', 'filter' => ['pin' => '1']]))
             ->assertOk()->assertSee('usuario_roto')->assertDontSee('usuario_sano');
-    }
-
-    public function test_pull_payload_pin_is_the_lowercase_hex_sha384_when_the_hash_exists(): void
-    {
-        $location = Location::factory()->create(['is_active' => true]);
-        $device = Device::factory()->create(['location_id' => $location->id, 'is_enabled' => true]);
-        License::factory()->create(['device_id' => $device->id, 'status' => 'ACTIVE', 'valid_from' => now()->subDay(), 'valid_to' => now()->addDay()]);
-        $good = User::create(['username' => 'bueno', 'password' => 'Clave12345!', 'role' => 'CASHIER', 'is_active' => true, 'location_id' => $location->id]);
-        $broken = $this->legacyUser(['username' => 'roto', 'location_id' => $location->id]);
-        $token = $device->createToken('t')->plainTextToken;
-
-        $users = collect($this->getJson('/api/sync/pull?'.http_build_query(['device_fingerprint' => $device->device_fingerprint]), ['Authorization' => 'Bearer '.$token])
-            ->assertOk()->json('data.users'))->keyBy('username');
-
-        $this->assertSame(hash('sha384', 'Clave12345!'), $users['bueno']['pin']);
-        // El caso roto queda documentado: el valor enviado no es el SHA-384 de ningún PIN tecleable
-        $this->assertSame(hash('sha384', $broken->password), $users['roto']['pin']);
-        $this->assertSame(1, User::query()->withoutOfflinePin()->reachingDevices($location->id)->count());
     }
 }

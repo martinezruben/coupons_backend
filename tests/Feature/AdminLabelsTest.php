@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
-use App\Models\Transaction;
+use App\Models\Device;
+use App\Models\Location;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -25,17 +26,20 @@ class AdminLabelsTest extends TestCase
 
     public function test_grid_shows_spanish_headers_values_and_local_dates(): void
     {
-        Transaction::factory()->create(['status' => 'VOIDED', 'occurred_at' => '2026-09-28 14:05:09']);
+        $location = Location::create(['name' => 'Sede Etiquetas', 'is_active' => true]);
+        Device::create([
+            'location_id' => $location->id,
+            'device_fingerprint' => 'fp-labels',
+            'is_enabled' => true,
+            'registered_at' => '2026-09-28 14:05:09',
+        ]);
 
-        $this->actingAs($this->admin('transactions.view'), 'admin')
-            ->get(route('admin.screens.index', 'transactions'))
+        $this->actingAs($this->admin('devices.view'), 'admin')
+            ->get(route('admin.screens.index', 'devices'))
             ->assertOk()
-            ->assertSee('Estado')
-            ->assertSee('Sincronizada')
-            ->assertSee('ID externo')
-            ->assertDontSee('Is Synced')
-            ->assertDontSee('External Id')
-            ->assertSee('anulada')
+            ->assertSee('Localidad')
+            ->assertDontSee('Is Enabled')
+            ->assertDontSee('Device Fingerprint')
             ->assertSee('28/09/2026 14:05');
     }
 

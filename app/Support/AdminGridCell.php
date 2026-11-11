@@ -267,6 +267,7 @@ class AdminGridCell
         if ($known !== null) {
             return $known;
         }
+
         return $raw;
     }
 

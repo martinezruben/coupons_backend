@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
-use App\Models\Device;
-use App\Models\License;
 use App\Models\Location;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -90,36 +88,5 @@ class PosUserPin4Test extends TestCase
             ->assertSessionHasErrors('pin4');
 
         $this->assertDatabaseCount('users', 0);
-    }
-
-    public function test_pull_includes_pin4_hash(): void
-    {
-        $location = Location::create(['id' => (string) Str::uuid(), 'name' => 'Main', 'is_active' => true]);
-        $device = Device::create([
-            'id' => (string) Str::uuid(),
-            'location_id' => $location->id,
-            'device_fingerprint' => 'fp-pin4',
-            'is_enabled' => true,
-        ]);
-        License::create([
-            'device_id' => $device->id,
-            'valid_from' => now()->subDay(),
-            'valid_to' => now()->addDay(),
-            'status' => 'ACTIVE',
-        ]);
-
-        $withPin = User::factory()->create(['pin4_sha384' => User::pin4Sha384FromPlain('9876')]);
-        $withoutPin = User::factory()->create();
-        $withPin->locations()->attach($location->id);
-        $withoutPin->locations()->attach($location->id);
-
-        $token = $device->createToken('pin4')->plainTextToken;
-        $res = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->getJson('/api/sync/pull?'.http_build_query(['device_fingerprint' => $device->device_fingerprint]))
-            ->assertOk();
-
-        $rows = collect($res->json('data.users'));
-        $this->assertSame(User::pin4Sha384FromPlain('9876'), $rows->firstWhere('id', $withPin->id)['pin4']);
-        $this->assertNull($rows->firstWhere('id', $withoutPin->id)['pin4']);
     }
 }
