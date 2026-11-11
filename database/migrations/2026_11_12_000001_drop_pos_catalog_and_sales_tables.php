@@ -41,6 +41,11 @@ return new class extends Migration
     {
         Schema::disableForeignKeyConstraints();
         foreach (self::TABLES as $table) {
+            // Defensa: una tabla `transactions` sin las columnas del POS heredado es de otro
+            // sistema (p. ej. la de cupones de couponsapi) y no se toca.
+            if ($table === 'transactions' && Schema::hasTable($table) && ! Schema::hasColumn($table, 'external_id')) {
+                continue;
+            }
             Schema::dropIfExists($table);
         }
         Schema::enableForeignKeyConstraints();
