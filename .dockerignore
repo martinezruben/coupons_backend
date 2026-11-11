@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Tests
+Dockerfile*
+docker-compose*.yml
+phpunit.xml
+
+# Vite / node (runtime artefacts only, keep source files)
+/node_modules
+/public/build
+/public/hot
+/public/.vite

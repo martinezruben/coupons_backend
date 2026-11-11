@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <title>Tap&amp;Go POS — arquitectura de componentes</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#605E5C"/>
+    </marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C4314B"/>
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000" flood-opacity="0.12"/>
+    </filter>
+    <!-- Iconos estilo Azure: cuadro azul con glifo blanco -->
+    <symbol id="i-phone" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><rect x="10" y="5" width="12" height="22" rx="2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="16" cy="23" r="1.3" fill="#fff"/></symbol>
+    <symbol id="i-browser" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><rect x="5" y="7" width="22" height="18" rx="2" fill="none" stroke="#fff" stroke-width="2"/><line x1="5" y1="12" x2="27" y2="12" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-gateway" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#009639"/><path d="M8 16h16M18 10l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-app" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><path d="M7 11l9-5 9 5v10l-9 5-9-5z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M7 11l9 5 9-5M16 16v10" fill="none" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-api" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#5C2D91"/><path d="M12 10l-5 6 5 6M20 10l5 6-5 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-web" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><rect x="6" y="8" width="20" height="16" rx="2" fill="none" stroke="#fff" stroke-width="2"/><rect x="9" y="14" width="6" height="7" fill="#fff"/><line x1="17" y1="15" x2="23" y2="15" stroke="#fff" stroke-width="2"/><line x1="17" y1="19" x2="23" y2="19" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><circle cx="16" cy="16" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M16 6v4M16 22v4M6 16h4M22 16h4M9 9l3 3M20 20l3 3M23 9l-3 3M12 20l-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><circle cx="16" cy="16" r="9" fill="none" stroke="#fff" stroke-width="2"/><path d="M16 10v6l4 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#8A8886"/><rect x="7" y="9" width="18" height="4" rx="1" fill="#fff"/><rect x="7" y="15" width="18" height="4" rx="1" fill="#fff"/><rect x="7" y="21" width="18" height="4" rx="1" fill="#fff" opacity=".6"/></symbol>
+    <symbol id="i-db" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><ellipse cx="16" cy="9" rx="8" ry="3" fill="none" stroke="#fff" stroke-width="2"/><path d="M8 9v14c0 1.7 3.6 3 8 3s8-1.3 8-3V9M8 16c0 1.7 3.6 3 8 3s8-1.3 8-3" fill="none" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-disk" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><rect x="7" y="9" width="18" height="14" rx="2" fill="none" stroke="#fff" stroke-width="2"/><circle cx="21" cy="19" r="1.4" fill="#fff"/><line x1="10" y1="13" x2="18" y2="13" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-admin" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><circle cx="16" cy="12" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M8 25c1-4.5 4.2-6.5 8-6.5s7 2 8 6.5" fill="none" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#0078D4"/><rect x="6" y="9" width="20" height="14" rx="2" fill="none" stroke="#fff" stroke-width="2"/><path d="M6 11l10 7 10-7" fill="none" stroke="#fff" stroke-width="2"/></symbol>
+    <symbol id="i-m365" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#D83B01"/><rect x="8" y="8" width="7" height="7" fill="#fff"/><rect x="17" y="8" width="7" height="7" fill="#fff" opacity=".85"/><rect x="8" y="17" width="7" height="7" fill="#fff" opacity=".85"/><rect x="17" y="17" width="7" height="7" fill="#fff" opacity=".7"/></symbol>
+    <symbol id="i-gov" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#8A8886"/><path d="M6 13l10-6 10 6zM8 14h16M9 15v8M14 15v8M18 15v8M23 15v8M7 25h18" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-docker" viewBox="0 0 32 32"><rect width="32" height="32" rx="5" fill="#1D63ED"/><rect x="7" y="14" width="4" height="4" fill="#fff"/><rect x="12" y="14" width="4" height="4" fill="#fff"/><rect x="17" y="14" width="4" height="4" fill="#fff"/><rect x="12" y="9" width="4" height="4" fill="#fff"/><path d="M6 19h20c-1 4-4.5 6-10 6S7 23 6 19z" fill="#fff"/></symbol>
+  </defs>
+
+  <rect width="1280" height="800" fill="#FFFFFF"/>
+
+  <!-- Título -->
+  <text x="32" y="44" font-size="22" font-weight="600" fill="#201F1E">Tap&amp;Go POS — Arquitectura de componentes</text>
+  <text x="32" y="68" font-size="13" fill="#605E5C">Backend Laravel 13 (PHP 8.3) desplegado con docker-compose · API para la app Android y panel de administración web</text>
+
+  <!-- ============ Grupo: Clientes ============ -->
+  <rect x="32" y="96" width="232" height="560" rx="6" fill="#FAF9F8" stroke="#8A8886" stroke-dasharray="6 4"/>
+  <text x="48" y="122" font-size="13" font-weight="600" fill="#323130">Clientes</text>
+
+  <g filter="url(#shadow)">
+    <rect x="52" y="146" width="192" height="104" rx="4" fill="#fff" stroke="#C8C6C4"/>
+  </g>
+  <use href="#i-phone" x="66" y="160" width="32" height="32"/>
+  <text x="108" y="174" font-size="13" font-weight="600" fill="#201F1E">App POS Android</text>
+  <text x="108" y="191" font-size="11" fill="#605E5C">Tap&amp;Go · offline-first</text>
+  <text x="66" y="218" font-size="11" fill="#605E5C">Ventas locales, sincroniza</text>
+  <text x="66" y="233" font-size="11" fill="#605E5C">push / pull con el backend</text>
+
+  <g filter="url(#shadow)">
+    <rect x="52" y="420" width="192" height="104" rx="4" fill="#fff" stroke="#C8C6C4"/>
+  </g>
+  <use href="#i-browser" x="66" y="434" width="32" height="32"/>
+  <text x="108" y="448" font-size="13" font-weight="600" fill="#201F1E">Navegador</text>
+  <text x="108" y="465" font-size="11" fill="#605E5C">Administradores</text>
+  <text x="66" y="492" font-size="11" fill="#605E5C">Dashboards, CRUD, reportes,</text>
+  <text x="66" y="507" font-size="11" fill="#605E5C">permisos y parámetros</text>
+
+  <!-- ============ Grupo: Host Docker ============ -->
+  <rect x="300" y="96" width="664" height="664" rx="6" fill="#F3F9FD" stroke="#0078D4" stroke-dasharray="6 4"/>
+  <use href="#i-docker" x="316" y="106" width="22" height="22"/>
+  <text x="346" y="122" font-size="13" font-weight="600" fill="#004578">Host Docker · docker-compose (red kopagnet)</text>
+
+  <!-- Contenedor app -->
+  <rect x="320" y="140" width="400" height="520" rx="6" fill="#FFFFFF" stroke="#0078D4"/>
+  <text x="336" y="164" font-size="12" font-weight="600" fill="#004578">Contenedor app · kopagpos-app</text>
+  <text x="704" y="164" font-size="11" fill="#605E5C" text-anchor="end">:8082 → 80 · supervisord</text>
+
+  <!-- Nginx -->
+  <g filter="url(#shadow)"><rect x="340" y="180" width="360" height="56" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-gateway" x="354" y="192" width="32" height="32"/>
+  <text x="396" y="205" font-size="13" font-weight="600" fill="#201F1E">Nginx</text>
+  <text x="396" y="222" font-size="11" fill="#605E5C">Servidor web · estáticos (Vite build, storage/public)</text>
+
+  <!-- PHP-FPM / Laravel -->
+  <rect x="340" y="262" width="360" height="262" rx="4" fill="#F8FBFE" stroke="#0078D4"/>
+  <use href="#i-app" x="354" y="274" width="32" height="32"/>
+  <text x="396" y="287" font-size="13" font-weight="600" fill="#201F1E">PHP-FPM · Laravel 13</text>
+  <text x="396" y="303" font-size="11" fill="#605E5C">PHP 8.3 · zona horaria America/Santo_Domingo</text>
+
+  <g filter="url(#shadow)"><rect x="356" y="320" width="328" height="54" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-api" x="368" y="331" width="30" height="30"/>
+  <text x="408" y="342" font-size="12" font-weight="600" fill="#201F1E">API REST /api · Sanctum</text>
+  <text x="408" y="358" font-size="11" fill="#605E5C">Emparejamiento, licencias, sync push/pull, reportes</text>
+
+  <g filter="url(#shadow)"><rect x="356" y="384" width="328" height="54" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-web" x="368" y="395" width="30" height="30"/>
+  <text x="408" y="406" font-size="12" font-weight="600" fill="#201F1E">Panel admin /admin · Blade + Alpine</text>
+  <text x="408" y="422" font-size="11" fill="#605E5C">CRUD por config, RBAC (Spatie), 2FA, exportes</text>
+
+  <g filter="url(#shadow)"><rect x="356" y="448" width="328" height="60" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-gear" x="368" y="462" width="30" height="30"/>
+  <text x="408" y="471" font-size="12" font-weight="600" fill="#201F1E">Servicios de dominio</text>
+  <text x="408" y="487" font-size="11" fill="#605E5C">Sync · Dashboard · Reportes · NCF · Contingencia</text>
+  <text x="408" y="501" font-size="11" fill="#605E5C">Miniaturas WebP · Correo SMTP / Microsoft 365</text>
+
+  <!-- Scheduler -->
+  <g filter="url(#shadow)"><rect x="340" y="560" width="176" height="80" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-clock" x="352" y="572" width="30" height="30"/>
+  <text x="392" y="585" font-size="12" font-weight="600" fill="#201F1E">Scheduler</text>
+  <text x="392" y="600" font-size="11" fill="#605E5C">schedule:run c/60 s</text>
+  <text x="352" y="624" font-size="10.5" fill="#605E5C">Recordatorios de contingencia</text>
+
+  <!-- Worker de colas (no configurado) -->
+  <rect x="524" y="560" width="176" height="80" rx="4" fill="#FDF3F4" stroke="#C4314B" stroke-dasharray="5 3"/>
+  <use href="#i-queue" x="536" y="572" width="30" height="30"/>
+  <text x="576" y="585" font-size="12" font-weight="600" fill="#201F1E">queue:work</text>
+  <text x="576" y="600" font-size="11" fill="#A4262C">No configurado</text>
+  <text x="536" y="624" font-size="10.5" fill="#605E5C">Correos de contingencia, NCF</text>
+
+  <!-- MySQL -->
+  <rect x="760" y="140" width="184" height="520" rx="6" fill="#FFFFFF" stroke="#0078D4"/>
+  <text x="776" y="164" font-size="12" font-weight="600" fill="#004578">Datos</text>
+
+  <g filter="url(#shadow)"><rect x="776" y="180" width="152" height="150" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-db" x="788" y="192" width="32" height="32"/>
+  <text x="828" y="205" font-size="13" font-weight="600" fill="#201F1E">MySQL 8.4</text>
+  <text x="828" y="221" font-size="11" fill="#605E5C">kopagpos-mysql</text>
+  <text x="788" y="248" font-size="11" fill="#605E5C">Datos de negocio (UUID)</text>
+  <text x="788" y="264" font-size="11" fill="#605E5C">Sesiones y caché</text>
+  <text x="788" y="280" font-size="11" fill="#605E5C">Cola: tabla jobs</text>
+  <text x="788" y="296" font-size="11" fill="#605E5C">Permisos (Spatie)</text>
+  <text x="788" y="318" font-size="10.5" fill="#8A8886">:3306 · utf8mb4</text>
+
+  <g filter="url(#shadow)"><rect x="776" y="350" width="152" height="70" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-admin" x="788" y="362" width="30" height="30"/>
+  <text x="826" y="376" font-size="12" font-weight="600" fill="#201F1E">phpMyAdmin</text>
+  <text x="826" y="392" font-size="11" fill="#605E5C">:8081 → 80</text>
+  <text x="788" y="410" font-size="10.5" fill="#8A8886">Solo administración</text>
+
+  <g filter="url(#shadow)"><rect x="776" y="440" width="152" height="84" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-disk" x="788" y="452" width="30" height="30"/>
+  <text x="826" y="466" font-size="12" font-weight="600" fill="#201F1E">Volúmenes</text>
+  <text x="826" y="482" font-size="11" fill="#605E5C">./storage</text>
+  <text x="788" y="502" font-size="10.5" fill="#605E5C">Imágenes, miniaturas, logs</text>
+  <text x="788" y="516" font-size="10.5" fill="#605E5C">db_data (MySQL)</text>
+
+  <!-- ============ Grupo: Servicios externos ============ -->
+  <rect x="1000" y="96" width="248" height="560" rx="6" fill="#FAF9F8" stroke="#8A8886" stroke-dasharray="6 4"/>
+  <text x="1016" y="122" font-size="13" font-weight="600" fill="#323130">Servicios externos</text>
+
+  <g filter="url(#shadow)"><rect x="1020" y="280" width="208" height="70" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-mail" x="1034" y="292" width="32" height="32"/>
+  <text x="1076" y="306" font-size="13" font-weight="600" fill="#201F1E">Servidor SMTP</text>
+  <text x="1076" y="322" font-size="11" fill="#605E5C">TLS / SSL</text>
+
+  <g filter="url(#shadow)"><rect x="1020" y="370" width="208" height="70" rx="4" fill="#fff" stroke="#C8C6C4"/></g>
+  <use href="#i-m365" x="1034" y="382" width="32" height="32"/>
+  <text x="1076" y="396" font-size="13" font-weight="600" fill="#201F1E">Microsoft 365</text>
+  <text x="1076" y="412" font-size="11" fill="#605E5C">Graph API (OAuth2)</text>
+
+  <rect x="1020" y="540" width="208" height="70" rx="4" fill="#fff" stroke="#8A8886" stroke-dasharray="5 3"/>
+  <use href="#i-gov" x="1034" y="552" width="32" height="32"/>
+  <text x="1076" y="566" font-size="13" font-weight="600" fill="#201F1E">DGII (e-CF)</text>
+  <text x="1076" y="582" font-size="11" fill="#605E5C">Planificado · NCF local hoy</text>
+
+  <!-- ============ Flujos ============ -->
+  <g fill="none" stroke="#605E5C" stroke-width="1.6">
+    <!-- Android -> Nginx -->
+    <path d="M244 198 H300 V208 H340" marker-end="url(#arrow)"/>
+    <!-- Navegador -> Nginx -->
+    <path d="M244 472 H284 V222 H340" marker-end="url(#arrow)"/>
+    <!-- Nginx -> PHP-FPM -->
+    <path d="M520 236 V262" marker-end="url(#arrow)"/>
+    <!-- Laravel -> MySQL -->
+    <path d="M700 300 H776" marker-end="url(#arrow)"/>
+    <!-- Laravel -> volúmenes -->
+    <path d="M700 490 H776" marker-end="url(#arrow)"/>
+    <!-- Scheduler -> Laravel -->
+    <path d="M428 560 V524" marker-end="url(#arrow)"/>
+    <!-- phpMyAdmin -> MySQL -->
+    <path d="M852 350 V330" marker-end="url(#arrow)"/>
+    <!-- Laravel -> correo -->
+    <path d="M700 510 H736 V700 H984 V315 H1020" marker-end="url(#arrow)"/>
+    <path d="M984 405 H1020" marker-end="url(#arrow)"/>
+  </g>
+  <!-- Worker -> jobs (lectura de la cola) -->
+  <path d="M700 600 H752 V282 H776" fill="none" stroke="#C4314B" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrow-warn)"/>
+
+  <!-- Etiquetas de flujos -->
+  <g font-size="10.5" fill="#323130">
+    <rect x="250" y="160" width="46" height="30" fill="#fff"/>
+    <text x="253" y="173">HTTPS</text><text x="253" y="186">/api</text>
+    <rect x="250" y="432" width="30" height="30" fill="#fff"/>
+    <text x="252" y="445">HTTPS</text><text x="252" y="458">/admin</text>
+    <text x="528" y="253">FastCGI</text>
+    <text x="712" y="293">SQL</text>
+    <text x="708" y="483">Archivos</text>
+    <text x="760" y="718">Correo: alertas de contingencia y pruebas</text>
+  </g>
+
+  <!-- Leyenda -->
+  <g font-size="11" fill="#605E5C">
+    <line x1="32" y1="700" x2="62" y2="700" stroke="#605E5C" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <text x="70" y="704">Flujo en producción</text>
+    <line x1="32" y1="724" x2="62" y2="724" stroke="#C4314B" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#arrow-warn)"/>
+    <text x="70" y="728">Pendiente de configurar</text>
+    <rect x="32" y="740" width="30" height="14" rx="2" fill="#fff" stroke="#8A8886" stroke-dasharray="4 3"/>
+    <text x="70" y="751">Planificado</text>
+  </g>
+</svg>

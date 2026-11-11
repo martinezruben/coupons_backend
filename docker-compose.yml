@@ -1,0 +1,81 @@
+name: kopagpos-backend
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kopagpos-app:latest
+    container_name: kopagpos-app
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    ports:
+      - "8082:80"
+    networks:
+      - kopagnet
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+
+  mysql:
+    image: mysql:8.4
+    container_name: kopagpos-mysql
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      # Sin valores por defecto: deben venir del .env (deploy.sh los genera al azar)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: ${DB_DATABASE:-kopagpos}
+      MYSQL_USER: ${DB_USERNAME:-kopagpos}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      # Solo accesible desde el propio servidor (túnel SSH para administrarla)
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - kopagnet
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: kopagpos-pma
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    # Pide usuario y contraseña de la BD; sin inicio de sesión automático
+    environment:
+      PMA_HOST: mysql
+    ports:
+      # Solo desde el servidor: ssh -L 8081:127.0.0.1:8081 usuario@servidor
+      - "127.0.0.1:8081:80"
+    networks:
+      - kopagnet
+
+  # HTTPS opcional: docker compose --profile https up -d (ver documentation/docker/INSTALL_GUIDE.md)
+  caddy:
+    image: caddy:2
+    container_name: kopagpos-caddy
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    networks:
+      - kopagnet
+
+networks:
+  kopagnet:
+    driver: bridge
+
+volumes:
+  db_data:
+  caddy_data:

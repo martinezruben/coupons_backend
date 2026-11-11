@@ -1,0 +1,7 @@
+# HTTPS con certificados automáticos de Let's Encrypt.
+# Requiere DOMAIN en .env apuntando (DNS) a este servidor y los puertos 80/443 libres.
+{$DOMAIN} {
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy app:80
+}

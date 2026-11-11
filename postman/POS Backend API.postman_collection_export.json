@@ -1,0 +1,2233 @@
+{
+  "info": {
+    "_postman_id": "5e17df3e-d1db-406b-897f-9813d907567a",
+    "name": "POS Backend API",
+    "description": "API del POS (Tap&Go).\n\n**Registro inicial (app sin catálogo):** `POST /api/auth/register-device` con `Device-Fingerprint` + `Pairing-Token` (cabeceras o JSON `device_fingerprint`, `pairing_token`). El código de 6 dígitos se genera en el panel admin → Localidades (icono llave por fila, por sede). Crea dispositivo + licencia y devuelve `token`, `license_key`, `location_id`, `location_name`, `valid_from` y `valid_to` (ISO 8601, vigencia de la licencia). `license_key` es el UUID de la licencia (usar en login). El UUID del dispositivo está en **GET /api/auth/me** (`id`). Si la huella ya estaba registrada (reinstalación de la app), con un código válido devuelve de nuevo token (misma forma que el alta).\n\n**Login posterior (ya tiene catálogo / licencia):** `POST /api/auth/login` con `Device-Fingerprint` + `License-Key` (o JSON `device_fingerprint`, `license_key`). Respuesta: `token`, `license_key`, `location_id`, `location_name` (sin `device_id` ni `license_id`; el UUID del dispositivo está en **GET /api/auth/me**). Respuesta 403 si la licencia no está activa.\n\n**GET /api/sync/pull** devuelve `syncTimestamp` y `data`: `license` (incluye `deviceFingerprint`, la huella del terminal; no UUID de dispositivo), `users`, `families`, `subfamilies`, `products`, `paymentMethods` (camelCase). Obligatorio `device_fingerprint` en query (o `deviceFingerprint`) o cabecera `Device-Fingerprint`, misma huella que en login.\n\nCabecera: `Authorization: Bearer {{token}}` (Sanctum, modelo `Device`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19841587"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register device (pairing)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}",
+                "description": "Opcional si envías el cuerpo JSON."
+              },
+              {
+                "key": "Pairing-Token",
+                "value": "{{pairing_token}}",
+                "description": "Código de 6 dígitos."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register-device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register-device"
+              ]
+            },
+            "description": "Vincula el terminal con el código del panel (Dispositivos). Si la huella ya existía, devuelve token con el mismo formato que el alta (p. ej. app reinstalada). Invalida el código al tener éxito."
+          },
+          "response": [
+            {
+              "name": "Register device (pairing)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}",
+                    "description": "Opcional si envías el cuerpo JSON."
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}",
+                    "description": "Código de 6 dígitos."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": ":status",
+                  "value": 200
+                },
+                {
+                  "key": "access-control-allow-origin",
+                  "value": "*"
+                },
+                {
+                  "key": "cache-control",
+                  "value": "no-cache, private"
+                },
+                {
+                  "key": "content-type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "date",
+                  "value": "Sat, 04 Apr 2026 15:21:58 GMT"
+                },
+                {
+                  "key": "host",
+                  "value": "tiffiny-chondriosomal-chandra.ngrok-free.dev"
+                },
+                {
+                  "key": "x-powered-by",
+                  "value": "PHP/8.4.19"
+                },
+                {
+                  "key": "x-ratelimit-limit",
+                  "value": "30"
+                },
+                {
+                  "key": "x-ratelimit-remaining",
+                  "value": "28"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"token\": \"36|sDARTeNkIni9UrTsnxaBcNpQWaKw7rO1KUHWLgmC1440d084\",\n    \"license_key\": \"680fc0aa-6b56-4a76-b1ad-4f55018037ba\",\n    \"location_id\": \"1c7f6370-2f8b-44b0-868b-5b31183a3099\",\n    \"location_name\": \"Sucursal Centro\",\n    \"valid_from\": \"2026-04-04T15:21:57+00:00\",\n    \"valid_to\": \"2027-04-04T15:21:57+00:00\"\n}"
+            },
+            {
+              "name": "200 OK — paired (token issued)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"token\": \"36|sDARTeNkIni9UrTsnxaBcNpQWaKw7rO1KUHWLgmC1440d084\",\n  \"license_key\": \"680fc0aa-6b56-4a76-b1ad-4f55018037ba\",\n  \"location_id\": \"1c7f6370-2f8b-44b0-868b-5b31183a3099\",\n  \"location_name\": \"Sucursal Centro\",\n  \"valid_from\": \"2026-04-04T15:21:57+00:00\",\n  \"valid_to\": \"2027-04-04T15:21:57+00:00\"\n}"
+            },
+            {
+              "name": "422 Unprocessable Entity — invalid pairing_token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"badfingerprint\",\n  \"pairing_token\": \"12\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"pairing_token\": [\n      \"The pairing token must be 6 digits.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden — login inactive license",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"License inactive\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error — placeholder",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}"
+              },
+              {
+                "key": "License-Key",
+                "value": "{{license_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"license_key\": \"{{license_key}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Sesión cuando la app ya tiene el catálogo: valida huella + license_key (único por licencia). Respuesta 403 si la licencia no está activa."
+          },
+          "response": [
+            {
+              "name": "Login - 200 OK - Token issued",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"1234\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.POS_EXAMPLE_TOKEN\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"location_name\": \"Main Store\"\n}"
+            },
+            {
+              "name": "Login - 422 Unprocessable Entity - Missing required fields",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"license_key\": \"\",\n  \"pin\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"device_fingerprint\": [\n      \"The device_fingerprint field is required.\"\n    ],\n    \"license_key\": [\n      \"The license_key field is required.\"\n    ],\n    \"pin\": [\n      \"The pin field is required.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Login - 401 Unauthorized - Invalid credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"9999\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Invalid credentials.\"\n}"
+            },
+            {
+              "name": "Login - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"1234\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.id) { pm.collectionVariables.set('device_id', j.id); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Me - 200 OK - Current device context",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"b0b7b0c6-4fd7-4b4d-9b97-8362c3c2b7d3\",\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\"\n}"
+            },
+            {
+              "name": "Me - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Me - 403 Forbidden - Device not allowed for license",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Forbidden.\"\n}"
+            },
+            {
+              "name": "Me - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sync",
+      "item": [
+        {
+          "name": "Pull catalog (full)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.syncTimestamp) {",
+                  "        pm.collectionVariables.set('last_sync_timestamp', j.syncTimestamp);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "pull"
+              ],
+              "query": [
+                {
+                  "key": "device_fingerprint",
+                  "value": "{{device_fingerprint}}"
+                }
+              ]
+            },
+            "description": "Primera sync: sin `lastSyncTimestamp`. Requiere `device_fingerprint` = misma huella que en Login (variable `device_fingerprint`). Alternativa: cabecera `Device-Fingerprint`."
+          },
+          "response": [
+            {
+              "name": "Pull catalog (full) - 200 OK - Full catalog sync",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"syncTimestamp\": \"2026-04-04T15:00:00Z\",\n  \"data\": {\n    \"license\": {\n      \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n      \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n      \"location_name\": \"Main Store\",\n      \"valid_from\": \"2026-04-04T00:00:00Z\",\n      \"valid_to\": \"2027-04-04T00:00:00Z\"\n    },\n    \"users\": [\n      {\n        \"id\": \"2d7fd3d7-cc0f-4af3-9e63-2d203ab2d3b8\",\n        \"name\": \"Cashier 01\",\n        \"role\": \"cashier\",\n        \"active\": true\n      }\n    ],\n    \"families\": [\n      {\n        \"id\": \"b3dfba0b-fc5b-4ddf-a2fd-4e7c0f1e4d5a\",\n        \"name\": \"Beverages\"\n      }\n    ],\n    \"subfamilies\": [\n      {\n        \"id\": \"c7f2e0b3-0c5a-4b2b-a9c5-7c2f8ffb0f6f\",\n        \"family_id\": \"b3dfba0b-fc5b-4ddf-a2fd-4e7c0f1e4d5a\",\n        \"name\": \"Soft Drinks\"\n      }\n    ],\n    \"products\": [\n      {\n        \"id\": \"a0f9a2a0-3f69-4b62-9b93-50e0d2a2ab5a\",\n        \"sku\": \"SODA-COLA-330\",\n        \"name\": \"Cola 330ml\",\n        \"family_id\": \"b3dfba0b-fc5b-4ddf-a2fd-4e7c0f1e4d5a\",\n        \"subfamily_id\": \"c7f2e0b3-0c5a-4b2b-a9c5-7c2f8ffb0f6f\",\n        \"price\": 1.5,\n        \"tax_rate\": 0.1,\n        \"active\": true\n      }\n    ],\n    \"paymentMethods\": [\n      {\n        \"id\": \"f4d9b2c6-8f74-4b0a-8c6b-6a1d7f0a3e19\",\n        \"code\": \"CASH\",\n        \"name\": \"Cash\",\n        \"active\": true\n      },\n      {\n        \"id\": \"f8c20d1a-6c7d-4dfe-8c3c-2df9d5c02a1b\",\n        \"code\": \"CARD\",\n        \"name\": \"Card\",\n        \"active\": true\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "Pull catalog (full) - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Pull catalog (full) - 422 Unprocessable Entity - device_fingerprint invalid",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint=",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"device_fingerprint\": [\n      \"The device_fingerprint field is required.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Pull catalog (full) - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Pull catalog (incremental)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}&lastSyncTimestamp={{last_sync_timestamp}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "pull"
+              ],
+              "query": [
+                {
+                  "key": "device_fingerprint",
+                  "value": "{{device_fingerprint}}"
+                },
+                {
+                  "key": "lastSyncTimestamp",
+                  "value": "{{last_sync_timestamp}}"
+                }
+              ]
+            },
+            "description": "Pon en `last_sync_timestamp` el `syncTimestamp` de un pull anterior (la variable se rellena sola tras **Pull catalog (full)**). ISO 8601 o ms Unix. Misma huella que en Login."
+          },
+          "response": [
+            {
+              "name": "Pull catalog (incremental) - 200 OK - Incremental updates since lastSyncTimestamp",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}&lastSyncTimestamp={{last_sync_timestamp}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lastSyncTimestamp",
+                      "value": "{{last_sync_timestamp}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"syncTimestamp\": \"2026-04-04T16:30:00Z\",\n  \"data\": {\n    \"license\": {\n      \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n      \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n      \"location_name\": \"Main Store\"\n    },\n    \"users\": [],\n    \"families\": [],\n    \"subfamilies\": [],\n    \"products\": [\n      {\n        \"id\": \"a0f9a2a0-3f69-4b62-9b93-50e0d2a2ab5a\",\n        \"sku\": \"SODA-COLA-330\",\n        \"name\": \"Cola 330ml\",\n        \"price\": 1.6,\n        \"tax_rate\": 0.1,\n        \"active\": true,\n        \"updated_at\": \"2026-04-04T16:20:00Z\"\n      }\n    ],\n    \"paymentMethods\": []\n  }\n}"
+            },
+            {
+              "name": "Pull catalog (incremental) - 401 Unauthorized - Invalid token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer invalid.token.value"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}&lastSyncTimestamp={{last_sync_timestamp}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lastSyncTimestamp",
+                      "value": "{{last_sync_timestamp}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer invalid.token.value",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Pull catalog (incremental) - 422 Unprocessable Entity - lastSyncTimestamp format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}&lastSyncTimestamp=not-a-date",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lastSyncTimestamp",
+                      "value": "not-a-date",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"lastSyncTimestamp\": [\n      \"The lastSyncTimestamp is not a valid ISO-8601 datetime.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Pull catalog (incremental) - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/sync/pull?device_fingerprint={{device_fingerprint}}&lastSyncTimestamp={{last_sync_timestamp}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "pull"
+                  ],
+                  "query": [
+                    {
+                      "key": "device_fingerprint",
+                      "value": "{{device_fingerprint}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lastSyncTimestamp",
+                      "value": "{{last_sync_timestamp}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Push transactions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactions\": [\n    {\n      \"external_id\": \"demo-ext-{{$guid}}\",\n      \"shift_id\": null,\n      \"user_id\": \"{{cashier_user_id}}\",\n      \"turn_number\": 1,\n      \"status\": \"PAID\",\n      \"total\": 10.5,\n      \"occurred_at\": \"2026-04-03T15:00:00\",\n      \"items\": [\n        {\n          \"product_id\": null,\n          \"product_name\": \"Producto demo\",\n          \"product_sku\": \"SKU-1\",\n          \"qty\": 1,\n          \"unit_price\": 10.5,\n          \"discount\": 0,\n          \"tax\": 0,\n          \"line_total\": 10.5\n        }\n      ],\n      \"payments\": [\n        {\n          \"payment_method\": \"CASH\",\n          \"amount\": 10.5,\n          \"reference\": null\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/sync/push",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "push"
+              ]
+            },
+            "description": "Rellena `cashier_user_id` con el UUID de un cajero (p. ej. de **Pull** → `data.users`). `external_id` usa GUID distinto en cada envío."
+          },
+          "response": [
+            {
+              "name": "Push transactions - 201 Created - Transactions accepted",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"transactions\": [\n    {\n      \"id\": \"e6c1fd4b-2a87-4fb1-9f3a-7b2a02c3b9de\",\n      \"external_ref\": \"POS-00001234\",\n      \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n      \"total\": 3.1,\n      \"currency\": \"EUR\",\n      \"paid_at\": \"2026-04-04T16:40:12Z\",\n      \"lines\": [\n        {\n          \"product_id\": \"a0f9a2a0-3f69-4b62-9b93-50e0d2a2ab5a\",\n          \"qty\": 2,\n          \"unit_price\": 1.5,\n          \"tax_rate\": 0.1\n        }\n      ],\n      \"payments\": [\n        {\n          \"payment_method_id\": \"f4d9b2c6-8f74-4b0a-8c6b-6a1d7f0a3e19\",\n          \"amount\": 3.1\n        }\n      ]\n    },\n    {\n      \"id\": \"a0b3a2c9-5f5a-4b4a-8dc1-0a6b8cb2c045\",\n      \"external_ref\": \"POS-00001235\",\n      \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n      \"total\": 1.6,\n      \"currency\": \"EUR\",\n      \"paid_at\": \"2026-04-04T16:41:02Z\",\n      \"lines\": [\n        {\n          \"product_id\": \"a0f9a2a0-3f69-4b62-9b93-50e0d2a2ab5a\",\n          \"qty\": 1,\n          \"unit_price\": 1.6,\n          \"tax_rate\": 0.1\n        }\n      ],\n      \"payments\": [\n        {\n          \"payment_method_id\": \"f8c20d1a-6c7d-4dfe-8c3c-2df9d5c02a1b\",\n          \"amount\": 1.6\n        }\n      ]\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/sync/push",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "push"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"syncTimestamp\": \"2026-04-04T16:45:00Z\",\n  \"message\": \"Transactions accepted.\",\n  \"received\": 2,\n  \"accepted\": 2,\n  \"rejected\": 0\n}"
+            },
+            {
+              "name": "Push transactions - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"transactions\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/sync/push",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "push"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Push transactions - 422 Unprocessable Entity - Invalid payload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"transactions\": [\n    {\n      \"id\": \"\",\n      \"total\": -1,\n      \"lines\": []\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/sync/push",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "push"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"transactions\": [\n      \"The transactions field is required.\"\n    ],\n    \"transactions.0.lines\": [\n      \"At least one line item is required.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Push transactions - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"transactions\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/sync/push",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "sync",
+                    "push"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Dashboard (today)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "dashboard"
+              ]
+            },
+            "description": "Query opcional: `?location_id=` para filtrar."
+          },
+          "response": [
+            {
+              "name": "Dashboard (today) - 200 OK - Summary for today",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"date\": \"2026-04-04\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"location_name\": \"Main Store\",\n  \"totals\": {\n    \"transactions\": 128,\n    \"gross_sales\": 1540.75,\n    \"net_sales\": 1400.68,\n    \"tax\": 140.07,\n    \"refunds\": 2,\n    \"refund_amount\": 18.5\n  },\n  \"payments\": [\n    {\n      \"payment_method\": \"Cash\",\n      \"amount\": 620.25\n    },\n    {\n      \"payment_method\": \"Card\",\n      \"amount\": 920.5\n    }\n  ]\n}"
+            },
+            {
+              "name": "Dashboard (today) - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Dashboard (today) - 403 Forbidden - No access to reports",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Forbidden.\"\n}"
+            },
+            {
+              "name": "Dashboard (today) - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Dashboard by location_id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/dashboard?location_id={{location_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "location_id",
+                  "value": "{{location_id}}"
+                }
+              ]
+            },
+            "description": "Usa `location_id` guardado tras Login, o pega un UUID manualmente."
+          },
+          "response": [
+            {
+              "name": "Dashboard by location_id - 200 OK - Summary for location",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard?location_id={{location_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "location_id",
+                      "value": "{{location_id}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"date\": \"2026-04-04\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"location_name\": \"Main Store\",\n  \"totals\": {\n    \"transactions\": 64,\n    \"gross_sales\": 780.25,\n    \"net_sales\": 709.32,\n    \"tax\": 70.93\n  },\n  \"payments\": [\n    {\n      \"payment_method\": \"Cash\",\n      \"amount\": 300.25\n    },\n    {\n      \"payment_method\": \"Card\",\n      \"amount\": 480.0\n    }\n  ]\n}"
+            },
+            {
+              "name": "Dashboard by location_id - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard?location_id={{location_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "location_id",
+                      "value": "{{location_id}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Dashboard by location_id - 422 Unprocessable Entity - location_id required",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard?location_id=",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "location_id",
+                      "value": "",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"location_id\": [\n      \"The location_id field is required.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Dashboard by location_id - 403 Forbidden - Location not in license",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard?location_id={{location_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "location_id",
+                      "value": "{{location_id}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Forbidden.\"\n}"
+            },
+            {
+              "name": "Dashboard by location_id - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/dashboard?location_id={{location_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "dashboard"
+                  ],
+                  "query": [
+                    {
+                      "key": "location_id",
+                      "value": "{{location_id}}",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "By location",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/by-location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "by-location"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "By location - 200 OK - Sales totals grouped by location",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/by-location",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "by-location"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"date\": \"2026-04-04\",\n  \"locations\": [\n    {\n      \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n      \"location_name\": \"Main Store\",\n      \"totals\": {\n        \"transactions\": 128,\n        \"gross_sales\": 1540.75,\n        \"net_sales\": 1400.68,\n        \"tax\": 140.07\n      }\n    },\n    {\n      \"location_id\": \"ad4b0b5c-9b6d-4b0e-9e17-7f2a8d5c3b21\",\n      \"location_name\": \"Airport Kiosk\",\n      \"totals\": {\n        \"transactions\": 45,\n        \"gross_sales\": 520.1,\n        \"net_sales\": 472.82,\n        \"tax\": 47.28\n      }\n    }\n  ]\n}"
+            },
+            {
+              "name": "By location - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/by-location",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "by-location"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "By location - 403 Forbidden - No access to reports",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/by-location",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "by-location"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Forbidden.\"\n}"
+            },
+            {
+              "name": "By location - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/reports/by-location",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "reports",
+                    "by-location"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "device_id",
+      "value": ""
+    },
+    {
+      "key": "license_id",
+      "value": "",
+      "description": "Opcional; no se devuelve en login/register (usar license_key)."
+    },
+    {
+      "key": "license_key",
+      "value": "",
+      "description": "UUID de la licencia; usar en POST /api/auth/login."
+    },
+    {
+      "key": "device_fingerprint",
+      "value": "",
+      "description": "Huella única del terminal Android."
+    },
+    {
+      "key": "pairing_token",
+      "value": "",
+      "description": "Código de 6 dígitos del panel admin (solo registro inicial)."
+    },
+    {
+      "key": "last_sync_timestamp",
+      "value": ""
+    },
+    {
+      "key": "location_id",
+      "value": ""
+    },
+    {
+      "key": "location_name",
+      "value": "",
+      "description": "Nombre de la sede (respuesta register-device y login)."
+    },
+    {
+      "key": "cashier_user_id",
+      "value": "",
+      "description": "UUID de un usuario cajero del local (p. ej. de `data.users` tras Pull)."
+    }
+  ]
+}

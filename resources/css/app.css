@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300..800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        @apply antialiased text-snow-800;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    summary:focus-visible {
+        @apply outline-none ring-2 ring-primary-500 ring-offset-1;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    /* Inputs — sobrio, foco de acento */
+    .snow-input {
+        @apply block w-full rounded-md border border-slate-200 bg-snow-25 px-2 py-1.5 text-xs text-snow-800 shadow-sm;
+        @apply placeholder:text-slate-400;
+        @apply focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/25;
+    }
+
+    .snow-label {
+        @apply mb-1 block font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-500;
+    }
+
+    .snow-btn-primary {
+        @apply inline-flex items-center justify-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm;
+        @apply transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1;
+    }
+
+    .snow-btn-secondary {
+        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm;
+        @apply transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    }
+
+    .snow-btn-ghost {
+        @apply inline-flex items-center justify-center rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900;
+    }
+
+    .snow-btn-danger {
+        @apply inline-flex items-center justify-center rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100;
+    }
+
+    /* Tarjetas — superficie casi blanca, radio amplio, sombra suave */
+    .snow-card {
+        @apply overflow-hidden rounded-[10px] border border-slate-200/90 bg-snow-25 shadow-hope-card;
+    }
+
+    /* Cabeceras de tabla: compactas, mono uppercase */
+    .snow-table-head {
+        @apply bg-slate-50 text-left font-mono text-[11px] font-medium uppercase tracking-wider text-slate-500;
+    }
+
+    .snow-topbar {
+        @apply border-b border-slate-200 bg-snow-25;
+    }
+
+    /* Botón icónico con borde, para acciones de fila y topbar */
+    .snow-icon-btn {
+        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 text-slate-500 shadow-sm transition;
+        @apply hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700;
+    }
+
+    .snow-icon-btn-danger {
+        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 text-rose-500/90 shadow-sm transition;
+        @apply hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700;
+    }
+
+    /* Etiqueta/tag con punto de estado (badges) */
+    .snow-tag {
+        @apply inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold leading-tight;
+    }
+
+    /* Búsqueda compacta en grids */
+    .hope-grid-search {
+        @apply w-full rounded-md border border-slate-200 bg-snow-25 py-1 pl-7 pr-1.5 text-[11px] leading-tight text-slate-800 placeholder:text-slate-400;
+        @apply focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-500/35;
+    }
+
+    .hope-filter-select {
+        @apply rounded-md border border-slate-200 bg-snow-25 py-0.5 pl-1.5 pr-6 text-[11px] text-slate-800 shadow-sm;
+        @apply focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-500/30;
+    }
+}
