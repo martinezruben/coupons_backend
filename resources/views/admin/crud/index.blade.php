@@ -1,5 +1,5 @@
 @php
-    $badgeFields = ['status', 'is_active', 'is_enabled', 'is_synced', 'role', 'response_status'];
+    $badgeFields = ['status', 'is_active', 'coupon_active', 'is_enabled', 'is_synced', 'role', 'response_status'];
     $visibleLimit = (int) ($cfg['grid']['visible_limit'] ?? 8);
     $gridExclude = $cfg['grid']['exclude_from_grid'] ?? [];
     $gridFieldList = array_values(array_filter($cfg['fields'] ?? [], static fn (string $f): bool => ! in_array($f, $gridExclude, true)));
@@ -28,6 +28,9 @@
         <form method="GET" action="{{ route('admin.screens.index', $screen) }}" class="border-b border-slate-100">
             <div class="flex flex-col gap-1.5 bg-white px-2 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:px-3">
                 <div class="flex flex-wrap items-center gap-0.5">
+                    @if(in_array($screen, ['coupons', 'coupon-barcodes'], true) && auth('admin')->user()->can(\App\Support\AdminRbac::actionPermissions($screen)['issue']['permission']))
+                        <a href="{{ route('admin.coupons.issue', $screen === 'coupons' ? 'qr' : 'barcode') }}" class="snow-btn-primary">Emitir cupones</a>
+                    @endif
                     @if(($canEdit ?? false) && empty($cfg['disable_create'] ?? false))
                         <a
                             href="{{ route('admin.screens.create', $screen) }}"
@@ -225,6 +228,9 @@
                                     >
                                         <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
                                     </button>
+                                @endif
+                                @if(in_array($screen, ['coupons', 'coupon-barcodes', 'coupon-transactions'], true))
+                                    @include('admin.crud.partials.coupon-row-actions')
                                 @endif
                                 @if(($locationPairing ?? false))
                                     <button

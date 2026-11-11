@@ -15,6 +15,12 @@ return [
         'screens' => ['locations', 'devices', 'licenses'],
     ],
     [
+        'key' => 'coupons',
+        'icon' => 'gift',
+        'label' => 'Cupones',
+        'screens' => ['coupons', 'coupon-barcodes', 'coupon-transactions', 'coupon-audit-logs'],
+    ],
+    [
         'key' => 'ops',
         'icon' => 'briefcase',
         'label' => 'Operación',

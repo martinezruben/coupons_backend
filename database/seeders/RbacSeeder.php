@@ -42,6 +42,19 @@ class RbacSeeder extends Seeder
             $viewer[] = $p['view'];
         }
 
+        // Cupones: el gerente de operaciones puede ver y gestionar; ajustar saldo y revertir
+        // cobros son acciones sensibles que solo recibe el super-admin (o un rol a medida).
+        foreach (['coupons', 'coupon-barcodes'] as $screenKey) {
+            $r = AdminRbac::resourceKey($screenKey);
+            array_push($manager, "$r.view", "$r.issue", "$r.toggle");
+            $viewer[] = "$r.view";
+        }
+        foreach (['coupon-transactions', 'coupon-audit-logs'] as $screenKey) {
+            $r = AdminRbac::resourceKey($screenKey);
+            $manager[] = "$r.view";
+            $viewer[] = "$r.view";
+        }
+
         foreach (['audit_log.view'] as $extra) {
             Permission::firstOrCreate(['name' => $extra, 'guard_name' => 'admin']);
             $manager[] = $extra;

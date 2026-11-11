@@ -12,11 +12,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUuidPrimaryKey, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasUuidPrimaryKey, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'username',
@@ -28,6 +29,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'location_id',
+        'legacy_user_id',
     ];
 
     protected $hidden = ['password', 'remember_token', 'pin_sha384', 'pin4_sha384', 'pin4_enc'];
@@ -94,6 +96,39 @@ class User extends Authenticatable
     public function pin4Plain(): ?string
     {
         return $this->pin4_enc !== null ? (string) $this->pin4_enc : null;
+    }
+
+    /** Habilidades del token de la app de cupones según el rol (config/coupons.php). */
+    public function couponAbilities(): array
+    {
+        return config('coupons.role_abilities.'.strtoupper((string) $this->role), []);
+    }
+
+    /**
+     * ID entero para la app Android, que lo deserializa como Int: el de la API anterior si el
+     * usuario fue importado; si no, un entero estable derivado del UUID (siempre < 2^31).
+     */
+    public function apiId(): int
+    {
+        return $this->legacy_user_id !== null
+            ? (int) $this->legacy_user_id
+            : (int) hexdec(substr(str_replace('-', '', (string) $this->getKey()), 0, 7));
+    }
+
+    /** Representación del usuario compatible con la app Coupify (campos de la API anterior). */
+    public function toApi(): array
+    {
+        return [
+            'id' => $this->apiId(),
+            'name' => $this->full_name ?? $this->username,
+            'email' => $this->username,
+            'username' => $this->username,
+            'role' => $this->role,
+            'admin' => strtoupper((string) $this->role) === 'ADMIN' ? 1 : 0,
+            'email_verified_at' => null,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
     }
 
     public function locations()

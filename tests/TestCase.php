@@ -16,7 +16,18 @@ abstract class TestCase extends BaseTestCase
      */
     protected function setUp(): void
     {
+        // Las variables DB_* del entorno (p. ej. una BD real) NO deben llegar a los tests:
+        // RefreshDatabase borra tablas. Se fuerza SQLite en memoria antes de arrancar la app.
+        foreach (['DB_CONNECTION' => 'sqlite', 'DB_DATABASE' => ':memory:', 'DB_URL' => ''] as $key => $value) {
+            putenv("$key=$value");
+            $_ENV[$key] = $_SERVER[$key] = $value;
+        }
+
         parent::setUp();
+
+        if (config('database.default') !== 'sqlite' || config('database.connections.sqlite.database') !== ':memory:') {
+            $this->fail('Los tests solo pueden correr contra SQLite en memoria.');
+        }
 
         // Fuerza zona horaria UTC para tests (consistente con phpunit.xml)
         date_default_timezone_set('America/Santo_Domingo');

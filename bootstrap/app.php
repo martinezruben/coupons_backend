@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureAdminActive;
+use App\Http\Middleware\EnsureCouponUser;
 use App\Http\Middleware\EnsureDeviceOperational;
+use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\LogApiRequest;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -9,6 +11,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -32,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'device.operational' => EnsureDeviceOperational::class,
             'admin.active' => EnsureAdminActive::class,
+            'coupon.user' => EnsureCouponUser::class,
+            'abilities' => CheckAbilities::class,
+            'ability' => CheckForAnyAbility::class,
+            'idempotent' => EnsureIdempotency::class,
         ]);
 
         $middleware->appendToGroup('api', LogApiRequest::class);
