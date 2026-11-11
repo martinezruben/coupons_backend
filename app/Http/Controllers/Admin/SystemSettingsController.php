@@ -59,7 +59,6 @@ class SystemSettingsController extends Controller
             'pos_password_require_lowercase',
             'pos_password_require_digit',
             'pos_password_require_symbol',
-            'sync_paused',
             'contingency_enabled',
         ] as $boolField) {
             $validated[$boolField] = $request->boolean($boolField);

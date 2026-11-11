@@ -24,7 +24,7 @@ class PanelMailerTest extends TestCase
             'smtp_password' => 'secreto',
             'smtp_encryption' => 'ssl',
             'mail_from_address' => 'alertas@example.com',
-            'mail_from_name' => 'Tap&Go',
+            'mail_from_name' => 'Coupify',
         ], $overrides));
     }
 

@@ -7,11 +7,9 @@ use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
 use App\Models\SystemParameter;
-use App\Services\DashboardService;
 use App\Support\AppVersion;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -93,45 +91,6 @@ class AppVersionTest extends TestCase
         $this->travel(7)->hours();
         $this->withHeaders($headers)->getJson('/api/auth/me')->assertOk();
         $this->assertTrue($device->fresh()->app_version_seen_at->equalTo(now()));
-    }
-
-    public function test_outdated_devices_for_the_dashboard(): void
-    {
-        SystemParameter::query()->update(['min_app_version' => '1.4.0']);
-        $loc = Location::factory()->create();
-        Device::factory()->create(['location_id' => $loc->id, 'name' => 'Vieja', 'app_version' => '1.3.9']);
-        Device::factory()->create(['location_id' => $loc->id, 'name' => 'Al dia', 'app_version' => '1.10.0']);
-        Device::factory()->create(['location_id' => $loc->id, 'name' => 'Sin reportar', 'app_version' => null]);
-        Device::factory()->create(['location_id' => $loc->id, 'name' => 'Bloqueada', 'app_version' => '1.0.0', 'is_enabled' => false]);
-
-        $rows = (new DashboardService)->getOutdatedDevices();
-
-        $this->assertSame(['Vieja'], array_column($rows, 'name'));
-        $this->assertSame('1.4.0', $rows[0]['minimum']);
-
-        SystemParameter::query()->update(['min_app_version' => null]);
-        $this->assertSame([], (new DashboardService)->getOutdatedDevices());
-    }
-
-    public function test_technical_dashboard_shows_the_card_only_when_a_minimum_is_configured(): void
-    {
-        Permission::findOrCreate('dashboard_technical.view', 'admin');
-        $admin = AdminUser::factory()->create();
-        $admin->givePermissionTo('dashboard_technical.view');
-        $this->actingAs($admin, 'admin');
-
-        $this->get(route('admin.dashboard.technical'))
-            ->assertOk()
-            ->assertViewHas('kpis', fn (array $k): bool => ! collect($k)->contains(fn ($c) => str_starts_with($c['label'], 'App desactualizada')));
-
-        SystemParameter::query()->update(['min_app_version' => '2.0.0']);
-        Device::factory()->create(['app_version' => '1.0.0']);
-        Cache::flush();
-
-        $this->get(route('admin.dashboard.technical'))
-            ->assertOk()
-            ->assertViewHas('kpis', fn (array $k): bool => collect($k)->contains(fn ($c) => $c['label'] === 'App desactualizada (< 2.0.0)' && $c['value'] === '1'))
-            ->assertSee('dash-outdated-devices', false);
     }
 
     public function test_min_version_setting_validation(): void

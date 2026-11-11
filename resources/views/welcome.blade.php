@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta http-equiv="refresh" content="0;url=/admin">
-        <title>{{ config('app.name', 'Tap&Go') }}</title>
+        <title>{{ config('app.name', 'Coupify') }}</title>
         <style>
             body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
                    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: #f8fafc; color: #334155; }
@@ -19,7 +19,7 @@
     </head>
     <body>
         <div class="card">
-            <h1>{{ config('app.name', 'Tap&Go') }} — Panel de administración</h1>
+            <h1>{{ config('app.name', 'Coupify') }} — Panel de administración</h1>
             <p>Si no eres redirigido automáticamente, entra al panel:</p>
             <a href="/admin">Ir al panel</a>
         </div>

@@ -1,6 +1,6 @@
-# Guía de Instalación Limpia — Backend Tap&Go POS (Tap&Go + MySQL en Docker)
+# Guía de Instalación Limpia — Backend Coupify POS (Coupify + MySQL en Docker)
 
-> Documento de referencia para equipos y asistentes de IA. Captura TODO lo aprendido al hacer correr el backend Tap&Go (`pos-backend-tapandgo`) en contenedores Docker desde cero, incluyendo los errores que aparecen y cómo evitarlos.
+> Documento de referencia para equipos y asistentes de IA. Captura TODO lo aprendido al hacer correr el backend Coupify (`pos-backend-coupify`) en contenedores Docker desde cero, incluyendo los errores que aparecen y cómo evitarlos.
 
 ---
 
@@ -18,8 +18,8 @@
 ## 2. Estructura de archivos
 
 ```
-pos-backend-tapandgo/
-├── Dockerfile                  # Imagen Tap&Go (nginx+php-fpm) (multietapa simplificada, 1 solo stage Alpine)
+pos-backend-coupify/
+├── Dockerfile                  # Imagen Coupify (nginx+php-fpm) (multietapa simplificada, 1 solo stage Alpine)
 ├── docker-compose.yml          # 3 servicios: app, mysql, phpmyadmin
 ├── .env                        # Variables de entorno (NO versionar)
 ├── .dockerignore
@@ -40,8 +40,8 @@ pos-backend-tapandgo/
 
 ### A. Clonar repositorio y entrar al directorio
 ```bash
-git clone https://github.com/martinezruben/pos-backend-tapandgo.git
-cd pos-backend-tapandgo
+git clone https://github.com/martinezruben/pos-backend-coupify.git
+cd pos-backend-coupify
 ```
 
 ### B. Crear `.env` para Docker

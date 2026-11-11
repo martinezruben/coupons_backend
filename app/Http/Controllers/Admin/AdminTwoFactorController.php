@@ -51,7 +51,7 @@ class AdminTwoFactorController extends Controller
             $secretText = $pendingSecret;
             $qrSvg = $this->qrSvg(
                 $this->google2fa()->getQRCodeUrl(
-                    config('app.name', 'Tap&Go'),
+                    config('app.name', 'Coupify'),
                     $admin->email,
                     $pendingSecret,
                 ),

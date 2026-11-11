@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Gate;
 class AdminNavigation
 {
     /** Grids que el buscador ofrece primero al buscar registros. */
-    private const SEARCH_FIRST = ['products', 'transactions', 'android-users', 'locations', 'devices', 'families'];
+    private const SEARCH_FIRST = ['android-users', 'locations', 'devices'];
 
     /**
      * @return list<array{key: string, label: string, icon: string, items: list<array{label: string, icon: string, url: string, active: bool, searchable: bool, searchRank: int}>}>
@@ -48,9 +48,6 @@ class AdminNavigation
             }
 
             $key = $group['key'] ?? '';
-            if ($key === 'reports' && $admin->can('cierre_caja.view')) {
-                $items[] = self::item('Cierre de caja', 'archive-box', 'admin.cierre-caja.index', 'admin.cierre-caja.*');
-            }
             if ($key === 'system' && $admin->can('roles.edit')) {
                 $items[] = self::item('Permisos por rol', 'adjustments-horizontal', 'admin.rbac.matrix.index', 'admin.rbac.*');
             }
@@ -68,7 +65,7 @@ class AdminNavigation
     }
 
     /**
-     * Entradas del buscador: dashboards permitidos más todas las páginas del menú.
+     * Entradas del buscador: inicio más todas las páginas del menú.
      *
      * @return list<array{label: string, group: string, url: string, searchable: bool, searchRank: int}>
      */
@@ -79,11 +76,7 @@ class AdminNavigation
         }
 
         $entries = [];
-        foreach (['dashboard' => ['Dashboard comercial', 'admin.dashboard'], 'dashboard-technical' => ['Dashboard técnico', 'admin.dashboard.technical']] as $screen => [$label, $route]) {
-            if ($admin->can(AdminRbac::permissionsForScreen($screen)['view'])) {
-                $entries[] = ['label' => $label, 'group' => 'Dashboard', 'url' => route($route), 'searchable' => false, 'searchRank' => 99];
-            }
-        }
+        $entries[] = ['label' => 'Inicio', 'group' => 'Dashboard', 'url' => route('admin.dashboard'), 'searchable' => false, 'searchRank' => 99];
 
         foreach (self::groups($admin) as $group) {
             foreach ($group['items'] as $item) {

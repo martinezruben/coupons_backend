@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # deploy.sh — Automatiza la instalación y despliegue limpio del backend
-#             Tap&Go POS en Docker.
+#             Coupify POS en Docker.
 #
 # Uso:
 #   chmod +x deploy.sh
@@ -84,7 +84,7 @@ ensure_env() {
     else
         log "Generando .env inicial..."
         cat > .env <<EOF
-APP_NAME=Tap&Go
+APP_NAME=Coupify
 APP_ENV=production
 APP_KEY=$(php -r 'echo "base64:".base64_encode(random_bytes(32));' 2>/dev/null || echo "base64:$(openssl rand -base64 32)")
 APP_DEBUG=false
@@ -184,9 +184,9 @@ health_check() {
     pma_code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PMA_PORT}" 2>/dev/null || echo "000")
 
     if [ "$app_code" = "200" ]; then
-        ok "App Tap&Go: http://localhost:${APP_PORT}  → ${app_code}"
+        ok "App Coupify: http://localhost:${APP_PORT}  → ${app_code}"
     else
-        err "App Tap&Go: http://localhost:${APP_PORT}  → ${app_code} (Falla)"
+        err "App Coupify: http://localhost:${APP_PORT}  → ${app_code} (Falla)"
     fi
     if [ "$pma_code" = "200" ]; then
         ok "phpMyAdmin:  http://localhost:${PMA_PORT}  → ${pma_code}"

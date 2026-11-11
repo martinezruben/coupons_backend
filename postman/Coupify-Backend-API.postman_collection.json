@@ -1,0 +1,203 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-posbackend001",
+    "name": "Coupify Backend API",
+    "description": "API de Coupify.\n\n**Registro inicial (app sin catálogo):** `POST /api/auth/register-device` con `Device-Fingerprint` + `Pairing-Token` (cabeceras o JSON `device_fingerprint`, `pairing_token`). El código de 6 dígitos se genera en el panel admin → Localidades (icono llave por fila, por sede). Crea dispositivo + licencia y devuelve `token`, `license_key`, `location_id`, `location_name`, `valid_from` y `valid_to` (ISO 8601, vigencia de la licencia). `license_key` es el UUID de la licencia (usar en login). El UUID del dispositivo está en **GET /api/auth/me** (`id`). Si la huella ya estaba registrada (reinstalación de la app), con un código válido devuelve de nuevo token (misma forma que el alta).\n\n**Login posterior (ya tiene catálogo / licencia):** `POST /api/auth/login` con `Device-Fingerprint` + `License-Key` (o JSON `device_fingerprint`, `license_key`). Respuesta: `token`, `license_key`, `location_id`, `location_name` (sin `device_id` ni `license_id`; el UUID del dispositivo está en **GET /api/auth/me**). Respuesta 403 si la licencia no está activa.\n\nCabecera: `Authorization: Bearer {{token}}` (Sanctum, modelo `Device`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "device_id",
+      "value": ""
+    },
+    {
+      "key": "license_id",
+      "value": "",
+      "description": "Opcional; no se devuelve en login/register (usar license_key)."
+    },
+    {
+      "key": "license_key",
+      "value": "",
+      "description": "UUID de la licencia; usar en POST /api/auth/login."
+    },
+    {
+      "key": "device_fingerprint",
+      "value": "",
+      "description": "Huella única del terminal Android."
+    },
+    {
+      "key": "pairing_token",
+      "value": "",
+      "description": "Código de 6 dígitos del panel admin (solo registro inicial)."
+    },
+    {
+      "key": "last_sync_timestamp",
+      "value": ""
+    },
+    {
+      "key": "location_id",
+      "value": ""
+    },
+    {
+      "key": "location_name",
+      "value": "",
+      "description": "Nombre de la sede (respuesta register-device y login)."
+    },
+    {
+      "key": "cashier_user_id",
+      "value": "",
+      "description": "UUID de un usuario cajero del local (p. ej. de `data.users` tras Pull)."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register device (pairing)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}",
+                "description": "Opcional si envías el cuerpo JSON."
+              },
+              {
+                "key": "Pairing-Token",
+                "value": "{{pairing_token}}",
+                "description": "Código de 6 dígitos."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/register-device",
+            "description": "Vincula el terminal con el código del panel (Dispositivos). Si la huella ya existía, devuelve token con el mismo formato que el alta (p. ej. app reinstalada). Invalida el código al tener éxito."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}"
+              },
+              {
+                "key": "License-Key",
+                "value": "{{license_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"license_key\": \"{{license_key}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/login",
+            "description": "Sesión cuando la app ya tiene el catálogo: valida huella + license_key (único por licencia). Respuesta 403 si la licencia no está activa."
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.id) { pm.collectionVariables.set('device_id', j.id); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/me"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

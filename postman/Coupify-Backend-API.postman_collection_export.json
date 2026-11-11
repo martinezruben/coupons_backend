@@ -1,0 +1,933 @@
+{
+  "info": {
+    "_postman_id": "5e17df3e-d1db-406b-897f-9813d907567a",
+    "name": "Coupify Backend API",
+    "description": "API del POS (Tap&Go).\n\n**Registro inicial (app sin catálogo):** `POST /api/auth/register-device` con `Device-Fingerprint` + `Pairing-Token` (cabeceras o JSON `device_fingerprint`, `pairing_token`). El código de 6 dígitos se genera en el panel admin → Localidades (icono llave por fila, por sede). Crea dispositivo + licencia y devuelve `token`, `license_key`, `location_id`, `location_name`, `valid_from` y `valid_to` (ISO 8601, vigencia de la licencia). `license_key` es el UUID de la licencia (usar en login). El UUID del dispositivo está en **GET /api/auth/me** (`id`). Si la huella ya estaba registrada (reinstalación de la app), con un código válido devuelve de nuevo token (misma forma que el alta).\n\n**Login posterior (ya tiene catálogo / licencia):** `POST /api/auth/login` con `Device-Fingerprint` + `License-Key` (o JSON `device_fingerprint`, `license_key`). Respuesta: `token`, `license_key`, `location_id`, `location_name` (sin `device_id` ni `license_id`; el UUID del dispositivo está en **GET /api/auth/me**). Respuesta 403 si la licencia no está activa.\n\nCabecera: `Authorization: Bearer {{token}}` (Sanctum, modelo `Device`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19841587"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register device (pairing)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}",
+                "description": "Opcional si envías el cuerpo JSON."
+              },
+              {
+                "key": "Pairing-Token",
+                "value": "{{pairing_token}}",
+                "description": "Código de 6 dígitos."
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register-device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register-device"
+              ]
+            },
+            "description": "Vincula el terminal con el código del panel (Dispositivos). Si la huella ya existía, devuelve token con el mismo formato que el alta (p. ej. app reinstalada). Invalida el código al tener éxito."
+          },
+          "response": [
+            {
+              "name": "Register device (pairing)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}",
+                    "description": "Opcional si envías el cuerpo JSON."
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}",
+                    "description": "Código de 6 dígitos."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": ":status",
+                  "value": 200
+                },
+                {
+                  "key": "access-control-allow-origin",
+                  "value": "*"
+                },
+                {
+                  "key": "cache-control",
+                  "value": "no-cache, private"
+                },
+                {
+                  "key": "content-type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "date",
+                  "value": "Sat, 04 Apr 2026 15:21:58 GMT"
+                },
+                {
+                  "key": "host",
+                  "value": "tiffiny-chondriosomal-chandra.ngrok-free.dev"
+                },
+                {
+                  "key": "x-powered-by",
+                  "value": "PHP/8.4.19"
+                },
+                {
+                  "key": "x-ratelimit-limit",
+                  "value": "30"
+                },
+                {
+                  "key": "x-ratelimit-remaining",
+                  "value": "28"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"token\": \"36|sDARTeNkIni9UrTsnxaBcNpQWaKw7rO1KUHWLgmC1440d084\",\n    \"license_key\": \"680fc0aa-6b56-4a76-b1ad-4f55018037ba\",\n    \"location_id\": \"1c7f6370-2f8b-44b0-868b-5b31183a3099\",\n    \"location_name\": \"Sucursal Centro\",\n    \"valid_from\": \"2026-04-04T15:21:57+00:00\",\n    \"valid_to\": \"2027-04-04T15:21:57+00:00\"\n}"
+            },
+            {
+              "name": "200 OK — paired (token issued)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"token\": \"36|sDARTeNkIni9UrTsnxaBcNpQWaKw7rO1KUHWLgmC1440d084\",\n  \"license_key\": \"680fc0aa-6b56-4a76-b1ad-4f55018037ba\",\n  \"location_id\": \"1c7f6370-2f8b-44b0-868b-5b31183a3099\",\n  \"location_name\": \"Sucursal Centro\",\n  \"valid_from\": \"2026-04-04T15:21:57+00:00\",\n  \"valid_to\": \"2027-04-04T15:21:57+00:00\"\n}"
+            },
+            {
+              "name": "422 Unprocessable Entity — invalid pairing_token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"badfingerprint\",\n  \"pairing_token\": \"12\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"pairing_token\": [\n      \"The pairing token must be 6 digits.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden — login inactive license",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"License inactive\"\n}"
+            },
+            {
+              "name": "500 Internal Server Error — placeholder",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Device-Fingerprint",
+                    "value": "{{device_fingerprint}}"
+                  },
+                  {
+                    "key": "Pairing-Token",
+                    "value": "{{pairing_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"pairing_token\": \"{{pairing_token}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Accept",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Device-Fingerprint",
+                  "value": "{{device_fingerprint}}",
+                  "description": "",
+                  "enabled": true
+                },
+                {
+                  "key": "Pairing-Token",
+                  "value": "{{pairing_token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.token) { pm.collectionVariables.set('token', j.token); }",
+                  "    if (j.license_key) { pm.collectionVariables.set('license_key', j.license_key); }",
+                  "    if (j.location_id) { pm.collectionVariables.set('location_id', j.location_id); }",
+                  "    if (j.location_name) { pm.collectionVariables.set('location_name', j.location_name); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Device-Fingerprint",
+                "value": "{{device_fingerprint}}"
+              },
+              {
+                "key": "License-Key",
+                "value": "{{license_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_fingerprint\": \"{{device_fingerprint}}\",\n  \"license_key\": \"{{license_key}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Sesión cuando la app ya tiene el catálogo: valida huella + license_key (único por licencia). Respuesta 403 si la licencia no está activa."
+          },
+          "response": [
+            {
+              "name": "Login - 200 OK - Token issued",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"1234\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.POS_EXAMPLE_TOKEN\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"location_name\": \"Main Store\"\n}"
+            },
+            {
+              "name": "Login - 422 Unprocessable Entity - Missing required fields",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"license_key\": \"\",\n  \"pin\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"device_fingerprint\": [\n      \"The device_fingerprint field is required.\"\n    ],\n    \"license_key\": [\n      \"The license_key field is required.\"\n    ],\n    \"pin\": [\n      \"The pin field is required.\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Login - 401 Unauthorized - Invalid credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"9999\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Invalid credentials.\"\n}"
+            },
+            {
+              "name": "Login - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\",\n  \"pin\": \"1234\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var j = pm.response.json();",
+                  "    if (j.id) { pm.collectionVariables.set('device_id', j.id); }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Me - 200 OK - Current device context",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"b0b7b0c6-4fd7-4b4d-9b97-8362c3c2b7d3\",\n  \"device_fingerprint\": \"ios-7f0d9c1a1d2e3f4g\",\n  \"location_id\": \"3f0df8f4-4b51-4f08-9f05-2a0d6f41b1ab\",\n  \"license_key\": \"b8d7a9c2-2f8f-4a68-9a3a-7d8f3e4d1c2b\"\n}"
+            },
+            {
+              "name": "Me - 401 Unauthorized - Missing token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+            },
+            {
+              "name": "Me - 403 Forbidden - Device not allowed for license",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Forbidden.\"\n}"
+            },
+            {
+              "name": "Me - 500 Internal Server Error - Placeholder",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "me"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}",
+                  "description": "",
+                  "enabled": true
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Server Error\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "device_id",
+      "value": ""
+    },
+    {
+      "key": "license_id",
+      "value": "",
+      "description": "Opcional; no se devuelve en login/register (usar license_key)."
+    },
+    {
+      "key": "license_key",
+      "value": "",
+      "description": "UUID de la licencia; usar en POST /api/auth/login."
+    },
+    {
+      "key": "device_fingerprint",
+      "value": "",
+      "description": "Huella única del terminal Android."
+    },
+    {
+      "key": "pairing_token",
+      "value": "",
+      "description": "Código de 6 dígitos del panel admin (solo registro inicial)."
+    },
+    {
+      "key": "last_sync_timestamp",
+      "value": ""
+    },
+    {
+      "key": "location_id",
+      "value": ""
+    },
+    {
+      "key": "location_name",
+      "value": "",
+      "description": "Nombre de la sede (respuesta register-device y login)."
+    },
+    {
+      "key": "cashier_user_id",
+      "value": "",
+      "description": "UUID de un usuario cajero del local (p. ej. de `data.users` tras Pull)."
+    }
+  ]
+}

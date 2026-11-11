@@ -27,12 +27,6 @@
                 <div class="md:col-span-2">
                     <span class="snow-label">Última sincronización</span>
                     <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-[13px] text-slate-800 tabular-nums">{{ $item->last_sync_at?->format('Y-m-d H:i') ?? '—' }}</p>
-                    <form method="POST" action="{{ route('admin.devices.reset-last-sync', $item) }}" class="mt-2 inline" onsubmit="return confirm('¿Restablecer la última sincronización?');">
-                        @csrf
-                        <button type="submit" class="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-800">
-                            Restablecer última sync
-                        </button>
-                    </form>
                 </div>
                 <div class="md:col-span-2">
                     <form method="POST" action="{{ route('admin.screens.update', [$screen, $item->getKey()]) }}" class="flex flex-col gap-3 border-t border-slate-100 pt-3">
@@ -94,7 +88,7 @@
                 </div>
             </div>
         @else
-        <form method="POST" action="{{ $item ? route('admin.screens.update', [$screen, $item->getKey()]) : route('admin.screens.store', $screen) }}" class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-2 md:gap-x-4 md:gap-y-3" @if(in_array($screen, ['families', 'products'])) enctype="multipart/form-data" @endif x-data="selectCascade">
+        <form method="POST" action="{{ $item ? route('admin.screens.update', [$screen, $item->getKey()]) : route('admin.screens.store', $screen) }}" class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-2 md:gap-x-4 md:gap-y-3" x-data="selectCascade">
             @csrf
             @if($item)
                 @method('PUT')
@@ -235,77 +229,6 @@
                     @enderror
                 </div>
             @endforeach
-
-            @if(($screen ?? null) === 'families')
-                <div class="md:col-span-2">
-                    <label class="snow-label" for="family_image">Imagen de la categoría (POS)</label>
-                    @if($item?->image_url)
-                        <div class="mb-2 flex flex-wrap items-center gap-3">
-                            <img src="{{ \App\Services\ImageThumbnailService::displayUrl($item->image_url) }}" alt="" class="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-slate-200" width="64" height="64">
-                            <label class="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-600">
-                                <input type="checkbox" name="remove_image" value="1" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500">
-                                Quitar imagen actual
-                            </label>
-                        </div>
-                    @endif
-                    <input id="family_image" type="file" name="family_image" accept="image/jpeg,image/png,image/webp,image/gif" class="snow-input block w-full max-w-md text-[11px] file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-slate-700">
-                    <p class="mt-1 text-[10px] text-slate-500">JPEG, PNG, WebP o GIF. Máximo 5 MB.</p>
-                    @error('family_image')
-                        <p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-            @endif
-
-            @if(($screen ?? null) === 'products')
-                <div class="md:col-span-2">
-                    <label class="snow-label" for="product_image">Imagen del producto</label>
-                    @if($item?->image_url)
-                        <div class="mb-2 flex flex-wrap items-center gap-3">
-                            <img src="{{ \App\Services\ImageThumbnailService::displayUrl($item->image_url) }}" alt="" class="h-16 w-16 shrink-0 rounded-lg object-cover ring-1 ring-slate-200" width="64" height="64">
-                            <label class="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-600">
-                                <input type="checkbox" name="remove_image" value="1" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500">
-                                Quitar imagen actual
-                            </label>
-                        </div>
-                    @endif
-                    <input id="product_image" type="file" name="product_image" accept="image/jpeg,image/png,image/webp,image/gif" class="snow-input block w-full max-w-md text-[11px] file:mr-2 file:rounded file:border-0 file:bg-slate-100 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-slate-700">
-                    <p class="mt-1 text-[10px] text-slate-500">JPEG, PNG, WebP o GIF. Máximo 5 MB.</p>
-                    @error('product_image')
-                        <p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                @php
-                    $barcode = trim((string) $item?->barcode);
-                    $barcodePng = null;
-                    if ($barcode !== '') {
-                        try {
-                            $gen = new \Picqer\Barcode\BarcodeGeneratorPNG;
-                            if (strlen($barcode) === 13 && ctype_digit($barcode)) {
-                                try {
-                                    $barcodePng = base64_encode($gen->getBarcode($barcode, $gen::TYPE_EAN_13, 3, 56));
-                                } catch (\Throwable) {
-                                    $barcodePng = base64_encode($gen->getBarcode($barcode, $gen::TYPE_CODE_128, 3, 56));
-                                }
-                            } else {
-                                $barcodePng = base64_encode($gen->getBarcode($barcode, $gen::TYPE_CODE_128, 3, 56));
-                            }
-                        } catch (\Throwable) {
-                            $barcodePng = null;
-                        }
-                    }
-                @endphp
-                @if($barcodePng !== null)
-                    <div class="md:col-span-2">
-                        <label class="snow-label">Etiqueta · código de barras</label>
-                        <div class="inline-flex flex-col items-center gap-1 rounded-lg border border-slate-300 bg-white px-4 py-3 shadow-sm">
-                            <img src="data:image/png;base64,{{ $barcodePng }}" alt="Código de barras {{ $barcode }}" class="h-14 w-auto" width="220">
-                            <span class="font-mono text-xs tracking-[0.2em] text-slate-900">{{ $barcode }}</span>
-                        </div>
-                        <p class="mt-1 text-[10px] text-slate-500">Se genera a partir del código parametrizado (EAN-13 o Code 128).</p>
-                    </div>
-                @endif
-            @endif
 
             @if($screen === 'admin-users')
                 <div class="md:col-span-2">

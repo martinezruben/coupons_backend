@@ -6,14 +6,7 @@ use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\ApiRequestLog;
 use App\Models\Device;
-use App\Models\Family;
 use App\Models\Location;
-use App\Models\PaymentMethod;
-use App\Models\Product;
-use App\Models\Shift;
-use App\Models\Subfamily;
-use App\Models\SyncState;
-use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,11 +26,6 @@ class AdminGridCell
             'device' => Device::class,
             'user' => User::class,
             'adminUser' => AdminUser::class,
-            'shift' => Shift::class,
-            'transaction' => Transaction::class,
-            'product' => Product::class,
-            'family' => Family::class,
-            'subfamily' => Subfamily::class,
             default => throw new \InvalidArgumentException("Unknown foreign relation: {$relation}"),
         };
     }
@@ -79,22 +67,7 @@ class AdminGridCell
         /** @var Builder $query */
         $query = $modelClass::query();
 
-        if ($meta['relation'] === 'subfamily') {
-            return $query->with('family')->get()
-                ->sortBy(fn (Model $m) => [data_get($m, 'family.name', ''), data_get($m, 'name', '')])
-                ->values()
-                ->map(fn (Model $m): array => array_filter([
-                    'id' => (string) $m->getKey(),
-                    'label' => self::selectOptionLabel($m, $meta),
-                    'parent' => ! empty($meta['parent_column']) ? (string) data_get($m, $meta['parent_column']) : null,
-                ], fn ($v) => $v !== null));
-        }
-
-        match ($meta['relation']) {
-            'transaction' => $query->orderByDesc('occurred_at'),
-            'shift' => $query->orderByDesc('start_time'),
-            default => $query->orderBy($meta['attribute']),
-        };
+        $query->orderBy($meta['attribute']);
 
         return $query->get()->map(fn (Model $m): array => array_filter([
             'id' => (string) $m->getKey(),
@@ -133,12 +106,6 @@ class AdminGridCell
 
         if ($item instanceof User && $field === 'pin_status') {
             return $item->hasOfflinePin() ? 'Listo' : 'Restablecer contraseña';
-        }
-
-        if ($item instanceof SyncState && $field === 'last_sync_since') {
-            return $item->last_success_at !== null
-                ? $item->last_success_at->locale('es')->diffForHumans()
-                : '—';
         }
 
         if ($item instanceof AdminAuditLog) {
@@ -300,11 +267,6 @@ class AdminGridCell
         if ($known !== null) {
             return $known;
         }
-        if ($field === 'payment_method') {
-            static $names = [];
-
-            return $names[$raw] ??= PaymentMethod::labelsFor([$raw])[$raw] ?? $raw;
-        }
 
         return $raw;
     }
@@ -323,7 +285,7 @@ class AdminGridCell
                 continue;
             }
             if (! empty($meta['relation'])) {
-                $rels->push($meta['relation'] === 'subfamily' ? 'subfamily.family' : $meta['relation']);
+                $rels->push($meta['relation']);
             }
         }
 

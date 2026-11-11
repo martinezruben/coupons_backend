@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\AdminUser;
 use App\Models\Device;
 use App\Models\Location;
-use App\Services\DashboardService;
 use App\Support\LocationMapSyncPins;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +26,7 @@ class LocationMapStatusTest extends TestCase
     public function test_status_priority_and_four_hour_threshold(): void
     {
         $this->travelTo(Carbon::parse('2026-10-14 12:00:00'));
-        $hours = DashboardService::STALE_SYNC_HOURS;
+        $hours = LocationMapSyncPins::STALE_SYNC_HOURS;
 
         $online = Location::factory()->create(['name' => 'Online']);
         Device::factory()->create(['location_id' => $online->id, 'is_enabled' => true, 'last_sync_at' => now()->subHours($hours)->addMinute()]);
@@ -70,18 +69,6 @@ class LocationMapStatusTest extends TestCase
         Device::factory()->create(['location_id' => $loc->id, 'is_enabled' => true, 'last_sync_at' => now()->subMinutes(10)]);
 
         $this->assertStringContainsString('10 minutos', $this->pins()['Sede']['lastSyncHuman']);
-    }
-
-    public function test_map_status_matches_the_technical_dashboard_definition(): void
-    {
-        $this->travelTo(Carbon::parse('2026-10-14 12:00:00'));
-        $loc = Location::factory()->create(['name' => 'Sede']);
-        Device::factory()->create(['location_id' => $loc->id, 'is_enabled' => true, 'last_sync_at' => now()->subHours(5)]);
-
-        $notSynced = (new DashboardService)->getDevicesNotSyncedSince();
-
-        $this->assertCount(1, $notSynced);
-        $this->assertSame('stale', $this->pins()['Sede']['status']);
     }
 
     public function test_status_endpoint_requires_permission_and_returns_pins(): void

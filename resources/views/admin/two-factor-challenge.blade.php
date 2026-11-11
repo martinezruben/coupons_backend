@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Verificación en dos pasos — {{ config('app.name', 'Tap&Go') }}</title>
+        <title>Verificación en dos pasos — {{ config('app.name', 'Coupify') }}</title>
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
             @vite(['resources/css/app.css'])
         @endif

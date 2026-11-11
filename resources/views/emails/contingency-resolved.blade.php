@@ -37,7 +37,7 @@
 
             <p style="margin-top: 30px;">
                 Saludos,<br>
-                Sistema Tap&Go
+                Sistema Coupify
             </p>
         </div>
 

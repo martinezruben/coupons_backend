@@ -42,5 +42,5 @@ fi
 # Descubrir paquetes (necesario tras composer install --no-scripts)
 php artisan package:discover --ansi 2>&1 || echo "WARN: package:discover falló"
 
-echo "Tap&Go listo."
+echo "Coupify listo."
 exec "$@"
