@@ -460,11 +460,6 @@ class ScreenCrudController extends Controller
     }
 
     /**
-     * Reglas de negocio de promociones (tras la validación base de campos).
-     *
-     * @param  array<string, mixed>  $data
-     */
-    /**
      * @param  class-string<Model>  $modelClass
      * @return list<string>
      */

@@ -49,12 +49,13 @@
                             <th class="whitespace-nowrap px-2 py-1.5 text-center font-semibold">Ver</th>
                             <th class="whitespace-nowrap px-2 py-1.5 text-center font-semibold">Editar</th>
                             <th class="whitespace-nowrap px-2 py-1.5 text-center font-semibold">Eliminar</th>
+                            <th class="whitespace-nowrap px-2 py-1.5 font-semibold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @foreach($screenGroups as $group)
                             <tr class="bg-slate-50/80">
-                                <td colspan="4" class="sticky left-0 z-[1] bg-slate-50/95 px-2 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500 shadow-[1px_0_0_0_rgb(241_245_249)]">
+                                <td colspan="5" class="sticky left-0 z-[1] bg-slate-50/95 px-2 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500 shadow-[1px_0_0_0_rgb(241_245_249)]">
                                     {{ $group['label'] }}
                                 </td>
                             </tr>
@@ -104,6 +105,22 @@
                                             @checked(isset($assignedSet[$p['delete']]))
                                         >
                                     @endif
+                                </td>
+                                <td class="px-2 py-1 align-middle">
+                                    @forelse(\App\Support\AdminRbac::actionPermissions($s['key']) as $action)
+                                        <label class="mr-2 inline-flex items-center gap-1 whitespace-nowrap">
+                                            <input
+                                                type="checkbox"
+                                                name="permissions[]"
+                                                value="{{ $action['permission'] }}"
+                                                class="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                                @checked(isset($assignedSet[$action['permission']]))
+                                            >
+                                            <span>{{ $action['label'] }}</span>
+                                        </label>
+                                    @empty
+                                        <span class="text-slate-300">—</span>
+                                    @endforelse
                                 </td>
                             </tr>
                             @endforeach

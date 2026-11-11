@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminUserSecurityController;
 use App\Http\Controllers\Admin\ApiRequestLogDetailController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CouponAdminController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
@@ -66,6 +67,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/mail/validate-smtp', [MailTestController::class, 'validateSmtp'])->name('mail.validate-smtp');
         Route::post('/mail/validate-office365', [MailTestController::class, 'validateOffice365'])->name('mail.validate-office365');
         Route::post('/mail/test', [MailTestController::class, 'sendTest'])->name('mail.test');
+
+        // Cupones: acciones del panel (cada una con su permiso y auditoría)
+        Route::get('/coupons/{type}/issue', [CouponAdminController::class, 'issueForm'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue');
+        Route::post('/coupons/{type}/issue', [CouponAdminController::class, 'issue'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue.store');
+        Route::post('/coupons/{type}/{id}/toggle', [CouponAdminController::class, 'toggle'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.toggle');
+        Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');
+        Route::post('/coupon-transactions/{id}/reverse', [CouponAdminController::class, 'reverse'])->whereNumber('id')->name('coupon-transactions.reverse');
 
         Route::get('/screens/{screen}', [ScreenCrudController::class, 'index'])->name('screens.index');
         Route::get('/screens/{screen}/create', [ScreenCrudController::class, 'create'])->name('screens.create');

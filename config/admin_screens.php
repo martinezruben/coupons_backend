@@ -3,6 +3,10 @@
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\ApiRequestLog;
+use App\Models\BarcodeCoupon;
+use App\Models\Coupon;
+use App\Models\CouponAuditLog;
+use App\Models\CouponTransaction;
 use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
@@ -119,7 +123,7 @@ return [
     ],
     'android-users' => [
         'model' => User::class,
-        'label' => 'Usuarios POS (TapGo)',
+        'label' => 'Usuarios de la app (Coupify)',
         'icon' => 'users',
         'labels' => [
             'username' => 'Usuario',
@@ -178,6 +182,178 @@ return [
             ],
             'sortable' => ['username', 'full_name', 'role', 'is_active', 'location_id', 'last_activity_at'],
             'default_sort' => ['key' => 'username', 'direction' => 'asc'],
+        ],
+    ],
+    'coupons' => [
+        'model' => Coupon::class,
+        'label' => 'Cupones QR',
+        'icon' => 'qr-code',
+        'readonly' => true,
+        'labels' => [
+            'coupon_number' => 'Número',
+            'coupon_active' => 'Estado',
+            'coupon_date' => 'Emisión',
+            'coupon_expire_date' => 'Vence',
+            'coupon_amount' => 'Monto inicial',
+            'coupon_balance' => 'Saldo',
+        ],
+        'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo'],
+        'grid' => [
+            'filters' => [
+                'coupon_active' => [
+                    'label' => 'Estado',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', '1' => 'Activo', '0' => 'Inactivo'],
+                    'apply' => ['type' => 'column', 'column' => 'coupon_active'],
+                ],
+                'expire_to' => [
+                    'label' => 'Vence hasta',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_to', 'column' => 'coupon_expire_date'],
+                ],
+            ],
+            'money' => ['coupon_amount', 'coupon_balance'],
+            'sortable' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+            'search_columns' => ['coupon_number'],
+            'default_sort' => ['key' => 'coupon_id', 'direction' => 'desc'],
+        ],
+    ],
+    'coupon-barcodes' => [
+        'model' => BarcodeCoupon::class,
+        'label' => 'Cupones de barras',
+        'icon' => 'ticket',
+        'readonly' => true,
+        'labels' => [
+            'coupon_number' => 'Número',
+            'coupon_active' => 'Estado',
+            'coupon_date' => 'Emisión',
+            'coupon_expire_date' => 'Vence',
+            'coupon_amount' => 'Monto inicial',
+            'coupon_balance' => 'Saldo',
+        ],
+        'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo'],
+        'grid' => [
+            'filters' => [
+                'coupon_active' => [
+                    'label' => 'Estado',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', '1' => 'Activo', '0' => 'Inactivo'],
+                    'apply' => ['type' => 'column', 'column' => 'coupon_active'],
+                ],
+                'expire_to' => [
+                    'label' => 'Vence hasta',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_to', 'column' => 'coupon_expire_date'],
+                ],
+            ],
+            'money' => ['coupon_amount', 'coupon_balance'],
+            'sortable' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+            'search_columns' => ['coupon_number'],
+            'default_sort' => ['key' => 'coupon_id', 'direction' => 'desc'],
+        ],
+    ],
+    'coupon-transactions' => [
+        'model' => CouponTransaction::class,
+        'label' => 'Cobros de cupones',
+        'icon' => 'receipt-percent',
+        'readonly' => true,
+        'labels' => [
+            'transaction_id' => 'N.º',
+            'created_at' => 'Fecha/hora',
+            'coupon_number' => 'Cupón',
+            'coupon_type' => 'Tipo',
+            'transaction_amount' => 'Monto',
+            'user_id' => 'Usuario',
+            'location_id' => 'Localidad',
+            'device_id' => 'Dispositivo',
+            'reversed_of' => 'Reversa de',
+        ],
+        'fields' => ['transaction_id', 'created_at', 'coupon_number', 'coupon_type', 'transaction_amount', 'user_id', 'location_id', 'device_id', 'reversed_of'],
+        'actions' => ['reverse' => 'Revertir'],
+        'foreign_labels' => [
+            'user_id' => ['relation' => 'user', 'attribute' => 'username', 'header' => 'Usuario'],
+            'location_id' => ['relation' => 'location', 'attribute' => 'name', 'header' => 'Localidad'],
+            'device_id' => ['relation' => 'device', 'attribute' => 'name', 'fallback_attribute' => 'device_fingerprint', 'header' => 'Dispositivo'],
+        ],
+        'grid' => [
+            'filters' => [
+                'coupon_type' => [
+                    'label' => 'Tipo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'QRCODE' => 'QR', 'CODBAR' => 'Barras'],
+                    'apply' => ['type' => 'column', 'column' => 'coupon_type'],
+                ],
+                'location_id' => [
+                    'label' => 'Localidad',
+                    'type' => 'select',
+                    'model' => Location::class,
+                    'order_by' => 'name',
+                    'label_column' => 'name',
+                    'apply' => ['type' => 'column', 'column' => 'location_id'],
+                ],
+                'date_from' => [
+                    'label' => 'Desde',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_from', 'column' => 'created_at'],
+                ],
+                'date_to' => [
+                    'label' => 'Hasta',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_to', 'column' => 'created_at'],
+                ],
+            ],
+            'money' => ['transaction_amount'],
+            'sortable' => ['transaction_id', 'created_at', 'coupon_number', 'coupon_type', 'transaction_amount'],
+            'search_columns' => ['coupon_number'],
+            'default_sort' => ['key' => 'transaction_id', 'direction' => 'desc'],
+        ],
+    ],
+    'coupon-audit-logs' => [
+        'model' => CouponAuditLog::class,
+        'label' => 'Auditoría de cupones',
+        'icon' => 'clipboard-document-list',
+        'readonly' => true,
+        'labels' => [
+            'created_at' => 'Fecha/hora',
+            'action' => 'Acción',
+            'coupon_type' => 'Tipo',
+            'coupon_number' => 'Cupón',
+            'old_value' => 'Antes',
+            'new_value' => 'Después',
+            'reason' => 'Motivo',
+            'user_id' => 'Usuario app',
+            'admin_user_id' => 'Admin',
+            'ip_address' => 'IP',
+        ],
+        'fields' => ['created_at', 'action', 'coupon_type', 'coupon_number', 'old_value', 'new_value', 'reason', 'user_id', 'admin_user_id', 'ip_address'],
+        'foreign_labels' => [
+            'user_id' => ['relation' => 'user', 'attribute' => 'username', 'header' => 'Usuario app'],
+            'admin_user_id' => ['relation' => 'adminUser', 'attribute' => 'name', 'header' => 'Admin'],
+        ],
+        'grid' => [
+            'filters' => [
+                'action' => [
+                    'label' => 'Acción',
+                    'type' => 'select',
+                    'options' => ['' => 'Todas', 'issue' => 'Emisión', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa', 'activate' => 'Activación', 'deactivate' => 'Desactivación'],
+                    'apply' => ['type' => 'column', 'column' => 'action'],
+                ],
+                'date_from' => [
+                    'label' => 'Desde',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_from', 'column' => 'created_at'],
+                ],
+                'date_to' => [
+                    'label' => 'Hasta',
+                    'type' => 'date',
+                    'apply' => ['type' => 'date_to', 'column' => 'created_at'],
+                ],
+            ],
+            'sortable' => ['created_at', 'action', 'coupon_number'],
+            'search_columns' => ['coupon_number', 'reason'],
+            'default_sort' => ['key' => 'id', 'direction' => 'desc'],
         ],
     ],
     'api-request-logs' => [

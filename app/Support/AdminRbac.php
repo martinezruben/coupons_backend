@@ -57,6 +57,22 @@ class AdminRbac
     }
 
     /**
+     * Permisos de acción de una pantalla (`'actions' => ['issue' => 'Emitir', ...]` en admin_screens):
+     * operaciones que no son editar/eliminar (p. ej. ajustar saldo, revertir). Nombre: `{recurso}.{acción}`.
+     *
+     * @return array<string, array{permission: string, label: string}>
+     */
+    public static function actionPermissions(string $screen): array
+    {
+        $out = [];
+        foreach ((array) config("admin_screens.$screen.actions", []) as $action => $label) {
+            $out[$action] = ['permission' => self::resourceKey($screen).'.'.$action, 'label' => $label];
+        }
+
+        return $out;
+    }
+
+    /**
      * Pantalla sujeta a RBAC: tiene modelo CRUD o se marca `'rbac' => true`
      * (pantallas sin modelo como el dashboard, que solo exponen `.view`).
      */
@@ -87,6 +103,9 @@ class AdminRbac
             if (! empty($cfg['model'])) {
                 $names[] = $p['edit'];
                 $names[] = $p['delete'];
+            }
+            foreach (self::actionPermissions($screen) as $action) {
+                $names[] = $action['permission'];
             }
         }
 
@@ -129,11 +148,12 @@ class AdminRbac
             return [];
         }
         $p = self::permissionsForScreen($screen);
+        $actions = array_column(self::actionPermissions($screen), 'permission');
         if (! empty($cfg['readonly']) || empty($cfg['model'])) {
-            return [$p['view']];
+            return [$p['view'], ...$actions];
         }
 
-        return [$p['view'], $p['edit'], $p['delete']];
+        return [$p['view'], $p['edit'], $p['delete'], ...$actions];
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\CouponException;
+use App\Models\AdminUser;
 use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Models\CouponAuditLog;
@@ -11,6 +12,7 @@ use App\Models\Device;
 use App\Models\User;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -145,7 +147,7 @@ class CouponService
     }
 
     /** Solo admin (ver ruta): fija el saldo, nunca por encima del monto original del cupon. */
-    public function restore(string $number, string $amount, string $reason, User $user, ?string $ip): array
+    public function restore(string $number, string $amount, string $reason, Authenticatable $user, ?string $ip): array
     {
         $newBalance = BigDecimal::of($amount)->toScale(2, self::rounding());
 
@@ -171,7 +173,7 @@ class CouponService
     }
 
     /** Reversa de una transaccion: devuelve el monto y deja una fila compensatoria. */
-    public static function reverse(CouponTransaction $original, string $reason, User $user, ?string $ip): array
+    public static function reverse(CouponTransaction $original, string $reason, Authenticatable $user, ?string $ip): array
     {
         $service = self::forType($original->coupon_type);
 
@@ -204,7 +206,7 @@ class CouponService
                 'legacy_device_id' => $tx->legacy_device_id,
                 'legacy_site_id' => $tx->legacy_site_id,
                 'coupon_type' => $tx->coupon_type,
-                'user_id' => $user->getKey(),
+                ...self::actor($user),
                 'ip_address' => $ip,
                 'reversed_of' => $tx->transaction_id,
             ]);
@@ -220,10 +222,10 @@ class CouponService
         });
     }
 
-    private function audit(string $action, string $type, string $number, string $old, string $new, string $reason, User $user, ?string $ip): void
+    private function audit(string $action, string $type, string $number, string $old, string $new, string $reason, Authenticatable $user, ?string $ip): void
     {
         CouponAuditLog::create([
-            'user_id' => $user->getKey(),
+            ...self::actor($user),
             'action' => $action,
             'coupon_type' => $type,
             'coupon_number' => $number,
@@ -232,6 +234,74 @@ class CouponService
             'reason' => $reason,
             'ip_address' => $ip,
         ]);
+    }
+
+    /** Quién actúa: usuario de la app (UUID) o administrador del panel (ID entero). */
+    private static function actor(?Authenticatable $actor): array
+    {
+        return [
+            'user_id' => $actor instanceof User ? $actor->getKey() : null,
+            'admin_user_id' => $actor instanceof AdminUser ? $actor->getKey() : null,
+        ];
+    }
+
+    /**
+     * Emite cupones nuevos (panel). Números aleatorios no adivinables; los QR llevan además un token
+     * secreto que solo se devuelve aquí (nunca se vuelve a mostrar).
+     *
+     * @return list<array{coupon_number: string, coupon_token: ?string, qr_payload: ?string}>
+     */
+    public function issue(int $quantity, string $amount, ?string $expireDate, string $prefix, Authenticatable $actor, ?string $ip): array
+    {
+        $amountDec = BigDecimal::of($amount)->toScale(2, self::rounding());
+        $isQr = $this->type === self::TYPE_QR;
+
+        return DB::transaction(function () use ($quantity, $amountDec, $expireDate, $prefix, $actor, $ip, $isQr) {
+            $issued = [];
+            for ($i = 0; $i < $quantity; $i++) {
+                do {
+                    $number = $prefix.str_pad((string) random_int(0, 999_999_999_999), 12, '0', STR_PAD_LEFT);
+                } while ($this->model::where('coupon_number', $number)->exists());
+
+                $token = $isQr ? bin2hex(random_bytes(16)) : null;
+                $row = [
+                    'coupon_number' => $number,
+                    'coupon_active' => 1,
+                    'coupon_date' => now()->toDateString(),
+                    'coupon_expire_date' => $expireDate,
+                    'coupon_amount' => $this->money($amountDec),
+                    'coupon_balance' => $this->money($amountDec),
+                ];
+                if ($isQr) {
+                    $row['coupon_token'] = $token;
+                }
+                DB::table((new $this->model)->getTable())->insert($row);
+
+                $issued[] = [
+                    'coupon_number' => $number,
+                    'coupon_token' => $token,
+                    'qr_payload' => $isQr ? "@coupon={$number}@token={$token}" : null,
+                ];
+            }
+
+            $this->audit('issue', $this->type, $issued[0]['coupon_number'] ?? '', '0', (string) $quantity, "Emisión de {$quantity} cupones de {$this->money($amountDec)}", $actor, $ip);
+
+            return $issued;
+        });
+    }
+
+    /** Activa o desactiva un cupón (panel), con auditoría. */
+    public function setActive(int $couponId, bool $active, string $reason, Authenticatable $actor, ?string $ip): void
+    {
+        DB::transaction(function () use ($couponId, $active, $reason, $actor, $ip) {
+            $coupon = $this->model::where('coupon_id', $couponId)->lockForUpdate()->first();
+            if (! $coupon) {
+                throw new CouponException('Coupon not found', 404);
+            }
+            $old = (int) $coupon->coupon_active === 1 ? 'active' : 'inactive';
+            $this->model::where('coupon_id', $couponId)->update(['coupon_active' => $active ? 1 : 0]);
+            $this->audit($active ? 'activate' : 'deactivate', $this->type, $coupon->coupon_number, $old, $active ? 'active' : 'inactive', $reason, $actor, $ip);
+        });
     }
 
     private function tokenMatches(Model $coupon, ?string $token): bool

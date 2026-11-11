@@ -6,7 +6,7 @@ Backend administrativo de **Coupify** (cupones prepago). Es el panel web con el 
 ![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![MySQL 8.4](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)
 
-> **Estado:** adaptación en curso. La API de cupones que consume la app Android vive hoy en el repositorio `couponsapi`; aquí falta migrarla (ver [Pendiente](#pendiente)).
+> **Estado:** la API de cupones y su panel de administración ya están aquí (fases 1 a 3). Falta la prueba en paralelo y el corte de producción (ver [Pendiente](#pendiente)).
 
 ## Funcionalidades
 
@@ -14,6 +14,7 @@ Backend administrativo de **Coupify** (cupones prepago). Es el panel web con el 
 - **Ingreso**: login por guard `admin`, verificación en dos pasos (TOTP), bloqueo por intentos fallidos y cierre de sesiones.
 - **Usuarios del panel** (`admin-users`) y **usuarios de la app** (`android-users`, con PIN offline).
 - **Roles y permisos**: RBAC con Spatie (`{recurso}.view/.edit/.delete`), matriz de permisos por rol, rol `super-admin`.
+- **Cupones**: listados QR y de barras, cobros, auditoría, emisión con token de un solo uso, activar/desactivar, ajustar saldo y revertir (cada acción con su permiso y auditoría).
 - **Infraestructura**: localidades (con mapa), dispositivos (bloqueo remoto) y licencias.
 - **Auditoría**: cambios de modelos clave y login/logout; bitácora de peticiones de la API.
 - **Parámetros del sistema**: políticas de contraseña, correo (SMTP o Microsoft 365), contingencia por localidad con avisos por correo y versión mínima de la app.
@@ -21,6 +22,10 @@ Backend administrativo de **Coupify** (cupones prepago). Es el panel web con el 
 
 **API de dispositivos** (`/api`, Sanctum)
 - `POST /api/auth/register-device`, `POST /api/auth/login`, `GET /api/auth/me`: emparejamiento del dispositivo con licencia.
+
+**API de cupones** (`/api`, Sanctum con usuarios de la app) — ver [`docs/COUPONS_API.md`](docs/COUPONS_API.md)
+- `POST /api/login`, `GET /api/balance`, `POST /api/transaction` y sus equivalentes de código de barras, reversa auditada y restore solo para admin.
+- Migración de datos desde `couponsapi`: `php artisan coupons:import-legacy`.
 
 ## Puesta en marcha
 
@@ -74,6 +79,7 @@ Convenciones del proyecto: [`AGENTS.md`](AGENTS.md).
 
 ## Pendiente
 
-- Migrar el módulo de cupones (QR y código de barras, cobros, reversas, restore solo admin) desde `couponsapi`.
+- Reportes de canjes por día/localidad/dispositivo y reglas de recarga (TOP-UP).
+- Prueba en paralelo con `couponsapi` y corte de producción (`docs/COUPONS_API.md`).
 - Quitar dependencias que ya no se usan (`dompdf`, `phpspreadsheet`, `intervention/image`, `picqer`, `apexcharts`); requiere `composer update` con PHP 8.4.
 - Decidir el futuro de dispositivos, licencias y contingencia (heredados del POS).

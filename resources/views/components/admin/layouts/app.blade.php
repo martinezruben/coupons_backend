@@ -103,6 +103,11 @@
                     {{ session('status') }}
                 </div>
             @endif
+            @if($errors->has('coupon'))
+                <div class="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-800 shadow-sm">
+                    {{ $errors->first('coupon') }}
+                </div>
+            @endif
             {{ $slot }}
         </main>
 
