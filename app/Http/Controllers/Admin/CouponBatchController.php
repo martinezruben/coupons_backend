@@ -51,7 +51,11 @@ class CouponBatchController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ], [], ['name' => 'nombre', 'quantity' => 'cantidad', 'amount' => 'monto', 'expire_date' => 'fecha de vencimiento', 'prefix' => 'prefijo', 'notes' => 'notas']);
 
-        $batch = CouponBatchGenerator::create($data, $request->user('admin'), $request->ip());
+        try {
+            $batch = CouponBatchGenerator::create($data, $request->user('admin'), $request->ip());
+        } catch (CouponException $e) {
+            return back()->withInput()->withErrors(['coupon' => $this->explain($e)]);
+        }
         GenerateCouponBatch::dispatch($batch->getKey())->afterCommit();
 
         return redirect()->route('admin.coupon-batches.show', $batch)
@@ -62,15 +66,21 @@ class CouponBatchController extends Controller
     {
         $this->authorizeView();
 
+        $admin = auth('admin')->user();
         $table = (new ($batch->couponModel()))->getTable();
-        $funnel = DB::table($table)->where('batch_id', $batch->getKey())->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status');
+        $allowed = $admin->allowedCustomerIds();
+        $funnel = DB::table($table)->where('batch_id', $batch->getKey())
+            // Con alcance por cliente: los generados sin asignar (disponibilidad) y solo los de sus clientes
+            ->when($allowed !== null, fn ($q) => $q->where(fn ($w) => $w->where('status', 'GENERATED')->orWhereIn('customer_id', $allowed)))
+            ->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status');
 
         return view('admin.coupon-batches.show', [
             'batch' => $batch->load('creator'),
             'funnel' => $funnel,
-            'orders' => $batch->orders()->with(['customer', 'requester'])->latest()->limit(10)->get(),
+            'restricted' => $allowed !== null,
+            'orders' => $batch->orders()->visibleTo($admin)->with(['customer', 'requester'])->latest()->limit(10)->get(),
             'can' => collect(array_keys(AdminRbac::actionPermissions(self::SCREEN)))
-                ->mapWithKeys(fn ($a) => [$a => $this->can($a)])->all(),
+                ->mapWithKeys(fn ($a) => [$a => $this->can($a)])->all() + ['operate' => $this->canAny(['assign', 'activate', 'schedule'])],
         ]);
     }
 
@@ -97,7 +107,7 @@ class CouponBatchController extends Controller
 
     public function activateForm(CouponBatch $batch): View
     {
-        $this->authorizeAction('activate');
+        abort_unless($this->canAny(['assign', 'activate', 'schedule']), 403);
 
         return view('admin.coupon-batches.activate', $this->activateData($batch));
     }
@@ -105,8 +115,6 @@ class CouponBatchController extends Controller
     /** `step=preview` muestra cuántos cupones se afectarían; `step=confirm` aplica. */
     public function activate(Request $request, CouponBatch $batch, CouponActivationService $service): View|RedirectResponse
     {
-        $this->authorizeAction('activate');
-
         [$type, $input] = $this->selection($request);
         $data = $request->validate([
             'customer_id' => ['required', 'uuid', Rule::exists('customers', 'id')->whereNull('deleted_at')],
@@ -115,12 +123,18 @@ class CouponBatchController extends Controller
             'reason' => ['nullable', 'string', 'max:255'],
         ], [], ['customer_id' => 'cliente', 'mode' => 'modo', 'activate_at' => 'fecha de activación', 'reason' => 'motivo']);
 
+        // Cada modo y alcance tiene su permiso: asignar, activar una selección, programar, operar el lote completo
+        $this->authorizeAction(['assign' => 'assign', 'now' => 'activate', 'scheduled' => 'schedule'][$data['mode']]);
+        if ($type === 'all') {
+            $this->authorizeAction('activate_all');
+        }
+
         $customer = Customer::findOrFail($data['customer_id']);
         $at = ($data['mode'] === 'scheduled') ? Carbon::parse($data['activate_at']) : null;
 
         try {
             if ($request->input('step') !== 'confirm') {
-                $summary = $service->preview($batch, $data['mode'], $type, $input, $customer);
+                $summary = $service->preview($batch, $data['mode'], $type, $input, $customer, $request->user('admin'));
 
                 return view('admin.coupon-batches.activate-confirm', [
                     'batch' => $batch, 'customer' => $customer, 'summary' => $summary, 'mode' => $data['mode'], 'at' => $at,
@@ -140,8 +154,11 @@ class CouponBatchController extends Controller
 
     public function unassign(Request $request, CouponBatch $batch, CouponActivationService $service): RedirectResponse
     {
-        $this->authorizeAction('activate');
+        $this->authorizeAction('assign');
         [$type, $input] = $this->selection($request);
+        if ($type === 'all') {
+            $this->authorizeAction('activate_all');
+        }
         $reason = $request->validate(['reason' => ['nullable', 'string', 'max:255']])['reason'] ?? null;
 
         try {
@@ -156,6 +173,7 @@ class CouponBatchController extends Controller
     public function cancelOrder(Request $request, ActivationOrder $order, CouponActivationService $service): RedirectResponse
     {
         $this->authorizeAction('cancel');
+        abort_unless(ActivationOrder::query()->visibleTo($request->user('admin'))->whereKey($order->getKey())->exists(), 404);
         $reason = $request->validate(['reason' => ['nullable', 'string', 'max:255']])['reason'] ?? null;
 
         try {
@@ -220,7 +238,9 @@ class CouponBatchController extends Controller
     {
         return [
             'batch' => $batch,
-            'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'document']),
+            'customers' => Customer::query()->visibleTo(auth('admin')->user())->where('is_active', true)->orderBy('name')->get(['id', 'name', 'document']),
+            'modes' => collect(['now' => 'activate', 'scheduled' => 'schedule', 'assign' => 'assign'])->filter(fn ($perm) => $this->can($perm))->keys()->all(),
+            'canAll' => $this->can('activate_all'),
         ];
     }
 
@@ -233,6 +253,7 @@ class CouponBatchController extends Controller
             'The batch is not ready' => 'El lote no está listo (sigue generándose, falló o está anulado).',
             'The customer is not active' => 'El cliente está inactivo.',
             'The activation date must be at least one minute from now and within a year' => 'La fecha de activación debe ser al menos un minuto en el futuro y dentro del próximo año.',
+            'You can only work with the customers assigned to you' => 'Solo puedes trabajar con los clientes que te asignaron.',
             'Only a pending scheduled activation can be cancelled' => 'Solo se puede cancelar una activación programada que siga pendiente.',
         ];
 
@@ -245,6 +266,12 @@ class CouponBatchController extends Controller
         $user = auth('admin')->user();
 
         return (bool) ($permission && $user && $user->can($permission));
+    }
+
+    /** @param list<string> $actions */
+    private function canAny(array $actions): bool
+    {
+        return collect($actions)->contains(fn ($a) => $this->can($a));
     }
 
     private function authorizeAction(string $action): void

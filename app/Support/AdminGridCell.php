@@ -66,6 +66,9 @@ class AdminGridCell
         $modelClass = self::relationModel($meta['relation']);
         /** @var Builder $query */
         $query = $modelClass::query();
+        if (method_exists($modelClass, 'scopeVisibleTo')) {
+            $query->visibleTo(auth('admin')->user());
+        }
 
         $query->orderBy($meta['attribute']);
 
@@ -93,6 +96,9 @@ class AdminGridCell
         if ($item instanceof AdminUser) {
             if ($field === 'roles_list') {
                 return $item->roles->pluck('name')->implode(', ') ?: '—';
+            }
+            if ($field === 'scope_label') {
+                return $item->isCustomerRestricted() ? $item->customers()->count().' clientes' : 'Todos los clientes';
             }
             if ($field === 'totp_status') {
                 return $item->totp_enabled ? 'Activada' : 'No';

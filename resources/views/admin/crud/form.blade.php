@@ -243,6 +243,29 @@
                     </select>
                     <p class="mt-1 text-xs text-slate-500">Cmd/Ctrl + clic para varios roles.</p>
                 </div>
+                @php
+                    $scope = old('customer_scope', $item->customer_scope ?? 'all');
+                    $scopeIds = old('customer_ids', $item ? $item->customers()->pluck('customers.id')->all() : []);
+                @endphp
+                <div class="md:col-span-2" x-data="{ scope: '{{ $scope }}' }">
+                    <label class="snow-label" for="customer-scope">Alcance por cliente</label>
+                    <select id="customer-scope" name="customer_scope" class="snow-input" x-model="scope">
+                        <option value="all">Todos los clientes</option>
+                        <option value="selected">Solo los clientes seleccionados</option>
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">Con «solo seleccionados», este usuario únicamente ve y opera los cupones, activaciones y reportes de esos clientes. El super-admin nunca está restringido.</p>
+                    <div x-show="scope === 'selected'" x-cloak class="mt-2">
+                        <label class="snow-label" for="customer-ids">Clientes permitidos</label>
+                        <select id="customer-ids" name="customer_ids[]" multiple class="snow-input min-h-[7.5rem]">
+                            @foreach(\App\Models\Customer::query()->orderBy('name')->get(['id', 'name', 'document']) as $customer)
+                                <option value="{{ $customer->id }}" @selected(in_array($customer->id, $scopeIds, true))>{{ $customer->name }}@if($customer->document) · {{ $customer->document }}@endif</option>
+                            @endforeach
+                        </select>
+                        @error('customer_ids')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        @error('customer_ids.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    @error('customer_scope')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
             @endif
 
             <div class="flex flex-wrap items-center gap-2 md:col-span-2 md:pt-1">

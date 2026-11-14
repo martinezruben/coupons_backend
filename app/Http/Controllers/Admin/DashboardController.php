@@ -3,58 +3,111 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivationOrder;
 use App\Models\AdminUser;
-use App\Models\BarcodeCoupon;
-use App\Models\Coupon;
 use App\Models\CouponTransaction;
-use App\Models\Device;
-use App\Models\License;
-use App\Models\Location;
+use App\Models\Customer;
+use App\Support\CouponStats;
 use App\Support\Format;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-/** Página de inicio del panel Coupify: indicadores de cupones y de infraestructura. */
+/** Inicio del panel: indicadores y gráficas de cupones (por periodo y, opcionalmente, por cliente). */
 class DashboardController extends Controller
 {
-    public function index(): View
+    private const PERIODS = [7, 14, 30];
+
+    public function index(Request $request): View
     {
-        $today = now()->startOfDay();
-        $week = now()->subDays(6)->startOfDay();
-        $soon = now()->addDays(30)->toDateString();
+        /** @var AdminUser $admin */
+        $admin = $request->user('admin');
+        $filters = $request->validate(['days' => ['nullable', 'integer', 'in:'.implode(',', self::PERIODS)], 'customer' => ['nullable', 'uuid']]);
+        $days = (int) ($filters['days'] ?? 14);
 
-        $activeCoupons = fn (string $model) => $model::query()
-            ->where('coupon_active', 1)
-            ->where(fn ($q) => $q->whereNull('coupon_expire_date')->orWhere('coupon_expire_date', '>=', now()->toDateString()));
+        // Un cliente fuera del alcance del administrador equivale a no existir
+        $customerId = $filters['customer'] ?? null;
+        if ($customerId !== null && ! Customer::query()->visibleTo($admin)->whereKey($customerId)->exists()) {
+            abort(404);
+        }
 
-        $outstanding = (float) $activeCoupons(Coupon::class)->sum('coupon_balance')
-            + (float) $activeCoupons(BarcodeCoupon::class)->sum('coupon_balance');
+        $start = CarbonImmutable::now()->subDays($days - 1)->startOfDay();
+        $statuses = CouponStats::byStatus($admin, $customerId);
 
-        // Cobrado neto: cobros menos reversas (las recargas no cuentan como cobro).
-        $redeemed = fn ($from) => (float) CouponTransaction::query()->where('created_at', '>=', $from)
-            ->whereIn('kind', [CouponTransaction::KIND_REDEEM, CouponTransaction::KIND_REVERSAL])->sum('transaction_amount');
-        $toppedUp = fn ($from) => (float) CouponTransaction::query()->where('created_at', '>=', $from)
-            ->where('kind', CouponTransaction::KIND_TOPUP)->sum('transaction_amount');
+        $moves = fn () => CouponStats::transactions($admin, $customerId);
+        $net = fn ($from) => (float) $moves()->where('created_at', '>=', $from)->whereIn('kind', ['REDEEM', 'REVERSAL'])->sum('transaction_amount');
+        $topups = (float) $moves()->where('created_at', '>=', $start)->where('kind', 'TOPUP')->sum('transaction_amount');
 
-        $expiring = fn (string $model) => $activeCoupons($model)
-            ->whereNotNull('coupon_expire_date')->where('coupon_expire_date', '<=', $soon)->where('coupon_balance', '>', 0)->count();
+        $pending = ActivationOrder::query()->visibleTo($admin)->where('status', 'pending')
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId));
+
+        $kpis = [
+            ['label' => 'Sin asignar', 'value' => number_format($statuses['GENERATED']['count'] ?? 0), 'hint' => 'generados, aún sin cliente'],
+            ['label' => 'Asignados', 'value' => number_format($statuses['ASSIGNED']['count'] ?? 0), 'hint' => 'reservados, sin activar'],
+            ['label' => 'Activos', 'value' => number_format($statuses['ACTIVE']['count'] ?? 0), 'hint' => 'cobrables ahora'],
+            ['label' => 'Saldo en circulación', 'value' => Format::money($statuses['ACTIVE']['balance'] ?? 0), 'hint' => 'de los cupones activos'],
+            ['label' => 'Cobrado hoy', 'value' => Format::money($net(CarbonImmutable::now()->startOfDay())), 'hint' => 'neto de reversas'],
+            ['label' => "Cobrado ({$days} días)", 'value' => Format::money($net($start)), 'hint' => 'neto de reversas'],
+            ['label' => "Recargado ({$days} días)", 'value' => Format::money($topups), 'hint' => 'no cuenta como cobro'],
+            ['label' => 'Activaciones programadas', 'value' => number_format((clone $pending)->count()), 'hint' => number_format((int) (clone $pending)->sum('coupons_count')).' cupones por activar'],
+        ];
+
+        // Series diarias (rellenadas con ceros) para las gráficas
+        $labels = collect(range(0, $days - 1))->map(fn ($i) => $start->addDays($i)->toDateString());
+        $perDay = fn ($rows) => $labels->map(fn ($d) => round((float) ($rows[$d] ?? 0), 2))->all();
+
+        $redeemed = $moves()->where('created_at', '>=', $start)->whereIn('kind', ['REDEEM', 'REVERSAL'])
+            ->selectRaw('DATE(created_at) as d, SUM(transaction_amount) as v')->groupBy('d')->pluck('v', 'd');
+        $toppedUp = $moves()->where('created_at', '>=', $start)->where('kind', 'TOPUP')
+            ->selectRaw('DATE(created_at) as d, SUM(transaction_amount) as v')->groupBy('d')->pluck('v', 'd');
+
+        $activated = [];
+        foreach (CouponStats::TABLES as $table) {
+            DB::table($table)->where('activated_at', '>=', $start)
+                ->when($admin->allowedCustomerIds() !== null, fn ($q) => $q->whereIn('customer_id', $admin->allowedCustomerIds()))
+                ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+                ->selectRaw('DATE(activated_at) as d, COUNT(*) as v')->groupBy('d')->get()
+                ->each(function ($r) use (&$activated) {
+                    $activated[$r->d] = ($activated[$r->d] ?? 0) + (int) $r->v;
+                });
+        }
+
+        $topCustomers = collect();
+        foreach (CouponStats::TABLES as $table) {
+            DB::table($table)->where('status', 'ACTIVE')->whereNotNull('customer_id')
+                ->when($admin->allowedCustomerIds() !== null, fn ($q) => $q->whereIn('customer_id', $admin->allowedCustomerIds()))
+                ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+                ->selectRaw('customer_id, COUNT(*) as n, SUM(coupon_balance) as bal')->groupBy('customer_id')->get()
+                ->each(fn ($r) => $topCustomers->push($r));
+        }
+        $names = Customer::query()->whereIn('id', $topCustomers->pluck('customer_id')->unique())->pluck('name', 'id');
+        $topCustomers = $topCustomers->groupBy('customer_id')
+            ->map(fn ($g, $id) => ['name' => $names[$id] ?? '—', 'count' => (int) $g->sum('n'), 'balance' => (float) $g->sum('bal')])
+            ->sortByDesc('balance')->take(5)->values();
+
+        $statusLabels = ['GENERATED' => 'Sin asignar', 'ASSIGNED' => 'Asignados', 'ACTIVE' => 'Activos', 'INACTIVE' => 'Inactivos', 'VOID' => 'Anulados'];
 
         return view('admin.dashboard-welcome', [
-            'kpis' => [
-                ['label' => 'Cupones activos', 'value' => (string) ($activeCoupons(Coupon::class)->count() + $activeCoupons(BarcodeCoupon::class)->count())],
-                ['label' => 'Saldo pendiente', 'value' => Format::money($outstanding)],
-                ['label' => 'Cobrado hoy', 'value' => Format::money($redeemed($today))],
-                ['label' => 'Cobrado (7 días)', 'value' => Format::money($redeemed($week))],
-                ['label' => 'Cobros hoy', 'value' => (string) CouponTransaction::query()->where('created_at', '>=', $today)->where('kind', CouponTransaction::KIND_REDEEM)->count()],
-                ['label' => 'Recargado hoy', 'value' => Format::money($toppedUp($today))],
-                ['label' => 'Por vencer (30 días)', 'value' => (string) ($expiring(Coupon::class) + $expiring(BarcodeCoupon::class))],
+            'kpis' => $kpis,
+            'days' => $days,
+            'periods' => self::PERIODS,
+            'customerId' => $customerId,
+            'customers' => Customer::query()->visibleTo($admin)->orderBy('name')->get(['id', 'name']),
+            'charts' => [
+                'labels' => $labels->all(),
+                'redeemed' => $perDay($redeemed),
+                'topups' => $perDay($toppedUp),
+                'activated' => $perDay($activated),
+                'status' => [
+                    'labels' => array_values($statusLabels),
+                    'values' => array_map(fn ($k) => $statuses[$k]['count'] ?? 0, array_keys($statusLabels)),
+                ],
             ],
-            'stats' => [
-                ['label' => 'Usuarios del panel', 'value' => AdminUser::query()->where('is_active', true)->count()],
-                ['label' => 'Localidades activas', 'value' => Location::query()->where('is_active', true)->count()],
-                ['label' => 'Dispositivos habilitados', 'value' => Device::query()->where('is_enabled', true)->count()],
-                ['label' => 'Licencias activas', 'value' => License::query()->where('status', 'ACTIVE')->count()],
-            ],
-            'recent' => CouponTransaction::query()->with(['user', 'location'])->latest('transaction_id')->limit(10)->get(),
+            'topCustomers' => $topCustomers,
+            'upcoming' => (clone $pending)->with(['batch', 'customer'])->orderBy('activate_at')->limit(5)->get(),
+            'recent' => CouponTransaction::query()->visibleTo($admin)->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+                ->with(['user', 'location'])->latest('transaction_id')->limit(8)->get(),
         ]);
     }
 }

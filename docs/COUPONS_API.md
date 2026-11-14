@@ -60,6 +60,22 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 - El rol `ops-manager` recibe ver, emitir y activar/desactivar, más ver reportes y reglas; **recargar, ajustar saldo, revertir y editar reglas** solo el super-admin (o un rol a medida).
 - Inicio: saldo pendiente, cobrado hoy y en 7 días, cobros de hoy, cupones por vencer y últimos cobros.
 
+## Permisos, perfiles, límites y alcance (RBAC)
+
+**Permisos de lotes** (`coupon_batches.*`): `generate`, `download`, `assign` (asignar a cliente y liberar), `activate` (activar una selección), `activate_all` (operar sobre el lote completo), `schedule` (activar en una fecha), `cancel` (cancelar programadas), `void`. El formulario de activación solo ofrece los modos y selecciones que la cuenta puede usar; el servidor lo vuelve a comprobar. Con `COUPONS_SEPARATION_OF_DUTIES` quien generó un lote no lo asigna ni activa.
+
+**Perfiles de partida** (`RbacSeeder`, solo se crean si no existen y nunca se sobrescriben): `generador` (genera y descarga), `operador` (asigna, activa, programa, cancela), `ventas` (activa selecciones; límite de 500 cupones por operación), `supervisor` (anula, reversa), `auditor` (solo lectura, bitácoras y reportes).
+
+**Límites por rol** (pantalla del rol → «Límites del rol»): máximo de cupones por activación, por lote y valor total del lote. Con varios roles gana el más permisivo; un rol sin límite no limita; el super-admin nunca tiene límites. Los cambios se auditan.
+
+**Alcance por cliente**: cada administrador ve todos los clientes (`all`) o solo los elegidos (`selected`, en el formulario de la cuenta). Aplica a clientes, cupones, activaciones, lotes (embudo y órdenes), tablero y reportes; un registro fuera de alcance responde 404. Un alcance «selected» vacío no ve nada.
+
+**Cuentas por rol**: en la pantalla del rol se añaden y quitan cuentas (solo super-admin, auditado, sin tocar el rol `super-admin`).
+
+## Tablero y reportes
+
+`/admin` muestra KPIs y gráficas (7/14/30 días, filtro por cliente). Reportes en «Reportes»: *Por lote* y *Por cliente* (filtros y CSV con celdas neutralizadas contra fórmulas) y *Canjes*.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

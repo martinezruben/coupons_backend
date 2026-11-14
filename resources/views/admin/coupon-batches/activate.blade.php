@@ -1,6 +1,11 @@
 @php
-    $selection = old('selection_type', 'all');
-    $mode = old('mode', 'now');
+    $modeLabels = ['now' => 'Activar ahora (el cupón queda vigente de inmediato)', 'scheduled' => 'Activar en una fecha y hora', 'assign' => 'Solo asignar al cliente (se activa después)'];
+    $selectionLabels = ['all' => 'Todos los elegibles del lote', 'range' => 'Un rango de la secuencia', 'quantity' => 'Una cantidad (los primeros N)', 'list' => 'Una lista de números'];
+    if (! $canAll) {
+        unset($selectionLabels['all']);
+    }
+    $selection = old('selection_type', array_key_first($selectionLabels));
+    $mode = old('mode', $modes[0] ?? 'now');
 @endphp
 <x-admin.layouts.app :title="'Asignar y activar — '.$batch->code">
     <form method="POST" action="{{ route('admin.coupon-batches.activate', $batch) }}" enctype="multipart/form-data"
@@ -18,7 +23,7 @@
             <div class="space-y-4">
                 <h3 class="subheader">1. Selección</h3>
                 <div class="space-y-2">
-                    @foreach(['all' => 'Todos los elegibles del lote', 'range' => 'Un rango de la secuencia', 'quantity' => 'Una cantidad (los primeros N)', 'list' => 'Una lista de números'] as $key => $label)
+                    @foreach($selectionLabels as $key => $label)
                         <label class="flex items-center gap-2">
                             <input type="radio" name="selection_type" value="{{ $key }}" x-model="selection"> <span>{{ $label }}</span>
                         </label>
@@ -66,7 +71,7 @@
                     <p class="mt-1 text-xs text-slate-500">¿No está? <a href="{{ route('admin.screens.create', 'customers') }}" class="text-primary-600 hover:underline">Registra un cliente</a>.</p>
                 </div>
                 <div class="space-y-2">
-                    @foreach(['now' => 'Activar ahora (el cupón queda vigente de inmediato)', 'scheduled' => 'Activar en una fecha y hora', 'assign' => 'Solo asignar al cliente (se activa después)'] as $key => $label)
+                    @foreach(collect($modeLabels)->only($modes) as $key => $label)
                         <label class="flex items-center gap-2">
                             <input type="radio" name="mode" value="{{ $key }}" x-model="mode"> <span>{{ $label }}</span>
                         </label>

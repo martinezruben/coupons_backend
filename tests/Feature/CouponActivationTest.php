@@ -414,7 +414,7 @@ class CouponActivationTest extends TestCase
     {
         $batch = $this->batch(6);
         $customer = $this->customer();
-        $this->actingAs($this->admin('coupon_batches.activate'), 'admin');
+        $this->actingAs($this->admin('coupon_batches.assign'), 'admin');
         [$n1, $n2, $n3] = DB::table('coupons')->where('batch_id', $batch->id)->orderBy('seq')->limit(3)->pluck('coupon_number')->all();
         $file = UploadedFile::fake()->createWithContent('lista.csv', "numero\n{$n3}\n");
 
@@ -428,7 +428,7 @@ class CouponActivationTest extends TestCase
 
     public function test_panel_rejects_the_generator_with_a_clear_message_and_bad_dates(): void
     {
-        $generator = $this->admin('coupon_batches.generate', 'coupon_batches.activate');
+        $generator = $this->admin('coupon_batches.generate', 'coupon_batches.activate', 'coupon_batches.activate_all');
         $this->actingAs($generator, 'admin');
         $this->post(route('admin.coupon-batches.store'), ['name' => 'Mío', 'coupon_type' => 'CODBAR', 'quantity' => 3, 'amount' => 5]);
         $batch = CouponBatch::first();
@@ -438,7 +438,7 @@ class CouponActivationTest extends TestCase
         $this->post(route('admin.coupon-batches.activate', $batch), $data)->assertSessionHasErrors('coupon');
         $this->assertStringContainsString('Quien generó el lote', session('errors')->first('coupon'));
 
-        $other = $this->admin('coupon_batches.activate');
+        $other = $this->admin('coupon_batches.activate', 'coupon_batches.activate_all', 'coupon_batches.schedule');
         $this->actingAs($other, 'admin');
         $this->post(route('admin.coupon-batches.activate', $batch), ['mode' => 'scheduled', 'activate_at' => ''] + $data)->assertSessionHasErrors('activate_at');
         $this->post(route('admin.coupon-batches.activate', $batch), ['customer_id' => 'no-uuid'] + $data)->assertSessionHasErrors('customer_id');

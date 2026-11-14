@@ -27,12 +27,18 @@
                 @if($can['download'] && $batch->hasExportFile())
                     <a href="{{ route('admin.coupon-batches.download', $batch) }}" class="snow-btn-primary">Descargar archivo (una sola vez)</a>
                 @endif
-                @if($can['activate'] && $batch->status === 'ready')
+                @if($can['operate'] && $batch->status === 'ready')
                     <a href="{{ route('admin.coupon-batches.activate.form', $batch) }}" class="snow-btn-secondary">Asignar y activar</a>
                 @endif
                 <a href="{{ route('admin.screens.index', $batch->coupon_type === 'QRCODE' ? 'coupons' : 'coupon-barcodes') }}?filter[batch_id]={{ $batch->id }}" class="snow-btn-secondary">Ver cupones del lote</a>
             </div>
         </div>
+
+        @if($restricted)
+            <div class="border-b border-slate-200 bg-slate-100 px-5 py-3 text-sm text-slate-600">
+                Tu alcance está limitado a los clientes que te asignaron: ves los cupones disponibles (generados) y solo los de tus clientes.
+            </div>
+        @endif
 
         @if($batch->hasExportFile())
             <div class="border-b border-slate-200 bg-slate-100 px-5 py-3 text-sm text-slate-600">

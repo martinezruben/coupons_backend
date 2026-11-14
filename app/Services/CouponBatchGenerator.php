@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Exceptions\CouponException;
 use App\Models\AdminUser;
 use App\Models\Coupon;
 use App\Models\CouponAuditLog;
 use App\Models\CouponBatch;
 use App\Support\CouponToken;
+use App\Support\RoleLimits;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -24,6 +26,8 @@ class CouponBatchGenerator
     /** Crea el lote en estado `generating` (la generación corre aparte, en cola). */
     public static function create(array $data, AdminUser $admin, ?string $ip): CouponBatch
     {
+        self::assertWithinRoleLimits((int) $data['quantity'], (float) $data['amount'], $admin);
+
         $batch = DB::transaction(function () use ($data, $admin) {
             return CouponBatch::create([
                 'code' => self::nextCode(),
@@ -42,6 +46,19 @@ class CouponBatchGenerator
         self::audit($batch, 'batch_create', $admin, $ip, '0', (string) $batch->quantity, "Lote {$batch->code}: {$batch->quantity} cupones");
 
         return $batch;
+    }
+
+    /** Límites del rol del administrador sobre la cantidad y el valor total (cantidad × monto) del lote. */
+    public static function assertWithinRoleLimits(int $quantity, float $amount, AdminUser $admin): void
+    {
+        $maxQuantity = RoleLimits::for($admin, 'max_batch_quantity');
+        if ($maxQuantity !== null && $quantity > $maxQuantity) {
+            throw new CouponException('Your role can generate at most '.$maxQuantity.' coupons per batch', 422, ['max_quantity' => $maxQuantity]);
+        }
+        $maxValue = RoleLimits::for($admin, 'max_batch_value');
+        if ($maxValue !== null && round($quantity * $amount, 2) > $maxValue) {
+            throw new CouponException('The total value of the batch exceeds the limit of your role', 422, ['max_value' => number_format($maxValue, 2, '.', '')]);
+        }
     }
 
     public function generate(CouponBatch $batch): void

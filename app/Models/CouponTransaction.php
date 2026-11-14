@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToCustomers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Cobro (o reversa, con monto negativo y `reversed_of`) contra un cupón. */
 class CouponTransaction extends Model
 {
+    use ScopedToCustomers;
+
     public const KIND_REDEEM = 'REDEEM';
 
     public const KIND_TOPUP = 'TOPUP';
@@ -25,6 +28,7 @@ class CouponTransaction extends Model
         'coupon_type',
         'user_id',
         'admin_user_id',
+        'customer_id',
         'device_id',
         'location_id',
         'legacy_device_id',

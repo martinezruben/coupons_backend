@@ -152,7 +152,7 @@ class AdminTopUpAndReportsTest extends TestCase
         $this->tx('TOPUP', '500.00');
 
         $this->actingAs($this->admin(), 'admin')->get(route('admin.dashboard'))->assertOk()
-            ->assertSee('Recargado hoy')->assertSee('$500.00')->assertSee('$20.00') // 30 - 10 neto
+            ->assertSee('Recargado (14 días)')->assertSee('$500.00')->assertSee('$20.00') // 30 - 10 neto
             ->assertDontSee('$520.00')->assertDontSee('$530.00');
     }
 

@@ -37,7 +37,7 @@ class AdminGridQuery
                 $labelCol = $def['label_column'] ?? 'name';
                 $fallback = $def['fallback_column'] ?? null;
                 $parentColumn = $def['parent_column'] ?? null;
-                $rows = $modelClass::query()
+                $rows = (method_exists($modelClass, 'scopeVisibleTo') ? $modelClass::query()->visibleTo(auth('admin')->user()) : $modelClass::query())
                     ->orderBy($orderBy)
                     ->get()
                     ->map(function (Model $row) use ($labelCol, $fallback, $parentColumn): array {
