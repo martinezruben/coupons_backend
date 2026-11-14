@@ -182,6 +182,7 @@ class CouponBatchGenerator
     public static function audit(CouponBatch $batch, string $action, ?AdminUser $admin, ?string $ip, string $old, string $new, string $reason, ?string $orderId = null): void
     {
         CouponAuditLog::create([
+            'created_at' => now(),
             'admin_user_id' => $admin?->getKey(),
             'action' => $action,
             'coupon_type' => $batch->coupon_type,

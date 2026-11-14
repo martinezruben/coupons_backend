@@ -471,7 +471,7 @@ class CouponActivationTest extends TestCase
         $this->get(route('admin.screens.index', 'coupon-activations'))->assertOk()->assertSee('Cliente Visible')->assertSee($batch->code)->assertSee('Cancelar');
         $this->get(route('admin.screens.index', 'coupon-activations').'?filter[status]=applied')->assertOk()->assertDontSee('Cancelar'); // la programada no aparece como aplicada
         $this->get(route('admin.screens.index', 'coupon-batches'))->assertOk()->assertSee($batch->code)->assertSee('Lote');
-        $this->get(route('admin.screens.index', 'coupons').'?filter[customer_id]='.$customer->id)->assertOk()->assertSee('Cliente Visible')->assertSee('Asignado');
+        $this->get(route('admin.coupons.index').'?customer='.$customer->id)->assertOk()->assertSee('Cliente Visible')->assertSee('Asignado');
         $this->get(route('admin.screens.index', 'customers'))->assertOk()->assertSee('Cliente Visible');
     }
 }

@@ -33,7 +33,7 @@
                     @forelse($rows as $r)
                         <tr>
                             <td>
-                                <a href="{{ route('admin.screens.index', 'coupons') }}?filter[customer_id]={{ $r->customer->id }}" class="font-medium text-primary-600 hover:underline">{{ $r->customer->name }}</a>
+                                <a href="{{ route('admin.coupons.index') }}?customer={{ $r->customer->id }}" class="font-medium text-primary-600 hover:underline">{{ $r->customer->name }}</a>
                                 <span class="block text-xs text-slate-500">{{ $r->customer->document ?? 'sin documento' }}@unless($r->customer->is_active) · inactivo @endunless</span>
                             </td>
                             <td class="text-right tabular-nums">{{ number_format($r->assigned) }}</td>

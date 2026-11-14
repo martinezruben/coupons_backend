@@ -249,7 +249,7 @@ class CouponBatchTest extends TestCase
 
         foreach ([
             route('admin.coupon-batches.show', $batch),
-            route('admin.screens.index', 'coupons'),
+            route('admin.coupons.index'),
             route('admin.screens.index', 'coupon-batches'),
             route('admin.screens.index', 'coupon-audit-logs'),
             route('admin.coupon-batches.activate.form', $batch),

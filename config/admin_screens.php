@@ -191,10 +191,12 @@ return [
     ],
     'coupons' => [
         'model' => Coupon::class,
-        'label' => 'Cupones QR',
-        'description' => 'Saldo, vencimiento y estado de cada cupón QR',
+        'label' => 'Cupones',
+        'description' => 'QR y de barras en una sola lista; clic para ver todo su historial',
         'icon' => 'qr-code',
         'readonly' => true,
+        'route' => 'admin.coupons.index',
+        'active_pattern' => 'admin.coupons.*',
         'labels' => [
             'coupon_number' => 'Número',
             'status' => 'Estado',
@@ -254,6 +256,9 @@ return [
         'description' => 'Cupones de código de barras',
         'icon' => 'ticket',
         'readonly' => true,
+        'exclude_from_nav' => true, // se ven en la lista unificada de Cupones; conserva sus propios permisos
+        'route' => 'admin.coupons.index',
+        'route_query' => ['type' => 'CODBAR'],
         'labels' => [
             'coupon_number' => 'Número',
             'status' => 'Estado',
