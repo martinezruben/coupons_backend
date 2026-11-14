@@ -11,7 +11,7 @@ return [
 
     /*
     | Correo del administrador que la migración `assign_super_admin_role` debe dejar como super-admin.
-    | Sin valor, y solo si nadie tiene aún el rol, se usa la cuenta activa más antigua.
+    | Por defecto, la cuenta del propietario; si ese correo no existe no se asigna a nadie más.
     */
-    'bootstrap_super_admin_email' => env('ADMIN_BOOTSTRAP_EMAIL'),
+    'bootstrap_super_admin_email' => env('ADMIN_BOOTSTRAP_EMAIL', 'admin@coupify.noxutech.com'),
 ];

@@ -10,8 +10,9 @@ use Spatie\Permission\PermissionRegistrar;
  * cada opción exige permisos y una cuenta sin roles no tiene ninguno.
  *
  * - Crea el rol `super-admin` (guard `admin`) si falta.
- * - Si `ADMIN_BOOTSTRAP_EMAIL` está definido, ese administrador recibe el rol.
- * - Si no, y solo cuando ningún administrador activo lo tiene aún, lo recibe la cuenta activa más antigua.
+ * - El administrador con el correo de `admin.bootstrap_super_admin_email` (por defecto
+ *   admin@coupify.noxutech.com, o `ADMIN_BOOTSTRAP_EMAIL`) recibe el rol; si no existe, no se asigna a nadie.
+ * - Si el correo se deja vacío, y solo cuando ningún administrador activo lo tiene aún, lo recibe la cuenta activa más antigua.
  * - Es idempotente: no quita nada y no repite asignaciones.
  */
 return new class extends Migration
