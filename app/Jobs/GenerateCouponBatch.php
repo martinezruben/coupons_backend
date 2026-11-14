@@ -22,10 +22,13 @@ class GenerateCouponBatch implements ShouldQueue
 
     public function handle(CouponBatchGenerator $generator): void
     {
-        $batch = CouponBatch::find($this->batchId);
+        // Reclamo atómico: si el job se reintenta o dos workers lo toman, solo uno genera.
+        $claimed = CouponBatch::query()->whereKey($this->batchId)
+            ->where('status', CouponBatch::STATUS_GENERATING)->whereNull('generation_started_at')
+            ->update(['generation_started_at' => now()]);
 
-        if ($batch && $batch->status === CouponBatch::STATUS_GENERATING) {
-            $generator->generate($batch);
+        if ($claimed === 1) {
+            $generator->generate(CouponBatch::findOrFail($this->batchId));
         }
     }
 }

@@ -70,7 +70,7 @@ class ScreenCrudController extends Controller
             return redirect()->route($cfg['route'], $request->query());
         }
         $model = $cfg['model'];
-        $query = $model::query();
+        $query = $this->scoped($model::query(), $model);
 
         $with = AdminGridCell::eagerRelations($cfg);
         if ($with !== []) {
@@ -140,6 +140,7 @@ class ScreenCrudController extends Controller
             if ($names !== []) {
                 AdminAuditLog::record('updated', 'AdminUser', (string) $created->getKey(), ['roles' => ['', implode(', ', $names)]]);
             }
+            $this->syncCustomerScope($request, $created);
         }
         if ($screen === 'android-users' && $created instanceof User) {
             $this->syncAndroidUserLocationPivot($created, $data['location_id'] ?? null);
@@ -154,7 +155,7 @@ class ScreenCrudController extends Controller
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);
         $model = $cfg['model'];
-        $item = $model::findOrFail($id);
+        $item = $this->scoped($model::query(), $model)->findOrFail($id);
         if ($model === AdminUser::class) {
             $item->load('roles');
         }
@@ -180,7 +181,7 @@ class ScreenCrudController extends Controller
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);
         $model = $cfg['model'];
-        $item = $model::findOrFail($id);
+        $item = $this->scoped($model::query(), $model)->findOrFail($id);
 
         if ($screen === 'devices' && $item instanceof Device) {
             $validated = $request->validate([
@@ -232,6 +233,7 @@ class ScreenCrudController extends Controller
 
         $item->update($data);
         $item->syncRoles($newRoles);
+        $this->syncCustomerScope($request, $item);
 
         sort($newRoles);
         if ($oldRoles !== $newRoles) {
@@ -257,7 +259,7 @@ class ScreenCrudController extends Controller
         $cfg = $this->getScreen($screen);
         $model = $cfg['model'];
 
-        $item = $model::findOrFail($id);
+        $item = $this->scoped($model::query(), $model)->findOrFail($id);
 
         if ($screen === 'licenses') {
             $current = $item->status;
@@ -279,7 +281,7 @@ class ScreenCrudController extends Controller
         $this->assertScreenWritable($cfg);
         abort_if(! empty($cfg['disable_delete']), 404);
         $model = $cfg['model'];
-        $model::findOrFail($id)->delete();
+        $this->scoped($model::query(), $model)->findOrFail($id)->delete();
 
         return back()->with('status', 'Eliminado correctamente.');
     }
@@ -405,6 +407,10 @@ class ScreenCrudController extends Controller
             $rules['email'] = ['required', 'email:rfc', 'max:255', 'lowercase', $emailUnique];
             $rules['role_names'] = ['nullable', 'array'];
             $rules['role_names.*'] = ['string', Rule::exists('roles', 'name')->where('guard_name', 'admin')];
+            // Alcance por cliente: todos, o solo los seleccionados (al menos uno)
+            $rules['customer_scope'] = ['sometimes', Rule::in(['all', 'selected'])];
+            $rules['customer_ids'] = ['nullable', 'array', 'required_if:customer_scope,selected'];
+            $rules['customer_ids.*'] = ['uuid', Rule::exists('customers', 'id')->whereNull('deleted_at')];
         }
 
         if ($screen === 'customers') {
@@ -445,7 +451,7 @@ class ScreenCrudController extends Controller
         }
 
         // Los roles se sincronizan aparte (no son columnas de admin_users)
-        unset($data['role_names']);
+        unset($data['role_names'], $data['customer_ids']);
 
         if (isset($data['password']) && $data['password'] !== '') {
             if ($screen === 'admin-users') {
@@ -506,5 +512,26 @@ class ScreenCrudController extends Controller
             ->filter(fn (array $c) => ! $c['nullable'] && $c['default'] === null && ! $c['auto_increment'] && $c['name'] !== $model->getKeyName())
             ->pluck('name')
             ->all();
+    }
+
+    /** Alcance por cliente: un administrador restringido solo llega a los registros de sus clientes. */
+    private function scoped($query, string $model)
+    {
+        return method_exists($model, 'scopeVisibleTo') ? $query->visibleTo(auth('admin')->user()) : $query;
+    }
+
+    /** Guarda el alcance por cliente de un administrador y deja rastro del cambio en la auditoría. */
+    private function syncCustomerScope(Request $request, AdminUser $admin): void
+    {
+        $before = $admin->customers()->pluck('customers.id')->sort()->values()->all();
+        $ids = $admin->customer_scope === 'selected' ? array_values(array_unique($request->input('customer_ids', []))) : [];
+        $admin->customers()->sync($ids);
+        sort($ids);
+
+        if ($before !== $ids || $admin->wasChanged('customer_scope')) {
+            AdminAuditLog::record('updated', 'AdminUser', (string) $admin->getKey(), [
+                'customer_scope' => [count($before).' clientes', $admin->customer_scope === 'selected' ? count($ids).' clientes seleccionados' : 'todos'],
+            ]);
+        }
     }
 }

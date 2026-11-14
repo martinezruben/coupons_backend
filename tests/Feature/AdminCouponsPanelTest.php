@@ -70,7 +70,7 @@ class AdminCouponsPanelTest extends TestCase
     public function test_dashboard_shows_coupon_kpis(): void
     {
         $this->qr('Q1', '50.00');
-        $this->qr('Q2', '20.00', ['coupon_active' => 0]);
+        $this->qr('Q2', '20.00', ['coupon_active' => 0, 'status' => 'INACTIVE']);
         DB::table('coupon_transactions')->insert([
             'coupon_id' => 1, 'coupon_number' => 'Q1', 'transaction_amount' => '25.00', 'coupon_type' => 'QRCODE',
             'created_at' => now(), 'updated_at' => now(),
@@ -79,7 +79,7 @@ class AdminCouponsPanelTest extends TestCase
         $this->actingAs($this->superAdmin(), 'admin')
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Saldo pendiente')
+            ->assertSee('Saldo en circulación')
             ->assertSee('$50.00')   // solo el cupón activo
             ->assertSee('$25.00')   // cobrado hoy
             ->assertSee('Q1');

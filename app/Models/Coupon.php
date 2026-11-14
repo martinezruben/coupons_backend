@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToCustomers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Cupón QR (requiere coupon_number + coupon_token). */
 class Coupon extends Model
 {
+    use ScopedToCustomers;
+
     protected $table = 'coupons';
 
     protected $primaryKey = 'coupon_id';

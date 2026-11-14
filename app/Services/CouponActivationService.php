@@ -8,6 +8,7 @@ use App\Models\AdminUser;
 use App\Models\Coupon;
 use App\Models\CouponBatch;
 use App\Models\Customer;
+use App\Support\RoleLimits;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -29,13 +30,18 @@ class CouponActivationService
      * @param  list<string>  $statuses  estados de origen aceptados
      * @return list<int> coupon_id ordenados por secuencia
      */
-    public function resolve(CouponBatch $batch, string $type, array $input, array $statuses, ?Customer $customer = null, bool $lock = false): array
+    public function resolve(CouponBatch $batch, string $type, array $input, array $statuses, ?Customer $customer = null, bool $lock = false, ?array $onlyCustomers = null): array
     {
         $query = $batch->coupons()->whereIn('status', $statuses)->orderBy('seq');
 
         // Un cupón ya asignado a otro cliente no se puede tomar
         if ($customer !== null && in_array(Coupon::STATUS_ASSIGNED, $statuses, true)) {
             $query->where(fn ($q) => $q->whereNull('customer_id')->orWhere('customer_id', $customer->getKey()));
+        }
+
+        // Alcance por cliente: solo cupones asignados a los clientes permitidos
+        if ($onlyCustomers !== null) {
+            $query->whereIn('customer_id', $onlyCustomers);
         }
 
         switch ($type) {
@@ -90,14 +96,14 @@ class CouponActivationService
     }
 
     /** Vista previa: cuántos cupones se verían afectados. */
-    public function preview(CouponBatch $batch, string $mode, string $type, array $input, Customer $customer): array
+    public function preview(CouponBatch $batch, string $mode, string $type, array $input, Customer $customer, ?AdminUser $actor = null): array
     {
         $this->assertBatchUsable($batch);
         $ids = $this->resolve($batch, $type, $input, $this->sourceStatuses($mode), $customer);
         if ($ids === []) {
             throw new CouponException('There are no eligible coupons for this selection', 422);
         }
-        $this->assertSize(count($ids));
+        $this->assertSize(count($ids), $actor);
 
         $first = $batch->coupons()->whereIn('coupon_id', [$ids[0], $ids[count($ids) - 1]])->orderBy('seq')->pluck('seq')->all();
 
@@ -115,6 +121,7 @@ class CouponActivationService
         if (! $customer->is_active) {
             throw new CouponException('The customer is not active', 422);
         }
+        $this->assertCustomerAllowed($customer, $actor);
         if ($mode === ActivationOrder::MODE_SCHEDULED) {
             if ($at === null || $at->lt(now()->addMinute()) || $at->gt(now()->addYear())) {
                 throw new CouponException('The activation date must be at least one minute from now and within a year', 422);
@@ -128,7 +135,7 @@ class CouponActivationService
             if ($ids === []) {
                 throw new CouponException('There are no eligible coupons for this selection', 422);
             }
-            $this->assertSize(count($ids));
+            $this->assertSize(count($ids), $actor);
 
             $order = ActivationOrder::create([
                 'batch_id' => $batch->getKey(),
@@ -230,7 +237,7 @@ class CouponActivationService
         $this->assertSeparationOfDuties($batch, $actor);
 
         return DB::transaction(function () use ($batch, $type, $input, $reason, $actor, $ip) {
-            $ids = $this->resolve($batch, $type, $input, [Coupon::STATUS_ASSIGNED], null, lock: true);
+            $ids = $this->resolve($batch, $type, $input, [Coupon::STATUS_ASSIGNED], null, lock: true, onlyCustomers: $actor->allowedCustomerIds());
             $table = (new ($batch->couponModel()))->getTable();
             $pending = ActivationOrder::query()->where('batch_id', $batch->getKey())->where('status', ActivationOrder::STATUS_PENDING)->pluck('id')->all();
             $count = 0;
@@ -283,10 +290,24 @@ class CouponActivationService
         }
     }
 
-    private function assertSize(int $count): void
+    private function assertSize(int $count, ?AdminUser $actor = null): void
     {
-        if ($count > (int) config('coupons.max_activation_size')) {
-            throw new CouponException('The selection exceeds the maximum per operation', 422, ['max' => (int) config('coupons.max_activation_size')]);
+        $max = (int) config('coupons.max_activation_size');
+        $role = $actor ? RoleLimits::for($actor, 'max_activation_size') : null;
+        if ($role !== null) {
+            $max = min($max, (int) $role);
+        }
+
+        if ($count > $max) {
+            throw new CouponException('The selection exceeds the maximum per operation', 422, ['max' => $max]);
+        }
+    }
+
+    private function assertCustomerAllowed(Customer $customer, AdminUser $actor): void
+    {
+        $allowed = $actor->allowedCustomerIds();
+        if ($allowed !== null && ! in_array((string) $customer->getKey(), $allowed, true)) {
+            throw new CouponException('You can only work with the customers assigned to you', 403);
         }
     }
 

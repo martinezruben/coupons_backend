@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToCustomers;
 use App\Models\Traits\HasUuidPrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Operación de asignar o activar una selección de cupones de un lote para un cliente. */
 class ActivationOrder extends Model
 {
-    use HasUuidPrimaryKey;
+    use HasUuidPrimaryKey, ScopedToCustomers;
 
     public const MODE_ASSIGN = 'assign';
 

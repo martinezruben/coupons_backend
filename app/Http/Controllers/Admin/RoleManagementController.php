@@ -29,14 +29,23 @@ class RoleManagementController extends Controller
             ->groupBy('role_id')
             ->pluck('users', 'role_id');
 
+        // Etiqueta de pantalla por recurso (`coupon_batches` → «Lotes de cupones») para resumir permisos por módulo
+        $labels = collect(config('admin_screens'))->mapWithKeys(fn ($cfg, $key) => [AdminRbac::resourceKey($key) => $cfg['label'] ?? $key]);
+
         $roles = Role::query()
             ->where('guard_name', 'admin')
+            ->with('permissions')
             ->withCount('permissions')
             ->orderBy('name')
             ->get()
-            ->each(function (Role $role) use ($usersByRole): void {
+            ->each(function (Role $role) use ($usersByRole, $labels): void {
                 $role->setAttribute('users_count', (int) ($usersByRole[$role->getKey()] ?? 0));
                 $role->setAttribute('is_protected', self::isProtected($role));
+                $role->setAttribute('modules', $role->permissions
+                    ->groupBy(fn ($p) => explode('.', $p->name)[0])
+                    ->map(fn ($group, $resource) => ['label' => $labels[$resource] ?? str_replace('_', ' ', $resource), 'count' => $group->count()])
+                    ->sortBy('label')->values()->all());
+                $role->setAttribute('members', AdminUser::query()->role($role->name)->orderBy('name')->limit(8)->get(['id', 'name']));
             });
 
         return response()->view('admin.roles.index', ['roles' => $roles]);

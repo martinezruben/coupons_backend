@@ -125,6 +125,7 @@ class CouponService
                         'transaction_amount' => $this->money($used),
                         'coupon_type' => $this->type,
                         'kind' => CouponTransaction::KIND_REDEEM,
+                        'customer_id' => $coupon->customer_id,
                         'user_id' => $user?->getKey(),
                         'device_id' => $device?->getKey(),
                         'location_id' => $device?->location_id,
@@ -212,6 +213,7 @@ class CouponService
                 'ip_address' => $ip,
                 'reversed_of' => $tx->transaction_id,
                 'kind' => CouponTransaction::KIND_REVERSAL,
+                'customer_id' => $tx->customer_id ?? $coupon->customer_id,
             ]);
 
             $service->audit('reverse', $tx->coupon_type, $tx->coupon_number, $service->money($coupon->coupon_balance),
@@ -276,6 +278,7 @@ class CouponService
                 'transaction_amount' => $this->money($amountDec),
                 'coupon_type' => $this->type,
                 'kind' => CouponTransaction::KIND_TOPUP,
+                'customer_id' => $coupon->customer_id,
                 ...self::actor($actor),
                 'device_id' => $device?->getKey(),
                 'location_id' => $device?->location_id,

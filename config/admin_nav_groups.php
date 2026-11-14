@@ -22,7 +22,7 @@ return [
         'key' => 'reports',
         'icon' => 'chart-bar',
         'label' => 'Reportes',
-        'screens' => ['coupon-reports', 'coupon-audit-logs'],
+        'screens' => ['coupon-batch-report', 'coupon-customer-report', 'coupon-reports', 'coupon-audit-logs'],
     ],
     [
         'key' => 'infra',

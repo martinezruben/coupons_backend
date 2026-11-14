@@ -386,6 +386,78 @@
         background: color-mix(in srgb, var(--blue) 9%, var(--surface));
     }
 
+    /* ---- Navegación horizontal (navbar): marca, enlaces y desplegables por grupo ---- */
+    .topnav {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .topnav-inner {
+        display: flex;
+        width: 100%;
+        max-width: 1320px;
+        min-height: 3.5rem;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .topnav-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--body-color);
+        text-decoration: none;
+    }
+
+    .topnav-menu {
+        align-items: center;
+        gap: 0.125rem;
+        margin-left: 1rem;
+    }
+
+    .topnav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--body-color);
+        text-decoration: none;
+        background: none;
+        border: 0;
+        border-radius: var(--radius);
+        cursor: pointer;
+    }
+
+    .topnav-link:hover {
+        background: var(--surface-tertiary);
+    }
+
+    .topnav-link.is-active {
+        color: var(--blue);
+        background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+    }
+
+    .dropdown-item.is-active {
+        color: var(--blue);
+        background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+    }
+
+    .topnav-mobile {
+        max-height: calc(100vh - 3.5rem);
+        padding: 0.75rem;
+        overflow-y: auto;
+        border-top: 1px solid var(--border-color);
+    }
+
     .topbar {
         position: sticky;
         top: 0;

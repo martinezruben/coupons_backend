@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CouponAdminController;
 use App\Http\Controllers\Admin\CouponBatchController;
+use App\Http\Controllers\Admin\CouponBatchReportController;
+use App\Http\Controllers\Admin\CouponCustomerReportController;
 use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
@@ -62,6 +64,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/rbac', [RoleRbacMatrixController::class, 'index'])->name('rbac.matrix.index');
         Route::get('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'edit'])->name('rbac.matrix.edit');
         Route::post('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'update'])->name('rbac.matrix.update');
+        Route::post('/rbac/roles/{role}/accounts', [RoleRbacMatrixController::class, 'addAccount'])->name('rbac.accounts.add');
+        Route::delete('/rbac/roles/{role}/accounts/{adminUser}', [RoleRbacMatrixController::class, 'removeAccount'])->name('rbac.accounts.remove');
 
         Route::get('/system-settings', [SystemSettingsController::class, 'edit'])->name('system-settings.edit');
         Route::put('/system-settings', [SystemSettingsController::class, 'update'])->name('system-settings.update');
@@ -89,6 +93,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         // Reportes de canjes
         Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');
+        Route::get('/reports/batches', [CouponBatchReportController::class, 'index'])->name('reports.batches');
+        Route::get('/reports/customers', [CouponCustomerReportController::class, 'index'])->name('reports.customers');
 
         Route::get('/screens/{screen}', [ScreenCrudController::class, 'index'])->name('screens.index');
         Route::get('/screens/{screen}/create', [ScreenCrudController::class, 'create'])->name('screens.create');

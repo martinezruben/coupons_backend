@@ -21,7 +21,7 @@ class CouponBatch extends Model
 
     protected $fillable = [
         'code', 'name', 'coupon_type', 'quantity', 'amount', 'prefix', 'expire_date', 'status', 'generated_count',
-        'notes', 'error', 'created_by_admin_id', 'generated_at', 'export_path', 'export_expires_at',
+        'notes', 'error', 'created_by_admin_id', 'generated_at', 'generation_started_at', 'export_path', 'export_expires_at',
         'export_downloaded_at', 'export_downloads',
     ];
 
@@ -30,6 +30,7 @@ class CouponBatch extends Model
         return [
             'expire_date' => 'date',
             'generated_at' => 'datetime',
+            'generation_started_at' => 'datetime',
             'export_expires_at' => 'datetime',
             'export_downloaded_at' => 'datetime',
         ];

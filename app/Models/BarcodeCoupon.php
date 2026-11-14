@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToCustomers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Cupón de código de barras (solo coupon_number). */
 class BarcodeCoupon extends Model
 {
+    use ScopedToCustomers;
+
     protected $table = 'coupons_codbar';
 
     protected $primaryKey = 'coupon_id';

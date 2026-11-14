@@ -26,6 +26,8 @@ class CouponAdminController extends Controller
         $screen = $this->screenFor($type);
         $this->authorizeAction($screen, 'toggle');
         $data = $request->validate(['active' => ['required', 'boolean'], 'reason' => ['required', 'string', 'min:3', 'max:255']]);
+        $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
+        abort_unless($model::query()->visibleTo($request->user('admin'))->where('coupon_id', $id)->exists(), 404);
 
         return $this->run(fn () => $this->service($type)->setActive($id, (bool) $data['active'], $data['reason'], $request->user('admin'), $request->ip()),
             $screen, $data['active'] ? 'Cupón activado.' : 'Cupón desactivado.');
@@ -41,7 +43,7 @@ class CouponAdminController extends Controller
         ], [], ['balance' => 'saldo', 'reason' => 'motivo']);
 
         $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
-        $number = $model::where('coupon_id', $id)->value('coupon_number');
+        $number = $model::query()->visibleTo($request->user('admin'))->where('coupon_id', $id)->value('coupon_number');
         abort_if($number === null, 404);
 
         return $this->run(fn () => $this->service($type)->restore($number, (string) $data['balance'], $data['reason'], $request->user('admin'), $request->ip()),
@@ -58,7 +60,7 @@ class CouponAdminController extends Controller
         ], [], ['amount' => 'monto', 'note' => 'nota']);
 
         $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
-        $number = $model::where('coupon_id', $id)->value('coupon_number');
+        $number = $model::query()->visibleTo($request->user('admin'))->where('coupon_id', $id)->value('coupon_number');
         abort_if($number === null, 404);
 
         // Desde el panel no hay dispositivo ni localidad: no se exige token ni se evalúan reglas de localidad.
@@ -70,7 +72,7 @@ class CouponAdminController extends Controller
     {
         $this->authorizeAction('coupon-transactions', 'reverse');
         $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:255']], [], ['reason' => 'motivo']);
-        $original = CouponTransaction::findOrFail($id);
+        $original = CouponTransaction::query()->visibleTo($request->user('admin'))->findOrFail($id);
 
         return $this->run(fn () => CouponService::reverse($original, $data['reason'], $request->user('admin'), $request->ip()),
             'coupon-transactions', 'Cobro revertido.');
