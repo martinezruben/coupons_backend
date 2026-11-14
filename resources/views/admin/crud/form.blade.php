@@ -1,5 +1,5 @@
 <x-admin.layouts.app :title="$cfg['label']">
-    <div class="snow-card max-w-4xl">
+    <div class="snow-card">
         <div class="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5">
             <h2 class="text-sm font-bold text-slate-900">{{ $item ? 'Editar' : 'Crear' }} · {{ $cfg['label'] }}</h2>
             <p class="mt-0.5 text-xs text-slate-500">

@@ -16,6 +16,7 @@ Los nombres de clase `snow-*` y `hope-*` se conservaron para no tocar cada vista
 - **Color:** `blue` para enlaces, botón primario, foco y navegación activa; `green`/`yellow`/`red`/`azure` solo para estado. Texto blanco únicamente sobre azul y rojo.
 - **Tipografía:** pila del sistema; cuerpo de 14px; títulos de página de 24px/600; títulos de tarjeta de 16px/500; cabeceras de tabla y rótulos (`subheader`) de 10px en mayúsculas con 0.04em; cifras de indicadores en 32px ligero.
 - **Espaciado y forma:** radio de 6px (4px en controles pequeños); control de 36px de alto; rejilla de 1.5rem; tarjetas con borde de 1px + `shadow-sm`; contenedor máximo de 1320px.
+- **Ancho:** todo el contenido usa el ancho del layout (`max-w-[1320px]` del `<main>`); ninguna página fija un ancho propio. Solo se limitan campos sueltos (p. ej. un selector), nunca la tarjeta o la página.
 - **Foco:** contorno azul de 2px con separación de 2px, nunca se quita.
 - **Menú:** barra de 56px, máximo 6 elementos de primer nivel, desplegables al hacer clic (Esc o clic fuera para cerrar), subrayado azul de 2px en lo activo; menos de 992px se colapsa como acordeón. Un desplegable de 6 o más enlaces usa dos columnas y cada enlace lleva una descripción de una línea (`description` en `config/admin_screens.php`).
 - **Texto:** frases cortas en minúscula inicial, sin emoji ni signos de exclamación; los botones empiezan con un verbo.

@@ -1,5 +1,5 @@
 <x-admin.layouts.app :title="'Verificación en dos pasos'">
-    <div class="mx-auto max-w-2xl space-y-4 pb-6">
+    <div class="space-y-4 pb-6">
         @if(session('status'))
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">{{ session('status') }}</div>
         @endif

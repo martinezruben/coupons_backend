@@ -1,5 +1,5 @@
 <x-admin.layouts.app :title="$role ? 'Renombrar rol' : 'Nuevo rol'">
-    <div class="snow-card max-w-xl">
+    <div class="snow-card">
         <div class="border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
             <h2 class="text-base font-medium text-slate-800">{{ $role ? 'Renombrar rol «'.$role->name.'»' : 'Nuevo rol' }}</h2>
             <p class="mt-0.5 text-xs text-slate-500">
