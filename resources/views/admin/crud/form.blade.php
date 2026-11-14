@@ -1,8 +1,8 @@
 <x-admin.layouts.app :title="$cfg['label']">
-    <div class="snow-card max-w-4xl">
+    <div class="snow-card">
         <div class="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white px-4 py-2.5">
             <h2 class="text-sm font-bold text-slate-900">{{ $item ? 'Editar' : 'Crear' }} · {{ $cfg['label'] }}</h2>
-            <p class="mt-0.5 text-[11px] text-slate-500">
+            <p class="mt-0.5 text-xs text-slate-500">
                 @if(($screen ?? null) === 'devices' && $item)
                     Puedes editar el nombre, restablecer la última sincronización y bloquear o reactivar el acceso (con motivo).
                 @else
@@ -14,19 +14,19 @@
             <div class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-2 md:gap-x-4 md:gap-y-3">
                 <div class="md:col-span-2">
                     <span class="snow-label">Localidad</span>
-                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-[13px] text-slate-800">{{ $item->location?->name ?? '—' }}</p>
+                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm text-slate-800">{{ $item->location?->name ?? '—' }}</p>
                 </div>
                 <div class="md:col-span-2">
                     <span class="snow-label">Huella del dispositivo</span>
-                    <p class="mt-0.5 break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-mono text-[12px] text-slate-800">{{ $item->device_fingerprint }}</p>
+                    <p class="mt-0.5 break-all rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-mono text-sm text-slate-800">{{ $item->device_fingerprint }}</p>
                 </div>
                 <div class="md:col-span-2">
                     <span class="snow-label">Versión de la app</span>
-                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-mono text-[13px] text-slate-800">{{ $item->app_version ?? 'Sin reportar' }}@if ($item->app_version_seen_at) <span class="font-sans text-xs text-slate-500">· vista {{ $item->app_version_seen_at->format('Y-m-d H:i') }}</span>@endif</p>
+                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-mono text-sm text-slate-800">{{ $item->app_version ?? 'Sin reportar' }}@if ($item->app_version_seen_at) <span class="font-sans text-xs text-slate-500">· vista {{ $item->app_version_seen_at->format('Y-m-d H:i') }}</span>@endif</p>
                 </div>
                 <div class="md:col-span-2">
                     <span class="snow-label">Última sincronización</span>
-                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-[13px] text-slate-800 tabular-nums">{{ $item->last_sync_at?->format('Y-m-d H:i') ?? '—' }}</p>
+                    <p class="mt-0.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm text-slate-800 tabular-nums">{{ $item->last_sync_at?->format('Y-m-d H:i') ?? '—' }}</p>
                 </div>
                 <div class="md:col-span-2">
                     <form method="POST" action="{{ route('admin.screens.update', [$screen, $item->getKey()]) }}" class="flex flex-col gap-3 border-t border-slate-100 pt-3">
@@ -72,7 +72,7 @@
                         @error('reason')
                             <p class="text-xs font-medium text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="text-[11px] text-slate-500">
+                        <p class="text-xs text-slate-500">
                             @if ($item->is_enabled)
                                 Se cerrará su sesión en el servidor. El equipo lo notará en su próxima conexión; mientras esté sin internet puede seguir vendiendo con lo que ya tiene guardado.
                             @else
@@ -127,7 +127,7 @@
                     @elseif($field === 'password')
                         <input id="f-{{ $field }}" type="password" name="{{ $field }}" value="" placeholder="{{ $item ? 'Dejar vacío para mantener la actual' : 'Contraseña' }}" class="snow-input" autocomplete="new-password">
                         @if($item)
-                            <p class="mt-1 text-[10px] text-slate-500">Por seguridad, la contraseña actual no se muestra.</p>
+                            <p class="mt-1 text-xs text-slate-500">Por seguridad, la contraseña actual no se muestra.</p>
                         @endif
                         @if($screen === 'admin-users')
                             @php
@@ -148,9 +148,9 @@
                                         input.value = out; input.type = 'text'; shown = true;
                                     "
                                 >Generar contraseña</button>
-                                <span x-show="shown" x-cloak class="text-[11px] font-medium text-amber-800">Cópiala y comunícasela al usuario: no se vuelve a mostrar.</span>
+                                <span x-show="shown" x-cloak class="text-xs font-medium text-amber-800">Cópiala y comunícasela al usuario: no se vuelve a mostrar.</span>
                             </div>
-                            <p class="mt-1 text-[10px] text-slate-500">Tú defines la contraseña y se la comunicas al usuario. Al guardarla se cierran sus otras sesiones abiertas.</p>
+                            <p class="mt-1 text-xs text-slate-500">Tú defines la contraseña y se la comunicas al usuario. Al guardarla se cierran sus otras sesiones abiertas.</p>
                         @endif
                     @elseif($field === 'pin4')
                         <div class="mt-0.5 flex flex-col gap-3" x-data="{
@@ -162,7 +162,7 @@
                         }">
                             @if($item && method_exists($item, 'pin4Plain') && $item->pin4Plain() !== null)
                                 <div>
-                                    <span class="mb-1 block text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500">PIN actual</span>
+                                    <span class="mb-1 block text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">PIN actual</span>
                                     <div class="inline-flex gap-1.5" aria-hidden="true">
                                         @foreach(str_split(str_pad((string) $item->pin4Plain(), 4)) as $digit)
                                             <span class="flex h-9 w-8 items-center justify-center rounded-md border border-slate-200 bg-slate-50 font-mono text-base font-bold tabular-nums text-slate-700 shadow-sm">{{ trim($digit) }}</span>
@@ -171,7 +171,7 @@
                                 </div>
                             @endif
                             <div>
-                                <span class="mb-1 block text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500">{{ $item ? 'Nuevo PIN' : 'PIN' }}</span>
+                                <span class="mb-1 block text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">{{ $item ? 'Nuevo PIN' : 'PIN' }}</span>
                                 <div class="relative inline-flex cursor-text gap-1.5" @click="$refs.pin4Input.focus()">
                                     <template x-for="(digit, index) in digits" :key="index">
                                         <span
@@ -193,7 +193,7 @@
                                         @input="sync($event.target.value)"
                                     >
                                 </div>
-                                <p class="mt-1 text-[10px] text-slate-500">{{ $item ? 'Dejar vacío para mantener el PIN actual.' : '4 dígitos, ej. 7391' }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ $item ? 'Dejar vacío para mantener el PIN actual.' : '4 dígitos, ej. 7391' }}</p>
                             </div>
                         </div>
                     @elseif(!empty($cfg['select_options'][$field] ?? []))
@@ -241,7 +241,7 @@
                             <option value="{{ $role->name }}" @selected(in_array($role->name, old('role_names', $currentRoles), true))>{{ $role->name }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-1 text-[11px] text-slate-500">Cmd/Ctrl + clic para varios roles.</p>
+                    <p class="mt-1 text-xs text-slate-500">Cmd/Ctrl + clic para varios roles.</p>
                 </div>
             @endif
 
@@ -272,7 +272,7 @@
                         </form>
                     @endif
                 </div>
-                <p class="mt-1.5 text-[11px] text-slate-500">
+                <p class="mt-1.5 text-xs text-slate-500">
                     Para dejar de dar acceso, desactiva la cuenta (no se eliminan: se conserva el historial y la auditoría).
                     @if($isSelf) No puedes desactivarte ni quitarte el rol de super-admin a ti mismo. @endif
                 </p>

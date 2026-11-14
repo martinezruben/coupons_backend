@@ -18,7 +18,7 @@
                 <h2 id="api-log-detail-title" class="text-sm font-semibold text-slate-900">
                     Detalle de llamada API
                 </h2>
-                <p class="mt-0.5 truncate text-[10px] text-slate-500" x-show="row?.path" x-text="row ? `${row.method} ${row.path}` : ''"></p>
+                <p class="mt-0.5 truncate text-xs text-slate-500" x-show="row?.path" x-text="row ? `${row.method} ${row.path}` : ''"></p>
             </div>
             <button
                 type="button"
@@ -38,7 +38,7 @@
 
             <template x-if="!loading && !error && row">
             <div class="space-y-4">
-                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 text-[10px] sm:grid-cols-2">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
                         <div class="flex flex-col gap-0.5 sm:col-span-2">
                             <dt class="font-semibold uppercase tracking-wide text-slate-500">ID</dt>
                             <dd class="font-mono text-slate-800" x-text="row.id"></dd>
@@ -74,12 +74,12 @@
                     </dl>
 
                     <div>
-                        <h3 class="mb-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Parámetros (JSON)</h3>
-                        <pre class="max-h-[220px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[10px] leading-relaxed text-slate-800 whitespace-pre-wrap break-words font-mono" x-text="jsonBlock(row.parameters_json, row.parameters)"></pre>
+                        <h3 class="mb-1.5 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Parámetros (JSON)</h3>
+                        <pre class="max-h-[220px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-800 whitespace-pre-wrap break-words font-mono" x-text="jsonBlock(row.parameters_json, row.parameters)"></pre>
                     </div>
                     <div>
-                        <h3 class="mb-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Respuesta (JSON / cuerpo)</h3>
-                        <pre class="max-h-[280px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[10px] leading-relaxed text-slate-800 whitespace-pre-wrap break-words font-mono" x-text="jsonBlock(row.response_json, row.response_summary)"></pre>
+                        <h3 class="mb-1.5 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Respuesta (JSON / cuerpo)</h3>
+                        <pre class="max-h-[280px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-800 whitespace-pre-wrap break-words font-mono" x-text="jsonBlock(row.response_json, row.response_summary)"></pre>
                     </div>
                 </div>
             </template>

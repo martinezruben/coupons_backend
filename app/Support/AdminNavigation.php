@@ -16,7 +16,7 @@ class AdminNavigation
     private const SEARCH_FIRST = ['android-users', 'locations', 'devices'];
 
     /**
-     * @return list<array{key: string, label: string, icon: string, items: list<array{label: string, icon: string, url: string, active: bool, searchable: bool, searchRank: int}>}>
+     * @return list<array{key: string, label: string, icon: string, items: list<array{label: string, description: ?string, icon: string, url: string, active: bool, searchable: bool, searchRank: int}>}>
      */
     public static function groups(?Authenticatable $admin): array
     {
@@ -38,6 +38,7 @@ class AdminNavigation
                 $route = $screen['route'] ?? null;
                 $items[] = [
                     'label' => $screen['label'],
+                    'description' => $screen['description'] ?? null,
                     'icon' => $screen['icon'] ?? 'squares-2x2',
                     'url' => $route ? route($route) : route('admin.screens.index', $key),
                     'active' => $currentScreen === $key || ($route && request()->routeIs($screen['active_pattern'] ?? $route.'*')),
@@ -100,6 +101,7 @@ class AdminNavigation
     {
         return [
             'label' => $label,
+            'description' => null,
             'icon' => $icon,
             'url' => route($route),
             'active' => request()->routeIs($activePattern),

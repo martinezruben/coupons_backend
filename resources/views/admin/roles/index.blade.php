@@ -2,8 +2,8 @@
     <div class="snow-card overflow-hidden">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:px-4">
             <div>
-                <h1 class="text-sm font-semibold text-slate-900">Roles del panel</h1>
-                <p class="mt-0.5 text-[11px] text-slate-500">Un rol agrupa permisos; a cada usuario administrador se le asignan uno o varios.</p>
+                <h2 class="text-base font-medium text-slate-800">Roles del panel</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Un rol agrupa permisos; a cada usuario administrador se le asignan uno o varios.</p>
             </div>
             <a href="{{ route('admin.roles.create') }}" class="snow-btn-primary">Nuevo rol</a>
         </div>
@@ -43,7 +43,7 @@
                                         <button type="submit" class="snow-btn-danger" @disabled($role->users_count > 0) title="{{ $role->users_count > 0 ? 'Tiene usuarios asignados' : 'Eliminar rol' }}">Eliminar</button>
                                     </form>
                                 @else
-                                    <span class="text-[11px] text-slate-500">—</span>
+                                    <span class="text-xs text-slate-500">—</span>
                                 @endunless
                             </td>
                         </tr>

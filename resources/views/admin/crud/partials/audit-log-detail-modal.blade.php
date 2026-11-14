@@ -16,7 +16,7 @@
         <div class="flex shrink-0 items-start justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
             <div class="min-w-0">
                 <h2 id="audit-log-detail-title" class="text-sm font-semibold text-slate-900">Detalle de auditoría</h2>
-                <p class="mt-0.5 text-[10px] text-slate-500" x-text="row ? `${row.entity_type ?? '—'} · ${row.entity_id ?? '—'}` : ''"></p>
+                <p class="mt-0.5 text-xs text-slate-500" x-text="row ? `${row.entity_type ?? '—'} · ${row.entity_id ?? '—'}` : ''"></p>
             </div>
             <button
                 type="button"
@@ -33,7 +33,7 @@
             <div x-show="error && !loading" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800" x-text="error"></div>
 
             <div x-show="!loading && !error && row" class="space-y-4">
-                <dl class="grid grid-cols-1 gap-x-4 gap-y-2 text-[10px] sm:grid-cols-2">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
                     <div class="flex flex-col gap-0.5">
                         <dt class="font-semibold uppercase tracking-wide text-slate-500">Fecha / hora</dt>
                         <dd class="tabular-nums text-slate-800" x-text="row?.created_at ?? '—'"></dd>
@@ -53,9 +53,9 @@
                 </dl>
 
                 <div>
-                    <h3 class="mb-1 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Cambios</h3>
+                    <h3 class="mb-1 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Cambios</h3>
                     <template x-if="row && changeEntries(row.changes).length">
-                        <table class="min-w-full divide-y divide-slate-100 text-left text-[10px]">
+                        <table class="min-w-full divide-y divide-slate-100 text-left text-xs">
                             <thead class="snow-table-head">
                                 <tr>
                                     <th class="px-2 py-1 font-semibold">Campo</th>
@@ -75,7 +75,7 @@
                         </table>
                     </template>
                     <template x-if="row && !changeEntries(row.changes).length">
-                        <p class="text-[10px] text-slate-500">Sin cambios de campos registrados (creación, eliminación o sesión).</p>
+                        <p class="text-xs text-slate-500">Sin cambios de campos registrados (creación, eliminación o sesión).</p>
                     </template>
                 </div>
             </div>

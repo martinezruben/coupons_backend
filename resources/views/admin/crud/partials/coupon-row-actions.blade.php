@@ -3,7 +3,7 @@
     $admin = auth('admin')->user();
     $couponType = $screen === 'coupons' ? 'qr' : ($screen === 'coupon-barcodes' ? 'barcode' : null);
     $perm = fn (string $action) => ($p = \App\Support\AdminRbac::actionPermissions($screen)[$action]['permission'] ?? null) && $admin?->can($p);
-    $btn = 'rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 shadow-sm hover:border-primary-300 hover:bg-primary-50';
+    $btn = 'snow-btn-secondary snow-btn-sm';
 @endphp
 
 @if($couponType)

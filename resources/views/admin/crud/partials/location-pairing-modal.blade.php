@@ -11,13 +11,13 @@
 >
     <div class="w-full max-w-[340px] overflow-hidden rounded-[14px] bg-[#f2f2f7] shadow-2xl ring-1 ring-black/5" @click.stop>
         <div class="px-5 pt-5 pb-4 text-center">
-            <h2 id="location-pairing-title" class="text-[17px] font-semibold leading-snug tracking-tight text-slate-900">
+            <h2 id="location-pairing-title" class="text-lg font-semibold leading-snug tracking-tight text-slate-900">
                 Código de verificación de dispositivo
             </h2>
-            <p class="mt-2 text-[13px] leading-relaxed text-slate-600">
+            <p class="mt-2 text-sm leading-relaxed text-slate-600">
                 Introduce este código en el dispositivo para enrolarlo en esta localidad.
             </p>
-            <p x-show="locationName" class="mt-1 text-[13px] font-semibold text-slate-800" x-text="'Localidad: ' + locationName"></p>
+            <p x-show="locationName" class="mt-1 text-sm font-semibold text-slate-800" x-text="'Localidad: ' + locationName"></p>
 
             <div class="relative mt-6 min-h-[3.5rem] flex items-center justify-center">
                 <div x-show="code" class="flex items-baseline justify-center gap-[0.65rem] text-[34px] font-normal tabular-nums tracking-[0.12em] text-slate-900">
@@ -37,7 +37,7 @@
                 </div>
             </div>
 
-            <p class="mt-3 text-[13px] font-medium tabular-nums text-slate-700">
+            <p class="mt-3 text-sm font-medium tabular-nums text-slate-700">
                 <span class="text-slate-500">Tiempo restante:</span>
                 <span x-text="remainingLabel"></span>
             </p>
@@ -48,7 +48,7 @@
         <div class="grid grid-cols-2 divide-x divide-black/[0.08] bg-[#f2f2f7]">
             <button
                 type="button"
-                class="min-h-[44px] px-2 text-[17px] font-normal text-slate-900 transition hover:bg-black/[0.04] disabled:opacity-40"
+                class="min-h-[44px] px-2 text-lg font-normal text-slate-900 transition hover:bg-black/[0.04] disabled:opacity-40"
                 :disabled="loading"
                 @click="regenerate()"
             >
@@ -56,7 +56,7 @@
             </button>
             <button
                 type="button"
-                class="min-h-[44px] px-2 text-[17px] font-semibold text-[#007aff] transition hover:bg-black/[0.04]"
+                class="min-h-[44px] px-2 text-lg font-semibold text-[#007aff] transition hover:bg-black/[0.04]"
                 @click="closeModal()"
             >
                 Cerrar

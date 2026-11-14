@@ -5,8 +5,8 @@
 <x-admin.layouts.app title="Permisos por rol">
     <div class="snow-card overflow-hidden">
         <div class="border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:px-4">
-            <h1 class="text-sm font-semibold text-slate-900">Permisos por rol y pantalla</h1>
-            <p class="mt-0.5 text-[10px] text-slate-500">
+            <h2 class="text-base font-medium text-slate-800">Permisos por rol y pantalla</h2>
+            <p class="mt-0.5 text-xs text-slate-500">
                 Marca qué puede hacer cada rol en cada pantalla del panel. Los cambios se guardan en la base de datos (Spatie).
             </p>
         </div>
@@ -16,7 +16,7 @@
 
             <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div class="flex min-w-0 flex-col gap-0.5">
-                    <label for="rbac-role" class="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-500">Rol</label>
+                    <label for="rbac-role" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">Rol</label>
                     <select
                         id="rbac-role"
                         class="hope-filter-select max-w-md py-1.5 text-xs"
@@ -42,7 +42,7 @@
             </div>
 
             <div class="overflow-x-auto rounded-lg border border-slate-200">
-                <table class="w-full min-w-[640px] border-collapse text-left text-[10px]">
+                <table class="w-full min-w-[640px] border-collapse text-left text-xs">
                     <thead class="border-b border-slate-100 bg-slate-50/95">
                         <tr class="snow-table-head">
                             <th class="sticky left-0 z-10 bg-slate-50/95 px-2 py-1.5 font-semibold">Pantalla</th>
@@ -55,7 +55,7 @@
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @foreach($screenGroups as $group)
                             <tr class="bg-slate-50/80">
-                                <td colspan="5" class="sticky left-0 z-[1] bg-slate-50/95 px-2 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500 shadow-[1px_0_0_0_rgb(241_245_249)]">
+                                <td colspan="5" class="sticky left-0 z-[1] bg-slate-50/95 px-2 py-1 text-2xs font-bold uppercase tracking-[0.04em] text-slate-500 shadow-[1px_0_0_0_rgb(241_245_249)]">
                                     {{ $group['label'] }}
                                 </td>
                             </tr>
@@ -68,7 +68,7 @@
                                 <td class="sticky left-0 z-[1] bg-white px-2 py-1 align-middle font-medium text-slate-800 shadow-[1px_0_0_0_rgb(241_245_249)]">
                                     <span class="block truncate" title="{{ $s['key'] }}">{{ $s['label'] }}</span>
                                     @if($ro)
-                                        <span class="text-[9px] font-normal text-slate-500">(solo lectura)</span>
+                                        <span class="text-2xs font-normal text-slate-500">(solo lectura)</span>
                                     @endif
                                 </td>
                                 <td class="px-2 py-1 text-center align-middle">
@@ -129,7 +129,7 @@
                 </table>
             </div>
 
-            <p class="mt-3 text-[10px] text-slate-500">
+            <p class="mt-3 text-xs text-slate-500">
                 Los permisos de este formulario sustituyen solo las casillas de la tabla; otros permisos del rol que no estén en la matriz se mantienen.
             </p>
         </form>

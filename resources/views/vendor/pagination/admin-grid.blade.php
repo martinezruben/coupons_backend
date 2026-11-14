@@ -3,21 +3,21 @@
 
     <div class="flex items-center justify-between gap-2 sm:hidden">
         @if ($paginator->onFirstPage())
-            <span class="snow-icon-btn h-7 px-2 text-[10px] font-medium text-slate-300">
+            <span class="snow-icon-btn h-7 px-2 text-xs font-medium text-slate-300">
                 {!! __('pagination.previous') !!}
             </span>
         @else
-            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="snow-icon-btn h-7 px-2 text-[10px] font-medium">
+            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="snow-icon-btn h-7 px-2 text-xs font-medium">
                 {!! __('pagination.previous') !!}
             </a>
         @endif
 
         @if ($paginator->hasMorePages())
-            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="snow-icon-btn h-7 px-2 text-[10px] font-medium">
+            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="snow-icon-btn h-7 px-2 text-xs font-medium">
                 {!! __('pagination.next') !!}
             </a>
         @else
-            <span class="snow-icon-btn h-7 px-2 text-[10px] font-medium text-slate-300">
+            <span class="snow-icon-btn h-7 px-2 text-xs font-medium text-slate-300">
                 {!! __('pagination.next') !!}
             </span>
         @endif
@@ -25,7 +25,7 @@
 
     <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between sm:gap-2">
         <div>
-            <p class="text-[10px] leading-tight text-slate-500">
+            <p class="text-xs leading-tight text-slate-500">
                 {!! __('Showing') !!}
                 @if ($paginator->firstItem())
                     <span class="font-semibold text-slate-700">{{ $paginator->firstItem() }}</span>
@@ -54,7 +54,7 @@
             @foreach ($elements as $element)
                 @if (is_string($element))
                     <span aria-disabled="true">
-                        <span class="grid h-7 w-7 cursor-default place-items-center text-[10px] font-medium text-slate-500">{{ $element }}</span>
+                        <span class="grid h-7 w-7 cursor-default place-items-center text-xs font-medium text-slate-500">{{ $element }}</span>
                     </span>
                 @endif
 
@@ -62,10 +62,10 @@
                     @foreach ($element as $page => $url)
                         @if ($page == $paginator->currentPage())
                             <span aria-current="page">
-                                <span class="grid h-7 min-w-7 cursor-default place-items-center rounded-md bg-primary-600 px-1.5 text-[10.5px] font-semibold text-white">{{ $page }}</span>
+                                <span class="grid h-7 min-w-7 cursor-default place-items-center rounded-md bg-primary-600 px-1.5 text-xs font-semibold text-white">{{ $page }}</span>
                             </span>
                         @else
-                            <a href="{{ $url }}" class="snow-icon-btn grid h-7 min-w-7 place-items-center px-1.5 text-[10.5px] font-medium" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
+                            <a href="{{ $url }}" class="snow-icon-btn grid h-7 min-w-7 place-items-center px-1.5 text-xs font-medium" aria-label="{{ __('Go to page :page', ['page' => $page]) }}">
                                 {{ $page }}
                             </a>
                         @endif

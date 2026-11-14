@@ -188,6 +188,7 @@ return [
     'coupons' => [
         'model' => Coupon::class,
         'label' => 'Cupones QR',
+        'description' => 'Saldo, vencimiento y estado de cada cupón QR',
         'icon' => 'qr-code',
         'readonly' => true,
         'labels' => [
@@ -223,6 +224,7 @@ return [
     'coupon-barcodes' => [
         'model' => BarcodeCoupon::class,
         'label' => 'Cupones de barras',
+        'description' => 'Cupones de código de barras',
         'icon' => 'ticket',
         'readonly' => true,
         'labels' => [
@@ -258,6 +260,7 @@ return [
     'coupon-transactions' => [
         'model' => CouponTransaction::class,
         'label' => 'Cobros de cupones',
+        'description' => 'Cobros, recargas y reversas',
         'icon' => 'receipt-percent',
         'readonly' => true,
         'labels' => [
@@ -321,6 +324,7 @@ return [
     'coupon-audit-logs' => [
         'model' => CouponAuditLog::class,
         'label' => 'Auditoría de cupones',
+        'description' => 'Quién cambió qué y por qué',
         'icon' => 'clipboard-document-list',
         'readonly' => true,
         'labels' => [
@@ -367,6 +371,7 @@ return [
     'topup-rules' => [
         'model' => TopUpRule::class,
         'label' => 'Reglas de recarga',
+        'description' => 'Localidad, día y monto diario',
         'icon' => 'banknotes',
         'labels' => [
             'name' => 'Nombre',
@@ -410,7 +415,7 @@ return [
             'default_sort' => ['key' => 'id', 'direction' => 'desc'],
         ],
     ],
-    'coupon-reports' => ['label' => 'Reportes de canjes', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.*'],
+    'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.*'],
     'api-request-logs' => [
         'model' => ApiRequestLog::class,
         'label' => 'Llamadas API',

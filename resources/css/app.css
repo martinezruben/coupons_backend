@@ -1,18 +1,63 @@
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300..800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
+/*
+ * Coupify — estilos del panel, basados en el sistema de diseño «Tabler/UI»
+ * (artefacto de diseño del proyecto; ver docs/DESIGN.md).
+ * Tokens: neutros sin tinte, un único acento azul, fuente del sistema, radio 6px,
+ * tarjetas con borde de 1px + sombra suave, foco con contorno azul de 2px.
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root,
+[data-theme='light'] {
+    --body-bg: oklch(98.51% 0 0);
+    --surface: oklch(100% 0 0);
+    --surface-secondary: oklch(92.19% 0 0);
+    --surface-tertiary: oklch(97.02% 0 0);
+    --body-color: oklch(26.86% 0 0);
+    --text-secondary: oklch(55.55% 0 0);
+    --border-color: oklch(92.19% 0 0);
+    --border-active-color: oklch(71.55% 0 0);
+    --blue: oklch(54.6% 0.1724 254.2);
+    --azure: oklch(66.26% 0.1358 246.81);
+    --red: oklch(58.29% 0.1941 25.59);
+    --yellow: oklch(77.02% 0.1658 71.02);
+    --green: oklch(67.38% 0.1885 145.43);
+    --white: oklch(100% 0 0);
+    --gray-900: oklch(20.46% 0 0);
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-lg: 8px;
+    --radius-pill: 100rem;
+    --shadow-xs: 0 1px 2px 0 rgba(18, 18, 23, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(18, 18, 23, 0.1), 0 1px 2px 0 rgba(18, 18, 23, 0.06);
+    --shadow: 0 2px 4px -1px rgba(18, 18, 23, 0.06), 0 4px 6px -1px rgba(18, 18, 23, 0.08);
+    --shadow-lg: 0 4px 6px -2px rgba(18, 18, 23, 0.05), 0 10px 15px -3px rgba(18, 18, 23, 0.08);
+    --shadow-xl: 0 10px 10px -5px rgba(18, 18, 23, 0.04), 0 20px 25px -5px rgba(18, 18, 23, 0.1);
+}
+
 @layer base {
     html {
-        @apply antialiased text-snow-800;
+        @apply antialiased;
     }
 
-    a:focus-visible,
-    button:focus-visible,
-    summary:focus-visible {
-        @apply outline-none ring-2 ring-primary-500 ring-offset-1;
+    body {
+        background: var(--body-bg);
+        color: var(--body-color);
+        font-size: 0.875rem;
+        line-height: 1.4286;
+    }
+
+    /* Foco: contorno azul de 2px con separación de 2px; nunca se quita */
+    :focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 2px;
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+        accent-color: var(--blue);
     }
 
     [x-cloak] {
@@ -21,73 +66,580 @@
 }
 
 @layer components {
-    /* Inputs — sobrio, foco de acento */
+    /* ---- Formularios (form-control / form-label) ---- */
     .snow-input {
-        @apply block w-full rounded-md border border-slate-200 bg-snow-25 px-2 py-1.5 text-xs text-snow-800 shadow-sm;
-        @apply placeholder:text-slate-400;
-        @apply focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/25;
+        display: block;
+        width: 100%;
+        min-height: 2.25rem;
+        padding: 0.5625rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: var(--body-color);
+        background: var(--surface);
+        border: 1px solid var(--border-active-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .snow-input::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .snow-input:focus {
+        outline: 2px solid var(--blue);
+        outline-offset: 0;
+        border-color: var(--blue);
+        --tw-ring-shadow: 0 0 #0000;
     }
 
     .snow-label {
-        @apply mb-1 block font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-500;
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--body-color);
+    }
+
+    /* ---- Botones (.btn): una sola acción primaria por región ---- */
+    .snow-btn-primary,
+    .snow-btn-secondary,
+    .snow-btn-ghost,
+    .snow-btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 2.25rem;
+        padding: 0.5625rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        transition: background-color 0.12s, border-color 0.12s;
     }
 
     .snow-btn-primary {
-        @apply inline-flex items-center justify-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm;
-        @apply transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1;
+        color: var(--white);
+        background: var(--blue);
+        border-color: color-mix(in srgb, var(--blue), black 12%);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .snow-btn-primary:hover {
+        background: color-mix(in srgb, var(--blue), black 10%);
+        border-color: color-mix(in srgb, var(--blue), black 20%);
     }
 
     .snow-btn-secondary {
-        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm;
-        @apply transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+        color: var(--body-color);
+        background: var(--surface);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .snow-btn-secondary:hover {
+        border-color: var(--border-active-color);
     }
 
     .snow-btn-ghost {
-        @apply inline-flex items-center justify-center rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900;
+        color: var(--body-color);
+        background: transparent;
+        border-color: transparent;
+    }
+
+    .snow-btn-ghost:hover {
+        background: var(--surface-secondary);
+    }
+
+    .snow-btn-sm {
+        min-height: 1.875rem;
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        border-radius: var(--radius-sm);
     }
 
     .snow-btn-danger {
-        @apply inline-flex items-center justify-center rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100;
+        color: var(--white);
+        background: var(--red);
+        border-color: color-mix(in srgb, var(--red), black 12%);
+        box-shadow: var(--shadow-xs);
     }
 
-    /* Tarjetas — superficie casi blanca, radio amplio, sombra suave */
+    .snow-btn-danger:hover {
+        background: color-mix(in srgb, var(--red), black 10%);
+    }
+
+    /* ---- Tarjetas: 1px de borde + sombra pequeña, radio 6px ---- */
     .snow-card {
-        @apply overflow-hidden rounded-[10px] border border-slate-200/90 bg-snow-25 shadow-hope-card;
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
     }
 
-    /* Cabeceras de tabla: compactas, mono uppercase */
+    /* ---- Tablas: cabecera de 10px en mayúsculas sobre surface-tertiary ---- */
     .snow-table-head {
-        @apply bg-slate-50 text-left font-mono text-[11px] font-medium uppercase tracking-wider text-slate-500;
+        background: var(--surface-tertiary);
+        text-align: left;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
     }
 
-    .snow-topbar {
-        @apply border-b border-slate-200 bg-snow-25;
+    /* ---- Botón de icono con borde (acciones de fila) ---- */
+    .snow-icon-btn,
+    .snow-icon-btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-xs);
+        transition: border-color 0.12s, color 0.12s, background-color 0.12s;
     }
 
-    /* Botón icónico con borde, para acciones de fila y topbar */
-    .snow-icon-btn {
-        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 text-slate-500 shadow-sm transition;
-        @apply hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700;
+    .snow-icon-btn:hover {
+        color: var(--body-color);
+        border-color: var(--border-active-color);
+        background: var(--surface-tertiary);
     }
 
     .snow-icon-btn-danger {
-        @apply inline-flex items-center justify-center rounded-md border border-slate-200 bg-snow-25 text-rose-500/90 shadow-sm transition;
-        @apply hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700;
+        color: var(--red);
     }
 
-    /* Etiqueta/tag con punto de estado (badges) */
+    .snow-icon-btn-danger:hover {
+        border-color: var(--red);
+        background: color-mix(in srgb, var(--red) 8%, var(--surface));
+    }
+
+    /* ---- Badge: 10px, mayúsculas, radio pequeño ---- */
     .snow-tag {
-        @apply inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold leading-tight;
+        display: inline-flex;
+        max-width: 100%;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        border-radius: var(--radius-sm);
     }
 
-    /* Búsqueda compacta en grids */
+    /* ---- Búsqueda y filtros de los grids ---- */
     .hope-grid-search {
-        @apply w-full rounded-md border border-slate-200 bg-snow-25 py-1 pl-7 pr-1.5 text-[11px] leading-tight text-slate-800 placeholder:text-slate-400;
-        @apply focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-500/35;
+        width: 100%;
+        min-height: 2.25rem;
+        padding: 0.4375rem 0.75rem 0.4375rem 2rem;
+        font-size: 0.875rem;
+        color: var(--body-color);
+        background: var(--surface);
+        border: 1px solid var(--border-active-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .hope-grid-search:focus {
+        outline: 2px solid var(--blue);
+        outline-offset: 0;
+        border-color: var(--blue);
+        --tw-ring-shadow: 0 0 #0000;
     }
 
     .hope-filter-select {
-        @apply rounded-md border border-slate-200 bg-snow-25 py-0.5 pl-1.5 pr-6 text-[11px] text-slate-800 shadow-sm;
-        @apply focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-500/30;
+        min-height: 2.25rem;
+        padding: 0.4375rem 2rem 0.4375rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--body-color);
+        background-color: var(--surface);
+        border: 1px solid var(--border-active-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-xs);
     }
+
+    .hope-filter-select:focus {
+        outline: 2px solid var(--blue);
+        outline-offset: 0;
+        border-color: var(--blue);
+        --tw-ring-shadow: 0 0 #0000;
+    }
+
+    /* ---- Encabezado de página ---- */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-pretitle {
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .page-title {
+        margin: 0.125rem 0 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 2rem;
+    }
+
+    /* ---- Menú horizontal (hmenu): 56px, subrayado azul en lo activo ---- */
+    .hmenu {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .hmenu-bar {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        min-height: 3.5rem;
+        padding: 0 1rem;
+    }
+
+    .hmenu-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--body-color);
+        text-decoration: none;
+    }
+
+    .hmenu-mark {
+        display: flex;
+        width: 1.5rem;
+        height: 1.5rem;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--white);
+        background: var(--blue);
+        border-radius: var(--radius-sm);
+    }
+
+    .hmenu-nav {
+        display: none;
+        align-self: stretch;
+        gap: 0.125rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .hmenu-item {
+        position: relative;
+        display: flex;
+    }
+
+    .hmenu-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        background: none;
+        border: 0;
+        cursor: pointer;
+    }
+
+    .hmenu-link:hover {
+        color: var(--body-color);
+        background: var(--surface-tertiary);
+    }
+
+    .hmenu-link.is-active,
+    .hmenu-item.is-open > .hmenu-link {
+        color: var(--body-color);
+        box-shadow: inset 0 -2px 0 var(--blue);
+    }
+
+    .hmenu-item.is-open > .hmenu-link {
+        background: var(--surface-tertiary);
+    }
+
+    .hmenu-chevron::after {
+        content: '';
+        width: 0.4rem;
+        height: 0.4rem;
+        margin-top: -0.2rem;
+        border: solid currentColor;
+        border-width: 0 1.5px 1.5px 0;
+        transform: rotate(45deg);
+    }
+
+    .hmenu-end {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-left: auto;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        min-width: 11rem;
+        padding: 0.25rem;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .dropdown-menu.is-end {
+        right: 0;
+        left: auto;
+    }
+
+    .dropdown-menu.is-mega {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(11rem, 1fr));
+        gap: 0.25rem 1rem;
+        min-width: 30rem;
+        padding: 0.75rem;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--body-color);
+        text-align: left;
+        text-decoration: none;
+        background: none;
+        border: 0;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background: var(--surface-secondary);
+    }
+
+    .dropdown-item[aria-current='page'] {
+        background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+    }
+
+    .dropdown-item small {
+        display: block;
+        font-size: 0.765625rem;
+        color: var(--text-secondary);
+    }
+
+    /* Tarjeta de indicador (StatCard): rótulo de 10px en mayúsculas y cifra grande y ligera */
+    .subheader {
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .stat-value {
+        margin-top: 0.25rem;
+        font-size: 1.75rem;
+        font-weight: 300;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .dropdown-header {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .dropdown-divider {
+        height: 1px;
+        margin: 0.25rem 0;
+        background: var(--border-color);
+    }
+
+    .avatar {
+        display: inline-flex;
+        width: 2rem;
+        height: 2rem;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--white);
+        background: var(--blue);
+        border-radius: var(--radius-pill);
+    }
+
+    .navbar-toggler {
+        display: inline-flex;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        padding: 0 0.5rem;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        cursor: pointer;
+    }
+
+    .navbar-toggler span {
+        height: 2px;
+        background: var(--body-color);
+        border-radius: 1px;
+    }
+
+    .hmenu-collapse {
+        display: grid;
+        padding: 0.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .hmenu-collapse .hmenu-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 2.5rem;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--body-color);
+        text-decoration: none;
+        text-align: left;
+        background: none;
+        border: 0;
+        border-radius: var(--radius);
+        cursor: pointer;
+    }
+
+    .hmenu-collapse .hmenu-row.is-active {
+        background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+        box-shadow: inset 3px 0 0 var(--blue);
+    }
+
+    .hmenu-collapse .nested {
+        display: grid;
+        padding-left: 1.5rem;
+    }
+
+    /* ---- Avisos (alert) ---- */
+    .alert {
+        --ac: var(--azure);
+        display: flex;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        color: var(--body-color);
+        background: color-mix(in srgb, var(--ac) 12%, var(--surface));
+        border: 1px solid color-mix(in srgb, var(--ac) 45%, var(--surface));
+        border-radius: var(--radius);
+    }
+
+    .alert-success {
+        --ac: var(--green);
+    }
+
+    .alert-danger {
+        --ac: var(--red);
+    }
+
+    .alert-warning {
+        --ac: var(--yellow);
+    }
+
+    @media (min-width: 576px) {
+        .stat-value {
+            font-size: 2rem;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .hmenu-nav {
+            display: flex;
+        }
+
+        .navbar-toggler,
+        .hmenu-collapse {
+            display: none;
+        }
+    }
+}
+
+/*
+ * Reglas sin capa: ganan a las utilidades de Tailwind de las vistas existentes y
+ * llevan las tablas y los controles de los grids a la escala del sistema
+ * (celdas de 14px con 0.75rem/1.25rem de relleno, cabeceras de 10px, filas con hover).
+ */
+.snow-card table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--body-color);
+}
+
+.snow-card table thead th {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.snow-card table tbody td {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.snow-card table tbody tr:hover {
+    background: var(--surface-tertiary);
+}
+
+.snow-card table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.snow-card .snow-icon-btn {
+    min-width: 2rem;
+    min-height: 2rem;
+}
+
+/* Paginación del grid: tamaño táctil de 36px, activa en azul */
+.snow-card nav[aria-label*='aginat'] a,
+.snow-card nav[aria-label*='aginat'] span[aria-current] > span {
+    border-radius: var(--radius);
 }

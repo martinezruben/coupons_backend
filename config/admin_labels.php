@@ -47,6 +47,10 @@ return [
     ],
 
     'values' => [
+        'coupon_type' => [
+            'QRCODE' => 'QR',
+            'CODBAR' => 'Barras',
+        ],
         'kind' => [
             'REDEEM' => 'Cobro',
             'TOPUP' => 'Recarga',
