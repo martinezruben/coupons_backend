@@ -425,6 +425,16 @@ class ScreenCrudController extends Controller
             $rules['notes'] = ['nullable', 'string', 'max:1000'];
         }
 
+        if ($screen === 'coupon-prefixes') {
+            $request->merge(['prefix' => strtoupper(trim((string) $request->input('prefix')))]);
+            $unique = Rule::unique('coupon_prefixes', 'prefix');
+            if ($updating && $request->route('id')) {
+                $unique = $unique->ignore($request->route('id'));
+            }
+            $rules['prefix'] = ['required', 'alpha_num:ascii', 'max:6', $unique];
+            $rules['description'] = ['nullable', 'string', 'max:150'];
+        }
+
         if ($screen === 'topup-rules') {
             $rules['name'] = ['required', 'string', 'max:100'];
             $rules['type'] = ['required', Rule::in(TopUpRule::TYPES)];
