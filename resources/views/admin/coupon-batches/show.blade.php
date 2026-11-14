@@ -30,7 +30,7 @@
                 @if($can['operate'] && $batch->status === 'ready')
                     <a href="{{ route('admin.coupon-batches.activate.form', $batch) }}" class="snow-btn-secondary">Asignar y activar</a>
                 @endif
-                <a href="{{ route('admin.screens.index', $batch->coupon_type === 'QRCODE' ? 'coupons' : 'coupon-barcodes') }}?filter[batch_id]={{ $batch->id }}" class="snow-btn-secondary">Ver cupones del lote</a>
+                <a href="{{ route('admin.coupons.index') }}?type={{ $batch->coupon_type }}&batch={{ $batch->id }}" class="snow-btn-secondary">Ver cupones del lote</a>
             </div>
         </div>
 

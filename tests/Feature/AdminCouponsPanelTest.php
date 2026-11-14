@@ -56,15 +56,23 @@ class AdminCouponsPanelTest extends TestCase
 
         $this->actingAs($this->admin('coupons.view', 'coupon_barcodes.view'), 'admin');
 
-        $res = $this->get(route('admin.screens.index', 'coupons'))->assertOk()->assertSee('Q1')->assertSee('$50.00');
+        $res = $this->get(route('admin.coupons.index'))->assertOk()->assertSee('Q1')->assertSee('B1')->assertSee('$50.00')->assertSee('Cupón QR')->assertSee('Cupón de barras');
         $this->assertStringNotContainsString('secret-token', $res->getContent());
-        $this->get(route('admin.screens.index', 'coupon-barcodes'))->assertOk()->assertSee('B1');
+        $this->get(route('admin.coupons.index', ['type' => 'CODBAR']))->assertOk()->assertSee('B1')->assertDontSee('Q1');
+        $this->get(route('admin.coupons.index', ['type' => 'QRCODE']))->assertOk()->assertSee('Q1')->assertDontSee('B1');
+        $this->get(route('admin.coupons.index', ['q' => 'B']))->assertOk()->assertSee('B1')->assertDontSee('Q1');
+        $this->get(route('admin.screens.index', 'coupon-barcodes'))->assertRedirect(route('admin.coupons.index', ['type' => 'CODBAR']));
     }
 
     public function test_grids_require_their_view_permission(): void
     {
-        $this->actingAs($this->admin('coupon_barcodes.view'), 'admin')
-            ->get(route('admin.screens.index', 'coupons'))->assertForbidden();
+        $this->qr('Q1');
+        DB::table('coupons_codbar')->insert(['coupon_number' => 'B1', 'coupon_active' => 1, 'coupon_amount' => '30.00', 'coupon_balance' => '30.00']);
+
+        $this->actingAs($this->admin(), 'admin')->get(route('admin.coupons.index'))->assertForbidden();
+        // Con solo el permiso de barras, la lista unificada no muestra ni abre cupones QR
+        $this->actingAs($this->admin('coupon_barcodes.view'), 'admin')->get(route('admin.coupons.index'))->assertOk()->assertSee('B1')->assertDontSee('Q1');
+        $this->get(route('admin.coupons.show', ['qr', DB::table('coupons')->value('coupon_id')]))->assertForbidden();
     }
 
     public function test_dashboard_shows_coupon_kpis(): void
@@ -146,10 +154,11 @@ class AdminCouponsPanelTest extends TestCase
     {
         $this->qr('Q1');
 
-        $this->actingAs($this->admin('coupons.view'), 'admin')->get(route('admin.screens.index', 'coupons'))
+        $id = DB::table('coupons')->value('coupon_id');
+        $this->actingAs($this->admin('coupons.view'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
             ->assertOk()->assertDontSee('Ajustar saldo');
 
-        $this->actingAs($this->admin('coupons.view', 'coupons.adjust'), 'admin')->get(route('admin.screens.index', 'coupons'))
+        $this->actingAs($this->admin('coupons.view', 'coupons.adjust'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
             ->assertOk()->assertSee('Ajustar saldo');
     }
 

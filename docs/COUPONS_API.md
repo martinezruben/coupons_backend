@@ -85,6 +85,12 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 - **Cambios de datos:** altas, ediciones y bajas con el valor **antes y después** (lotes, clientes, prefijos, reglas, activaciones, cupones, usuarios, roles, límites, parámetros…). Los cambios hechos por la API o por jobs no ensucian esta bitácora (tienen su propio registro de cupones).
 - La pantalla filtra por usuario, tipo de registro, movimiento, módulo, fechas y texto; cada fila se abre para ver el detalle técnico y exporta a CSV. La retención la controla `pos:prune-logs`.
 
+## Lista de cupones y detalle completo
+
+**Cupones (`/admin/coupons`):** QR y de barras en una sola lista; el tipo se muestra como un icono junto al número y se puede filtrar por tipo, estado, cliente, lote, vencimiento y número. Cada tipo conserva su permiso (`coupons.view`, `coupon_barcodes.view`): quien solo tiene uno ve solo ese tipo.
+
+**Detalle (`/admin/coupons/{qr|barcode}/{id}`):** al hacer clic en un cupón se ve su historial completo, lo más reciente primero: creación (lote, creador, monto inicial), asignación y activación, cada cobro, recarga y reversa (monto, **localidad**, dispositivo, usuario, IP y **saldo tras el movimiento**), ajustes y cambios de estado con su motivo y el antes/después, los cambios de datos de la auditoría del panel y quién consultó el cupón. Incluye un resumen (cobrado neto, recargado, localidades donde se usó) y respeta el alcance por cliente. El token de los QR nunca se muestra.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

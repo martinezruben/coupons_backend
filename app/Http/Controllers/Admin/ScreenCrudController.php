@@ -67,7 +67,7 @@ class ScreenCrudController extends Controller
         $this->authorize($screen, 'view');
         $cfg = $this->getScreen($screen);
         if (! empty($cfg['route'])) {
-            return redirect()->route($cfg['route'], $request->query());
+            return redirect()->route($cfg['route'], $request->query() + ($cfg['route_query'] ?? []));
         }
         $model = $cfg['model'];
         $query = $this->scoped($model::query(), $model);

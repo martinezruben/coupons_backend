@@ -40,8 +40,13 @@ class AuditAdminActivity
         $isRead = $request->isMethod('GET');
         $input = $isRead ? $request->query() : $request->except(['_token']);
 
-        $param = collect($request->route()?->parameters() ?? [])->first(fn ($v) => is_scalar($v) || $v instanceof Model);
-        $entityId = $param instanceof Model ? (string) $param->getKey() : (is_scalar($param) ? (string) $param : null);
+        $params = $request->route()?->parameters() ?? [];
+        if (isset($params['type'], $params['id'])) {
+            $entityId = "{$params['type']}:{$params['id']}"; // cupones: el id solo es único por tipo
+        } else {
+            $param = $params['id'] ?? collect($params)->first(fn ($v) => $v instanceof Model) ?? collect($params)->first(fn ($v) => is_scalar($v));
+            $entityId = $param instanceof Model ? (string) $param->getKey() : (is_scalar($param) ? (string) $param : null);
+        }
 
         AdminAuditLog::record(
             $isRead ? 'view' : 'submit',

@@ -230,6 +230,7 @@ class CouponService
     private function audit(string $action, string $type, string $number, string $old, string $new, string $reason, Authenticatable $user, ?string $ip): void
     {
         CouponAuditLog::create([
+            'created_at' => now(), // misma zona horaria que los demás registros (no la del servidor de BD)
             ...self::actor($user),
             'action' => $action,
             'coupon_type' => $type,
