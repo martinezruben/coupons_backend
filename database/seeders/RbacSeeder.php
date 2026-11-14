@@ -49,7 +49,8 @@ class RbacSeeder extends Seeder
             array_push($manager, "$r.view", "$r.issue", "$r.toggle");
             $viewer[] = "$r.view";
         }
-        foreach (['coupon-transactions', 'coupon-audit-logs'] as $screenKey) {
+        // Reportes y reglas de recarga: ver. Editar reglas (crea condiciones de dinero) es del super-admin.
+        foreach (['coupon-transactions', 'coupon-audit-logs', 'coupon-reports', 'topup-rules'] as $screenKey) {
             $r = AdminRbac::resourceKey($screenKey);
             $manager[] = "$r.view";
             $viewer[] = "$r.view";

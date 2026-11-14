@@ -123,6 +123,7 @@ class CouponService
                         'coupon_number' => $coupon->coupon_number,
                         'transaction_amount' => $this->money($used),
                         'coupon_type' => $this->type,
+                        'kind' => CouponTransaction::KIND_REDEEM,
                         'user_id' => $user?->getKey(),
                         'device_id' => $device?->getKey(),
                         'location_id' => $device?->location_id,
@@ -181,7 +182,7 @@ class CouponService
             // Bloquea la fila original para que dos reversas simultaneas no pasen a la vez.
             $tx = CouponTransaction::where('transaction_id', $original->transaction_id)->lockForUpdate()->first();
 
-            if ($tx->reversed_of !== null || BigDecimal::of((string) $tx->transaction_amount)->isNegativeOrZero()) {
+            if ($tx->kind !== CouponTransaction::KIND_REDEEM || $tx->reversed_of !== null || BigDecimal::of((string) $tx->transaction_amount)->isNegativeOrZero()) {
                 throw new CouponException('This transaction cannot be reversed', 422);
             }
             if (CouponTransaction::where('reversed_of', $tx->transaction_id)->exists()) {
@@ -209,6 +210,7 @@ class CouponService
                 ...self::actor($user),
                 'ip_address' => $ip,
                 'reversed_of' => $tx->transaction_id,
+                'kind' => CouponTransaction::KIND_REVERSAL,
             ]);
 
             $service->audit('reverse', $tx->coupon_type, $tx->coupon_number, $service->money($coupon->coupon_balance),
@@ -234,6 +236,60 @@ class CouponService
             'reason' => $reason,
             'ip_address' => $ip,
         ]);
+    }
+
+    /**
+     * Recarga (TOP-UP): suma saldo y monto al cupón, respetando las reglas de recarga activas y el
+     * saldo máximo. En la API (QR) se exige el token; en el panel el administrador no lo necesita.
+     */
+    public function topUp(string $number, ?string $token, string $amount, ?Device $device, Authenticatable $actor, ?string $ip, bool $verifyToken = true, ?string $note = null): array
+    {
+        $amountDec = BigDecimal::of($amount)->toScale(2, self::rounding());
+
+        return DB::transaction(function () use ($number, $token, $amountDec, $device, $actor, $ip, $verifyToken, $note) {
+            $coupon = $this->model::where('coupon_number', $number)->lockForUpdate()->first();
+
+            if (! $coupon || ($verifyToken && $this->type === self::TYPE_QR && ! $this->tokenMatches($coupon, $token))) {
+                throw new CouponException('Coupon not found', 404);
+            }
+            if (! $this->isUsable($coupon)) {
+                throw new CouponException('Coupon is inactive or expired', 422, ['coupon_number' => $number]);
+            }
+
+            TopUpRules::assertAllowed($this->type, $amountDec, $number, $device?->location_id, $device !== null || $verifyToken);
+
+            $old = $this->decimal($coupon->coupon_balance);
+            $new = $old->plus($amountDec);
+            if ($new->isGreaterThan(BigDecimal::of((string) config('coupons.max_balance')))) {
+                throw new CouponException('Balance limit exceeded', 422, ['max_balance' => $this->money(config('coupons.max_balance'))]);
+            }
+
+            $this->model::where('coupon_id', $coupon->coupon_id)->update([
+                'coupon_balance' => $this->money($new),
+                'coupon_amount' => $this->money($this->decimal($coupon->coupon_amount)->plus($amountDec)),
+            ]);
+
+            $tx = CouponTransaction::create([
+                'coupon_id' => $coupon->coupon_id,
+                'coupon_number' => $coupon->coupon_number,
+                'transaction_amount' => $this->money($amountDec),
+                'coupon_type' => $this->type,
+                'kind' => CouponTransaction::KIND_TOPUP,
+                ...self::actor($actor),
+                'device_id' => $device?->getKey(),
+                'location_id' => $device?->location_id,
+                'ip_address' => $ip,
+            ]);
+
+            $this->audit('topup', $this->type, $number, $this->money($old), $this->money($new), 'Recarga de '.$this->money($amountDec).($note ? ': '.$note : ''), $actor, $ip);
+
+            return [
+                'number' => $number,
+                'topup_amount' => $this->money($amountDec),
+                'balance' => $this->money($new),
+                'transaction_id' => $tx->transaction_id,
+            ];
+        });
     }
 
     /** Quién actúa: usuario de la app (UUID) o administrador del panel (ID entero). */

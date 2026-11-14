@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BalanceRequest;
 use App\Http\Requests\RedeemRequest;
 use App\Http\Requests\RestoreRequest;
+use App\Http\Requests\TopUpRequest;
 use App\Models\Device;
 use App\Services\CouponService;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,18 @@ abstract class BaseCouponController extends Controller
         return response()->json($this->service()->redeem(
             $request->input('coupons'),
             $request->input('tokens'),
+            (string) $request->input('amount'),
+            $this->resolveDevice($request),
+            $request->user(),
+            $request->ip(),
+        ));
+    }
+
+    public function topUp(TopUpRequest $request): JsonResponse
+    {
+        return response()->json($this->service()->topUp(
+            $request->input('coupon_number'),
+            $request->input('coupon_token'),
             (string) $request->input('amount'),
             $this->resolveDevice($request),
             $request->user(),

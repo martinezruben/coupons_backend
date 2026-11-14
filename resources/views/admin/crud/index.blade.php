@@ -1,5 +1,5 @@
 @php
-    $badgeFields = ['status', 'is_active', 'coupon_active', 'is_enabled', 'is_synced', 'role', 'response_status'];
+    $badgeFields = ['status', 'kind', 'is_active', 'coupon_active', 'is_enabled', 'is_synced', 'role', 'response_status'];
     $visibleLimit = (int) ($cfg['grid']['visible_limit'] ?? 8);
     $gridExclude = $cfg['grid']['exclude_from_grid'] ?? [];
     $gridFieldList = array_values(array_filter($cfg['fields'] ?? [], static fn (string $f): bool => ! in_array($f, $gridExclude, true)));

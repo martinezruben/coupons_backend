@@ -17,6 +17,15 @@
             <button type="submit" class="{{ $btn }}">{{ $isActive ? 'Desactivar' : 'Activar' }}</button>
         </form>
     @endif
+    @if($perm('topup') && (int) $item->coupon_active === 1)
+        <form method="POST" action="{{ route('admin.coupons.topup', [$couponType, $item->getKey()]) }}" class="inline"
+              onsubmit="const a = prompt('Monto a recargar:'); if (!a || isNaN(a) || Number(a) <= 0) return false; const n = prompt('Nota (opcional, ej. referencia del pago):') || ''; this.amount.value = a; this.note.value = n;">
+            @csrf
+            <input type="hidden" name="amount" value="">
+            <input type="hidden" name="note" value="">
+            <button type="submit" class="{{ $btn }}">Recargar</button>
+        </form>
+    @endif
     @if($perm('adjust'))
         <form method="POST" action="{{ route('admin.coupons.adjust', [$couponType, $item->getKey()]) }}" class="inline"
               onsubmit="const b = prompt('Nuevo saldo (máx. {{ number_format((float) $item->coupon_amount, 2, '.', '') }}):', '{{ number_format((float) $item->coupon_balance, 2, '.', '') }}'); if (b === null || b === '') return false; const r = prompt('Motivo del ajuste:'); if (!r || r.trim().length < 5) return false; this.balance.value = b; this.reason.value = r;">
@@ -26,7 +35,7 @@
             <button type="submit" class="{{ $btn }}">Ajustar saldo</button>
         </form>
     @endif
-@elseif($screen === 'coupon-transactions' && $perm('reverse') && $item->reversed_of === null && (float) $item->transaction_amount > 0)
+@elseif($screen === 'coupon-transactions' && $perm('reverse') && $item->kind === 'REDEEM' && $item->reversed_of === null && (float) $item->transaction_amount > 0)
     <form method="POST" action="{{ route('admin.coupon-transactions.reverse', $item->getKey()) }}" class="inline"
           onsubmit="const r = prompt('Motivo de la reversa:'); if (!r || r.trim().length < 5) return false; this.reason.value = r;">
         @csrf

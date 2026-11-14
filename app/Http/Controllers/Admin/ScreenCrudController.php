@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureAdminActive;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\Device;
+use App\Models\TopUpRule;
 use App\Models\User;
 use App\Services\AdminUserGuard;
 use App\Support\AdminGridCell;
@@ -406,8 +407,30 @@ class ScreenCrudController extends Controller
             $rules['role_names.*'] = ['string', Rule::exists('roles', 'name')->where('guard_name', 'admin')];
         }
 
+        if ($screen === 'topup-rules') {
+            $rules['name'] = ['required', 'string', 'max:100'];
+            $rules['type'] = ['required', Rule::in(TopUpRule::TYPES)];
+            $rules['coupon_type'] = ['nullable', Rule::in(['QRCODE', 'CODBAR'])];
+            $rules['weekdays'] = ['nullable', 'regex:/^[1-7](,[1-7]){0,6}$/'];
+            $rules['max_daily_amount'] = ['nullable', 'numeric', 'gt:0', 'max:99999999.99', 'decimal:0,2'];
+        }
+
         // Etiquetas de la pantalla como nombres de atributo en los mensajes de error
         $data = $request->validate($rules, [], AdminGridCell::validationAttributes($cfg));
+
+        if ($screen === 'topup-rules') {
+            $required = ['location' => 'location_id', 'weekday' => 'weekdays', 'daily_amount' => 'max_daily_amount'][$data['type']];
+            if (empty($data[$required])) {
+                throw ValidationException::withMessages([
+                    $required => 'Este campo es obligatorio para el tipo de regla elegido.',
+                ]);
+            }
+            // Cada tipo guarda solo sus propios datos
+            $data = array_merge(['location_id' => null, 'weekdays' => null, 'max_daily_amount' => null], $data);
+            foreach (array_diff(['location_id', 'weekdays', 'max_daily_amount'], [$required]) as $unused) {
+                $data[$unused] = null;
+            }
+        }
 
         // Los roles se sincronizan aparte (no son columnas de admin_users)
         unset($data['role_names']);

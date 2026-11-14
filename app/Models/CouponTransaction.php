@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** Cobro (o reversa, con monto negativo y `reversed_of`) contra un cupón. */
 class CouponTransaction extends Model
 {
+    public const KIND_REDEEM = 'REDEEM';
+
+    public const KIND_TOPUP = 'TOPUP';
+
+    public const KIND_REVERSAL = 'REVERSAL';
+
     protected $table = 'coupon_transactions';
 
     protected $primaryKey = 'transaction_id';
@@ -25,6 +31,7 @@ class CouponTransaction extends Model
         'legacy_site_id',
         'ip_address',
         'reversed_of',
+        'kind',
     ];
 
     public function user(): BelongsTo

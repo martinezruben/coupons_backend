@@ -47,7 +47,7 @@ class CouponAuthTest extends TestCase
         $this->postJson('/api/login', ['username' => $user->username, 'password' => 'Correct-Horse-9!'])->assertOk();
 
         $token = $user->tokens()->first();
-        $this->assertSame(['coupon:read', 'coupon:redeem', 'coupon:reverse'], $token->abilities);
+        $this->assertSame(['coupon:read', 'coupon:redeem', 'coupon:topup', 'coupon:reverse'], $token->abilities);
         $this->assertNotNull($token->expires_at);
     }
 

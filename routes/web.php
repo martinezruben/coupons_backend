@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ApiRequestLogDetailController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CouponAdminController;
+use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
@@ -72,8 +73,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/coupons/{type}/issue', [CouponAdminController::class, 'issueForm'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue');
         Route::post('/coupons/{type}/issue', [CouponAdminController::class, 'issue'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue.store');
         Route::post('/coupons/{type}/{id}/toggle', [CouponAdminController::class, 'toggle'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.toggle');
+        Route::post('/coupons/{type}/{id}/topup', [CouponAdminController::class, 'topUp'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.topup');
         Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');
         Route::post('/coupon-transactions/{id}/reverse', [CouponAdminController::class, 'reverse'])->whereNumber('id')->name('coupon-transactions.reverse');
+
+        // Reportes de canjes
+        Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');
 
         Route::get('/screens/{screen}', [ScreenCrudController::class, 'index'])->name('screens.index');
         Route::get('/screens/{screen}/create', [ScreenCrudController::class, 'create'])->name('screens.create');
