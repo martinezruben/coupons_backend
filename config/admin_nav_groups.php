@@ -1,13 +1,29 @@
 <?php
 
 /**
- * Grupos del sidebar (estilo Snow: secciones colapsables con ítems indentados).
- *
- * Cada pantalla con CRUD en routes/web.php (`admin.screens.*`) debe aparecer aquí,
- * salvo vistas solo-detalle (p. ej. líneas/pagos de transacción): esas llevan
- * `exclude_from_nav` en config/admin_screens.php y no se listan.
+ * Grupos de la navegación lateral. Cada pantalla con CRUD en routes/web.php (`admin.screens.*`) debe
+ * aparecer aquí, salvo vistas de solo detalle (`exclude_from_nav` en config/admin_screens.php).
+ * `system` recibe además, según permisos, «Permisos por rol», «Parámetros del sistema» y «Pulse».
  */
 return [
+    [
+        'key' => 'customers',
+        'icon' => 'user-group',
+        'label' => 'Clientes',
+        'screens' => ['customers'],
+    ],
+    [
+        'key' => 'coupons',
+        'icon' => 'gift',
+        'label' => 'Cupones',
+        'screens' => ['coupon-batches', 'coupon-activations', 'coupons', 'coupon-barcodes', 'coupon-transactions', 'topup-rules'],
+    ],
+    [
+        'key' => 'reports',
+        'icon' => 'chart-bar',
+        'label' => 'Reportes',
+        'screens' => ['coupon-reports', 'coupon-audit-logs'],
+    ],
     [
         'key' => 'infra',
         'icon' => 'building-office-2',
@@ -15,27 +31,9 @@ return [
         'screens' => ['locations', 'devices', 'licenses'],
     ],
     [
-        'key' => 'coupons',
-        'icon' => 'gift',
-        'label' => 'Cupones',
-        'screens' => ['coupons', 'coupon-barcodes', 'coupon-transactions', 'coupon-reports', 'topup-rules', 'coupon-audit-logs'],
-    ],
-    [
-        'key' => 'ops',
-        'icon' => 'briefcase',
-        'label' => 'Operación',
-        'screens' => ['android-users'],
-    ],
-    [
-        'key' => 'logs',
-        'icon' => 'arrows-right-left',
-        'label' => 'Bitácora',
-        'screens' => ['api-request-logs'],
-    ],
-    [
         'key' => 'system',
         'icon' => 'wrench-screwdriver',
-        'label' => 'Sistema',
-        'screens' => ['admin-users', 'roles', 'audit-log'],
+        'label' => 'Configuración',
+        'screens' => ['android-users', 'admin-users', 'roles', 'audit-log', 'api-request-logs'],
     ],
 ];

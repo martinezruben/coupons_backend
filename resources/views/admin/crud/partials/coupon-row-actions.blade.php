@@ -6,9 +6,23 @@
     $btn = 'snow-btn-secondary snow-btn-sm';
 @endphp
 
-@if($couponType)
-    @if($perm('toggle'))
-        @php $isActive = (int) $item->coupon_active === 1; @endphp
+@if($screen === 'coupon-batches')
+    <a href="{{ route('admin.coupon-batches.show', $item) }}" class="{{ $btn }}">Ver</a>
+    @if($perm('download') && $item->hasExportFile())
+        <a href="{{ route('admin.coupon-batches.download', $item) }}" class="{{ $btn }}">Descargar</a>
+    @endif
+@elseif($screen === 'coupon-activations')
+    @if($item->status === 'pending' && ($cancelPerm = \App\Support\AdminRbac::actionPermissions('coupon-batches')['cancel']['permission'] ?? null) && $admin?->can($cancelPerm))
+        <form method="POST" action="{{ route('admin.activation-orders.cancel', $item) }}" class="inline"
+              onsubmit="const r = prompt('Motivo de la cancelación (opcional):'); if (r === null) return false; this.reason.value = r;">
+            @csrf
+            <input type="hidden" name="reason" value="">
+            <button type="submit" class="{{ $btn }}">Cancelar</button>
+        </form>
+    @endif
+@elseif($couponType)
+    @if($perm('toggle') && in_array($item->status, ['ACTIVE', 'INACTIVE'], true))
+        @php $isActive = $item->status === 'ACTIVE'; @endphp
         <form method="POST" action="{{ route('admin.coupons.toggle', [$couponType, $item->getKey()]) }}" class="inline"
               onsubmit="const r = prompt('Motivo para {{ $isActive ? 'desactivar' : 'activar' }} este cupón:'); if (!r || r.trim().length < 3) return false; this.reason.value = r;">
             @csrf
@@ -17,7 +31,7 @@
             <button type="submit" class="{{ $btn }}">{{ $isActive ? 'Desactivar' : 'Activar' }}</button>
         </form>
     @endif
-    @if($perm('topup') && (int) $item->coupon_active === 1)
+    @if($perm('topup') && $item->status === 'ACTIVE')
         <form method="POST" action="{{ route('admin.coupons.topup', [$couponType, $item->getKey()]) }}" class="inline"
               onsubmit="const a = prompt('Monto a recargar:'); if (!a || isNaN(a) || Number(a) <= 0) return false; const n = prompt('Nota (opcional, ej. referencia del pago):') || ''; this.amount.value = a; this.note.value = n;">
             @csrf

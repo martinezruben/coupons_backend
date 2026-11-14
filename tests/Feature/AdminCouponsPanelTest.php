@@ -85,59 +85,6 @@ class AdminCouponsPanelTest extends TestCase
             ->assertSee('Q1');
     }
 
-    public function test_issue_qr_coupons_returns_tokens_once_and_audits(): void
-    {
-        $admin = $this->admin('coupons.view', 'coupons.issue');
-        $this->actingAs($admin, 'admin');
-
-        $this->get(route('admin.coupons.issue', 'qr'))->assertOk();
-
-        $res = $this->post(route('admin.coupons.issue.store', 'qr'), ['quantity' => 3, 'amount' => '25.50', 'prefix' => 'nav', 'expire_date' => now()->addMonth()->toDateString()])
-            ->assertOk()->assertSee('Descargar CSV')->assertSee('@coupon=NAV', false);
-
-        $this->assertDatabaseCount('coupons', 3);
-        $row = DB::table('coupons')->first();
-        $this->assertStringStartsWith('NAV', $row->coupon_number);
-        $this->assertSame(32, strlen($row->coupon_token));
-        $this->assertSame('25.50', number_format((float) $row->coupon_balance, 2, '.', ''));
-        $this->assertStringContainsString('@token='.$row->coupon_token, $res->getContent());
-        $this->assertDatabaseHas('coupon_audit_logs', ['action' => 'issue', 'admin_user_id' => $admin->id, 'new_value' => '3']);
-
-        // El listado nunca vuelve a mostrar el token
-        $this->actingAs($admin, 'admin');
-        $this->get(route('admin.screens.index', 'coupons'))->assertDontSee($row->coupon_token);
-    }
-
-    public function test_issue_barcode_coupons_has_no_token(): void
-    {
-        $this->actingAs($this->admin('coupon_barcodes.view', 'coupon_barcodes.issue'), 'admin');
-
-        $this->post(route('admin.coupons.issue.store', 'barcode'), ['quantity' => 2, 'amount' => 10])->assertOk();
-
-        $this->assertDatabaseCount('coupons_codbar', 2);
-        $this->assertSame(12, strlen((string) DB::table('coupons_codbar')->value('coupon_number')));
-    }
-
-    public function test_issue_validates_input_and_requires_permission(): void
-    {
-        $this->actingAs($this->admin('coupons.view'), 'admin');
-        $this->get(route('admin.coupons.issue', 'qr'))->assertForbidden();
-        $this->post(route('admin.coupons.issue.store', 'qr'), ['quantity' => 1, 'amount' => 10])->assertForbidden();
-
-        $this->actingAs($this->admin('coupons.view', 'coupons.issue'), 'admin');
-        foreach ([
-            ['quantity' => 0, 'amount' => 10],
-            ['quantity' => 501, 'amount' => 10],
-            ['quantity' => 1, 'amount' => -1],
-            ['quantity' => 1, 'amount' => 1.005],
-            ['quantity' => 1, 'amount' => 10, 'expire_date' => now()->subDay()->toDateString()],
-            ['quantity' => 1, 'amount' => 10, 'prefix' => 'bad prefix!'],
-        ] as $body) {
-            $this->post(route('admin.coupons.issue.store', 'qr'), $body)->assertSessionHasErrors();
-        }
-        $this->assertDatabaseCount('coupons', 0);
-    }
-
     public function test_toggle_requires_permission_reason_and_audits(): void
     {
         $id = $this->qr('Q1');
@@ -200,10 +147,10 @@ class AdminCouponsPanelTest extends TestCase
         $this->qr('Q1');
 
         $this->actingAs($this->admin('coupons.view'), 'admin')->get(route('admin.screens.index', 'coupons'))
-            ->assertOk()->assertDontSee('Ajustar saldo')->assertDontSee('Emitir cupones');
+            ->assertOk()->assertDontSee('Ajustar saldo');
 
-        $this->actingAs($this->admin('coupons.view', 'coupons.adjust', 'coupons.issue'), 'admin')->get(route('admin.screens.index', 'coupons'))
-            ->assertOk()->assertSee('Ajustar saldo')->assertSee('Emitir cupones');
+        $this->actingAs($this->admin('coupons.view', 'coupons.adjust'), 'admin')->get(route('admin.screens.index', 'coupons'))
+            ->assertOk()->assertSee('Ajustar saldo');
     }
 
     public function test_rbac_matrix_lists_coupon_actions_and_seeder_grants_them(): void
@@ -217,7 +164,7 @@ class AdminCouponsPanelTest extends TestCase
 
         $this->seed(RbacSeeder::class);
         $manager = Role::findByName('ops-manager', 'admin');
-        $this->assertTrue($manager->hasPermissionTo('coupons.issue'));
+        $this->assertTrue($manager->hasPermissionTo('coupons.toggle'));
         $this->assertFalse($manager->hasPermissionTo('coupons.adjust'), 'ajustar saldo es solo super-admin');
         $this->assertFalse($manager->hasPermissionTo('coupon_transactions.reverse'));
         $this->assertTrue(Role::findByName('super-admin', 'admin')->hasPermissionTo('coupons.adjust'));

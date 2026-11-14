@@ -16,6 +16,12 @@ class CouponException extends Exception
         parent::__construct($message);
     }
 
+    /** @return array<string, mixed> */
+    public function extra(): array
+    {
+        return $this->extra;
+    }
+
     public function render(): JsonResponse
     {
         return response()->json(['error' => $this->getMessage()] + $this->extra, $this->status);

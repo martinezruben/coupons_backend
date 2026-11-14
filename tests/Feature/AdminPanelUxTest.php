@@ -113,7 +113,7 @@ class AdminPanelUxTest extends TestCase
 
         $html = $res->getContent();
         // secciones con el mismo nombre que el menú
-        foreach (['Infraestructura', 'Operación', 'Bitácora', 'Sistema'] as $section) {
+        foreach (['Clientes', 'Cupones', 'Reportes', 'Infraestructura', 'Configuración'] as $section) {
             $this->assertStringContainsString($section, $html);
         }
     }

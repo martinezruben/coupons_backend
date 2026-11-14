@@ -29,7 +29,11 @@
             $s = strtoupper($raw);
             $variant = match (true) {
                 in_array($s, ['SUCCESS', 'COMPLETED', 'PAID', 'COMPLETE', 'ACTIVE', 'APPROVED'], true) => ['bg' => 'bg-emerald-50', 'ink' => 'text-emerald-800', 'dot' => 'bg-emerald-500', 'text' => $raw],
-                in_array($s, ['FAILED', 'VOIDED', 'REJECTED', 'REVOKED', 'EXPIRED'], true) => ['bg' => 'bg-rose-50', 'ink' => 'text-rose-800', 'dot' => 'bg-rose-500', 'text' => $raw],
+                in_array($s, ['READY', 'APPLIED'], true) => ['bg' => 'bg-emerald-50', 'ink' => 'text-emerald-800', 'dot' => 'bg-emerald-500', 'text' => $raw],
+                in_array($s, ['GENERATING', 'GENERATED'], true) => ['bg' => 'bg-violet-50', 'ink' => 'text-violet-800', 'dot' => 'bg-violet-500', 'text' => $raw],
+                $s === 'ASSIGNED' => ['bg' => 'bg-sky-50', 'ink' => 'text-sky-900', 'dot' => 'bg-sky-500', 'text' => $raw],
+                in_array($s, ['CANCELLED', 'INACTIVE'], true) => ['bg' => 'bg-slate-100', 'ink' => 'text-slate-700', 'dot' => 'bg-slate-400', 'text' => $raw],
+                in_array($s, ['FAILED', 'VOID', 'VOIDED', 'REJECTED', 'REVOKED', 'EXPIRED'], true) => ['bg' => 'bg-rose-50', 'ink' => 'text-rose-800', 'dot' => 'bg-rose-500', 'text' => $raw],
                 in_array($s, ['PENDING', 'IN_PROGRESS', 'IN PROGRESS'], true) => ['bg' => 'bg-violet-50', 'ink' => 'text-violet-800', 'dot' => 'bg-violet-500', 'text' => $raw],
                 default => ['bg' => 'bg-amber-50', 'ink' => 'text-amber-900', 'dot' => 'bg-amber-500', 'text' => $raw],
             };
@@ -53,6 +57,12 @@
                 $s === 'TRANSFER' => ['bg' => 'bg-violet-50', 'ink' => 'text-violet-800', 'dot' => 'bg-violet-500', 'text' => $raw],
                 default => ['bg' => 'bg-amber-50', 'ink' => 'text-amber-900', 'dot' => 'bg-amber-500', 'text' => $raw],
             };
+        } elseif ($field === 'mode' && is_string($raw)) {
+            $variant = match (strtoupper($raw)) {
+                'NOW' => ['bg' => 'bg-emerald-50', 'ink' => 'text-emerald-800', 'dot' => 'bg-emerald-500', 'text' => $raw],
+                'SCHEDULED' => ['bg' => 'bg-violet-50', 'ink' => 'text-violet-800', 'dot' => 'bg-violet-500', 'text' => $raw],
+                default => ['bg' => 'bg-sky-50', 'ink' => 'text-sky-900', 'dot' => 'bg-sky-500', 'text' => $raw],
+            };
         } elseif ($field === 'kind' && is_string($raw)) {
             $variant = match (strtoupper($raw)) {
                 'TOPUP' => ['bg' => 'bg-sky-50', 'ink' => 'text-sky-900', 'dot' => 'bg-sky-500', 'text' => $raw],
@@ -66,7 +76,7 @@
         }
 
         // Valores enumerados guardados en inglés se muestran en español (config/admin_labels.php)
-        if (in_array($field, ['status', 'payment_method', 'role', 'operation', 'kind'], true)) {
+        if (in_array($field, ['status', 'payment_method', 'role', 'operation', 'kind', 'mode'], true)) {
             $variant['text'] = \App\Support\AdminGridCell::valueLabel($field, $raw);
         }
 

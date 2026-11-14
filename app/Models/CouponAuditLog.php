@@ -20,4 +20,9 @@ class CouponAuditLog extends Model
     {
         return $this->belongsTo(AdminUser::class);
     }
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(CouponBatch::class, 'batch_id');
+    }
 }
