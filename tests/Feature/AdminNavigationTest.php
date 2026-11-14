@@ -66,15 +66,16 @@ class AdminNavigationTest extends TestCase
             ->assertDontSee('disabled aria-disabled="true"', false);
     }
 
-    public function test_sidebar_groups_the_menu_like_the_reference_structure(): void
+    public function test_navbar_groups_the_menu_like_the_reference_structure(): void
     {
         $admin = AdminUser::factory()->create();
         $admin->assignRole(Role::findOrCreate('super-admin', 'admin'));
 
         $html = $this->actingAs($admin, 'admin')->get(route('admin.dashboard'))->assertOk()->getContent();
 
-        // Barra lateral con las secciones del menú y la página actual marcada
-        $this->assertStringContainsString('<aside', $html);
+        // Barra horizontal con un desplegable por sección y la página actual marcada
+        $this->assertStringContainsString('class="topnav"', $html);
+        $this->assertStringNotContainsString('<aside', $html);
         foreach (['Inicio', 'Clientes', 'Cupones', 'Reportes', 'Infraestructura', 'Configuración'] as $section) {
             $this->assertStringContainsString($section, $html);
         }
@@ -87,7 +88,7 @@ class AdminNavigationTest extends TestCase
         $this->assertStringNotContainsString('fonts.bunny', $html);
     }
 
-    public function test_sidebar_hides_what_the_admin_cannot_see(): void
+    public function test_navbar_hides_what_the_admin_cannot_see(): void
     {
         $this->actingAs($this->admin('customers.view'), 'admin')->get(route('admin.dashboard'))->assertOk()
             ->assertSee(route('admin.screens.index', 'customers'))
