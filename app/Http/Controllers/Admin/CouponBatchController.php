@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\GenerateCouponBatch;
 use App\Models\ActivationOrder;
 use App\Models\CouponBatch;
+use App\Models\CouponPrefix;
 use App\Models\Customer;
 use App\Services\CouponActivationService;
 use App\Services\CouponBatchGenerator;
@@ -34,22 +35,34 @@ class CouponBatchController extends Controller
     {
         $this->authorizeAction('generate');
 
-        return view('admin.coupon-batches.create', ['max' => CouponBatchGenerator::MAX_QUANTITY]);
+        return view('admin.coupon-batches.create', [
+            'max' => CouponBatchGenerator::MAX_QUANTITY,
+            'maxAmount' => (int) config('coupons.max_amount'),
+            'prefixes' => CouponPrefix::query()->where('is_active', true)->orderBy('prefix')->get(['prefix', 'description']),
+            // Vencimiento por defecto: un año contado desde mañana
+            'defaultExpire' => now()->addDay()->addYear()->toDateString(),
+            'tomorrow' => now()->addDay()->toDateString(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $this->authorizeAction('generate');
 
+        if (is_string($request->input('prefix'))) {
+            $request->merge(['prefix' => strtoupper(trim($request->input('prefix')))]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'coupon_type' => ['required', Rule::in(['QRCODE', 'CODBAR'])],
             'quantity' => ['required', 'integer', 'min:1', 'max:'.CouponBatchGenerator::MAX_QUANTITY],
-            'amount' => ['required', 'numeric', 'gt:0', 'max:'.config('coupons.max_amount'), 'decimal:0,2'],
+            'amount' => ['required', 'integer', 'min:1', 'max:'.(int) config('coupons.max_amount')],
             'expire_date' => ['nullable', 'date', 'after:today'],
-            'prefix' => ['nullable', 'alpha_num', 'max:6'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ], [], ['name' => 'nombre', 'quantity' => 'cantidad', 'amount' => 'monto', 'expire_date' => 'fecha de vencimiento', 'prefix' => 'prefijo', 'notes' => 'notas']);
+            'prefix' => ['nullable', Rule::exists('coupon_prefixes', 'prefix')->where('is_active', true)],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ], ['amount.integer' => 'El monto debe ser un número entero, sin decimales.', 'prefix.exists' => 'Elige un prefijo del catálogo (o déjalo vacío).'],
+            ['name' => 'nombre', 'quantity' => 'cantidad', 'amount' => 'monto', 'expire_date' => 'fecha de vencimiento', 'prefix' => 'prefijo', 'notes' => 'notas']);
 
         try {
             $batch = CouponBatchGenerator::create($data, $request->user('admin'), $request->ip());

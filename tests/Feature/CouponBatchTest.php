@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AdminUser;
 use App\Models\CouponBatch;
+use App\Models\CouponPrefix;
 use App\Models\Customer;
 use App\Models\User;
 use App\Services\CouponActivationService;
@@ -33,7 +34,9 @@ class CouponBatchTest extends TestCase
 
     private function payload(array $over = []): array
     {
-        return array_merge(['name' => 'Navidad', 'coupon_type' => 'QRCODE', 'quantity' => 5, 'amount' => '25.50', 'prefix' => 'nav', 'expire_date' => now()->addMonth()->toDateString()], $over);
+        CouponPrefix::firstOrCreate(['prefix' => 'NAV'], ['description' => 'Navidad']);
+
+        return array_merge(['name' => 'Navidad', 'coupon_type' => 'QRCODE', 'quantity' => 5, 'amount' => 25, 'prefix' => 'NAV', 'expire_date' => now()->addMonth()->toDateString()], $over);
     }
 
     private function generate(AdminUser $admin, array $over = []): CouponBatch
@@ -80,7 +83,7 @@ class CouponBatchTest extends TestCase
             $this->assertMatchesRegularExpression('/^NAV\d{12}$/', $row->coupon_number);
             $this->assertSame(71 - 4, strlen($row->coupon_token)); // h1: + sha256
             $this->assertStringStartsWith('h1:', $row->coupon_token);
-            $this->assertSame('25.50', number_format((float) $row->coupon_balance, 2, '.', ''));
+            $this->assertSame('25.00', number_format((float) $row->coupon_balance, 2, '.', ''));
         }
         $this->assertCount(50, $rows->pluck('coupon_number')->unique());
 
@@ -161,13 +164,59 @@ class CouponBatchTest extends TestCase
         $this->actingAs($this->admin('coupon_batches.generate'), 'admin');
 
         foreach ([
-            ['quantity' => 0], ['quantity' => 20001], ['quantity' => 'x'], ['amount' => -1], ['amount' => 0], ['amount' => 1.005],
+            ['quantity' => 0], ['quantity' => 20001], ['quantity' => 'x'], ['amount' => -1], ['amount' => 0], ['amount' => 1.005], ['amount' => '25.50'], ['amount' => 'abc'], ['prefix' => 'NOEXISTE'],
             ['expire_date' => now()->subDay()->toDateString()], ['prefix' => 'bad prefix!'], ['prefix' => 'TOOLONG1'],
             ['coupon_type' => 'OTRO'], ['name' => ''],
         ] as $bad) {
             $this->post(route('admin.coupon-batches.store'), $this->payload($bad))->assertSessionHasErrors();
         }
         $this->assertDatabaseCount('coupon_batches', 0);
+    }
+
+    public function test_the_form_defaults_to_one_year_from_tomorrow_and_lists_active_prefixes(): void
+    {
+        CouponPrefix::create(['prefix' => 'abc', 'description' => 'Campaña ABC']);
+        CouponPrefix::create(['prefix' => 'OFF', 'is_active' => false]);
+        $this->actingAs($this->admin('coupon_batches.generate'), 'admin');
+
+        $html = $this->get(route('admin.coupon-batches.create'))->assertOk()->getContent();
+
+        $expire = now()->addDay()->addYear()->toDateString();
+        $this->assertStringContainsString('"'.$expire.'"', str_replace("'", '"', $html));
+        $this->assertStringContainsString('min="'.now()->addDay()->toDateString().'"', $html);
+        $this->assertStringContainsString('ABC — Campaña ABC', $html);
+        $this->assertStringNotContainsString('>OFF', $html, 'un prefijo inactivo no se ofrece');
+        $this->assertStringContainsString('<textarea id="notes"', $html);
+        $this->assertStringContainsString('step="1"', $html);
+    }
+
+    public function test_the_amount_must_be_a_whole_number_and_the_prefix_comes_from_the_catalog(): void
+    {
+        CouponPrefix::create(['prefix' => 'OFF', 'is_active' => false]);
+        $this->actingAs($this->admin('coupon_batches.generate'), 'admin');
+
+        $this->post(route('admin.coupon-batches.store'), $this->payload(['amount' => '12.5']))->assertSessionHasErrors(['amount' => 'El monto debe ser un número entero, sin decimales.']);
+        $this->post(route('admin.coupon-batches.store'), $this->payload(['prefix' => 'OFF']))->assertSessionHasErrors('prefix');
+        $this->assertDatabaseCount('coupon_batches', 0);
+
+        $this->post(route('admin.coupon-batches.store'), $this->payload(['amount' => '40', 'notes' => str_repeat('n', 2000)]))->assertSessionHasNoErrors();
+        $batch = CouponBatch::first();
+        $this->assertSame('40.00', number_format((float) $batch->amount, 2, '.', ''));
+        $this->assertSame('NAV', $batch->prefix);
+        $this->assertSame(2000, mb_strlen($batch->notes));
+    }
+
+    public function test_prefixes_are_managed_in_their_own_screen(): void
+    {
+        $admin = $this->admin('coupon_prefixes.view', 'coupon_prefixes.edit');
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.screens.store', 'coupon-prefixes'), ['prefix' => 'nav2', 'description' => 'Navidad 2', 'is_active' => 1])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('coupon_prefixes', ['prefix' => 'NAV2']);
+        $this->post(route('admin.screens.store', 'coupon-prefixes'), ['prefix' => 'NAV2'])->assertSessionHasErrors('prefix');
+        $this->post(route('admin.screens.store', 'coupon-prefixes'), ['prefix' => 'TOOLONG1'])->assertSessionHasErrors('prefix');
+        $this->post(route('admin.screens.store', 'coupon-prefixes'), ['prefix' => 'a-b'])->assertSessionHasErrors('prefix');
+        $this->get(route('admin.screens.index', 'coupon-prefixes'))->assertOk()->assertSee('NAV2');
     }
 
     public function test_every_batch_action_needs_its_own_permission(): void
@@ -284,7 +333,7 @@ class CouponBatchTest extends TestCase
         $customer = Customer::create(['name' => 'Cliente X']);
         app(CouponActivationService::class)->submit($batch, $customer, 'now', null, 'all', [], null, $operator, null);
 
-        $this->getJson("/api/balance?$query")->assertOk()->assertJsonPath('active', true)->assertJsonPath('balance', '25.50');
+        $this->getJson("/api/balance?$query")->assertOk()->assertJsonPath('active', true)->assertJsonPath('balance', '25.00');
         $this->postJson('/api/transaction', $redeem)->assertOk();
         $this->postJson('/api/transaction', ['tokens' => ['mal']] + $redeem)->assertStatus(404);
     }

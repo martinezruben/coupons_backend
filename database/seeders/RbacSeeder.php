@@ -52,7 +52,7 @@ class RbacSeeder extends Seeder
         }
         // Reportes y reglas de recarga: ver. Editar reglas (crea condiciones de dinero) es del super-admin.
         // Lotes, activaciones y clientes: ver. Generar, descargar, activar y anular se asignan por rol (fase de permisos).
-        foreach (['coupon-transactions', 'coupon-audit-logs', 'coupon-reports', 'coupon-batch-report', 'coupon-customer-report', 'topup-rules', 'coupon-batches', 'coupon-activations', 'customers'] as $screenKey) {
+        foreach (['coupon-transactions', 'coupon-audit-logs', 'coupon-reports', 'coupon-batch-report', 'coupon-customer-report', 'topup-rules', 'coupon-prefixes', 'coupon-batches', 'coupon-activations', 'customers'] as $screenKey) {
             $r = AdminRbac::resourceKey($screenKey);
             $manager[] = "$r.view";
             $viewer[] = "$r.view";

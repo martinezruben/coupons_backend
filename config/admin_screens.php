@@ -8,6 +8,7 @@ use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Models\CouponAuditLog;
 use App\Models\CouponBatch;
+use App\Models\CouponPrefix;
 use App\Models\CouponTransaction;
 use App\Models\Customer;
 use App\Models\Device;
@@ -559,6 +560,32 @@ return [
             'default_sort' => ['key' => 'id', 'direction' => 'desc'],
         ],
     ],
+    'coupon-prefixes' => [
+        'model' => CouponPrefix::class,
+        'label' => 'Prefijos de cupones',
+        'description' => 'Catálogo de prefijos para generar lotes',
+        'icon' => 'tag',
+        'labels' => [
+            'prefix' => 'Prefijo (1 a 6 letras o números)',
+            'description' => 'Descripción',
+            'is_active' => 'Activo',
+        ],
+        'fields' => ['prefix', 'description', 'is_active'],
+        'grid' => [
+            'filters' => [
+                'is_active' => [
+                    'label' => 'Activo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', '1' => 'Sí', '0' => 'No'],
+                    'apply' => ['type' => 'column', 'column' => 'is_active'],
+                ],
+            ],
+            'sortable' => ['prefix', 'is_active'],
+            'search_columns' => ['prefix', 'description'],
+            'default_sort' => ['key' => 'prefix', 'direction' => 'asc'],
+        ],
+    ],
+
     'topup-rules' => [
         'model' => TopUpRule::class,
         'label' => 'Reglas de recarga',
@@ -810,6 +837,8 @@ return [
         'label' => 'Auditoría',
         'icon' => 'shield-check',
         'readonly' => true,
+        'route' => 'admin.audit.index',
+        'active_pattern' => 'admin.audit.*',
         'fields' => ['created_at', 'admin_user_id', 'action', 'entity_type', 'entity_id', 'changes', 'ip'],
         'labels' => [
             'created_at' => 'Fecha / hora',

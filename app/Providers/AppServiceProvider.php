@@ -2,12 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\ActivationOrder;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
+use App\Models\BarcodeCoupon;
+use App\Models\Coupon;
+use App\Models\CouponBatch;
+use App\Models\CouponPrefix;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
+use App\Models\RoleLimit;
 use App\Models\SystemParameter;
+use App\Models\TopUpRule;
 use App\Models\User;
 use App\Observers\AuditsModelChanges;
 use App\Observers\LocationContingencyObserver;
@@ -93,6 +101,14 @@ class AppServiceProvider extends ServiceProvider
             User::class,
             AdminUser::class,
             SystemParameter::class,
+            CouponBatch::class,
+            Customer::class,
+            TopUpRule::class,
+            CouponPrefix::class,
+            ActivationOrder::class,
+            Coupon::class,
+            BarcodeCoupon::class,
+            RoleLimit::class,
         ]);
         Event::listen(Login::class, function (Login $event): void {
             if ($event->user instanceof AdminUser) {

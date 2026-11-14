@@ -76,6 +76,15 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 
 `/admin` muestra KPIs y gráficas (7/14/30 días, filtro por cliente). Reportes en «Reportes»: *Por lote* y *Por cliente* (filtros y CSV con celdas neutralizadas contra fórmulas) y *Canjes*.
 
+## Generar lotes y auditoría total
+
+**Formulario «Generar lote»:** vencimiento por defecto de un año contado desde mañana (editable o vacío); el monto de cada cupón es un **número entero**; el prefijo se elige del catálogo **Prefijos de cupones** (menú Cupones; solo los activos, sin escribirlo a mano); las notas son un área de hasta 2,000 caracteres. Un resumen en vivo muestra el valor total del lote.
+
+**Auditoría (`/admin/audit`):** se guarda *todo* movimiento del panel con fecha, usuario, IP y navegador:
+- **Clics y consultas:** cada página abierta y cada acción enviada (ruta, método, resultado, datos enviados sin contraseñas, tokens, PIN ni códigos; resumen en español).
+- **Cambios de datos:** altas, ediciones y bajas con el valor **antes y después** (lotes, clientes, prefijos, reglas, activaciones, cupones, usuarios, roles, límites, parámetros…). Los cambios hechos por la API o por jobs no ensucian esta bitácora (tienen su propio registro de cupones).
+- La pantalla filtra por usuario, tipo de registro, movimiento, módulo, fechas y texto; cada fila se abre para ver el detalle técnico y exporta a CSV. La retención la controla `pos:prune-logs`.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

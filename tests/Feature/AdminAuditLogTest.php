@@ -172,12 +172,10 @@ class AdminAuditLogTest extends TestCase
     {
         $location = Location::create(['name' => 'Sede Lista', 'is_active' => true]);
 
-        $res = $this->get(route('admin.screens.index', 'audit-log'));
+        $res = $this->get(route('admin.audit.index'));
         $res->assertOk()->assertSee($location->id)->assertSee('Creación');
 
-        $res = $this->get(route('admin.screens.index', 'audit-log').'?'.http_build_query([
-            'filter' => ['entity_type' => 'Location'],
-        ]));
-        $res->assertOk()->assertSee('Location');
+        $res = $this->get(route('admin.audit.index', ['entity_type' => 'Location']));
+        $res->assertOk()->assertSee('Localidad');
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminTwoFactorController;
 use App\Http\Controllers\Admin\AdminUserSecurityController;
 use App\Http\Controllers\Admin\ApiRequestLogDetailController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CouponAdminController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\RoleRbacMatrixController;
 use App\Http\Controllers\Admin\ScreenCrudController;
 use App\Http\Controllers\Admin\SystemSettingsController;
+use App\Http\Middleware\AuditAdminActivity;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin');
@@ -33,7 +35,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/2fa', [AdminTwoFactorController::class, 'verify'])->name('2fa.verify');
     });
 
-    Route::middleware(['auth:admin', 'admin.active'])->group(function (): void {
+    Route::middleware(['auth:admin', 'admin.active', AuditAdminActivity::class])->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 
@@ -49,6 +51,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/devices/{device}/unblock', [DeviceAccessController::class, 'unblock'])->name('devices.unblock');
 
         Route::get('/api-request-logs/{id}', [ApiRequestLogDetailController::class, 'show'])->name('api-request-logs.show');
+        Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
         Route::get('/audit-logs/{id}', [AuditLogDetailController::class, 'show'])->name('audit-logs.show');
 
         Route::post('/admin-users/{adminUser}/reset-2fa', [AdminUserSecurityController::class, 'resetTwoFactor'])->name('admin-users.reset-2fa');
