@@ -82,6 +82,24 @@ class CouponAdminController extends Controller
             $screen, 'Saldo ajustado.');
     }
 
+    public function topUp(Request $request, string $type, int $id): RedirectResponse
+    {
+        $screen = $this->screenFor($type);
+        $this->authorizeAction($screen, 'topup');
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0', 'max:'.config('coupons.max_amount'), 'decimal:0,2'],
+            'note' => ['nullable', 'string', 'max:150'],
+        ], [], ['amount' => 'monto', 'note' => 'nota']);
+
+        $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
+        $number = $model::where('coupon_id', $id)->value('coupon_number');
+        abort_if($number === null, 404);
+
+        // Desde el panel no hay dispositivo ni localidad: no se exige token ni se evalúan reglas de localidad.
+        return $this->run(fn () => $this->service($type)->topUp($number, null, (string) $data['amount'], null, $request->user('admin'), $request->ip(), false, $data['note'] ?? null),
+            $screen, 'Cupón recargado.');
+    }
+
     public function reverse(Request $request, int $id): RedirectResponse
     {
         $this->authorizeAction('coupon-transactions', 'reverse');

@@ -18,7 +18,7 @@ return [
         'key' => 'coupons',
         'icon' => 'gift',
         'label' => 'Cupones',
-        'screens' => ['coupons', 'coupon-barcodes', 'coupon-transactions', 'coupon-audit-logs'],
+        'screens' => ['coupons', 'coupon-barcodes', 'coupon-transactions', 'coupon-reports', 'topup-rules', 'coupon-audit-logs'],
     ],
     [
         'key' => 'ops',

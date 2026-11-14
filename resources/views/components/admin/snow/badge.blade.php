@@ -53,6 +53,12 @@
                 $s === 'TRANSFER' => ['bg' => 'bg-violet-50', 'ink' => 'text-violet-800', 'dot' => 'bg-violet-500', 'text' => $raw],
                 default => ['bg' => 'bg-amber-50', 'ink' => 'text-amber-900', 'dot' => 'bg-amber-500', 'text' => $raw],
             };
+        } elseif ($field === 'kind' && is_string($raw)) {
+            $variant = match (strtoupper($raw)) {
+                'TOPUP' => ['bg' => 'bg-sky-50', 'ink' => 'text-sky-900', 'dot' => 'bg-sky-500', 'text' => $raw],
+                'REVERSAL' => ['bg' => 'bg-rose-50', 'ink' => 'text-rose-800', 'dot' => 'bg-rose-500', 'text' => $raw],
+                default => ['bg' => 'bg-emerald-50', 'ink' => 'text-emerald-800', 'dot' => 'bg-emerald-500', 'text' => $raw],
+            };
         } elseif ($field === 'role' && is_string($raw)) {
             $variant = ['bg' => 'bg-primary-50', 'ink' => 'text-primary-700', 'dot' => 'bg-primary-500', 'text' => $raw];
         } else {
@@ -60,7 +66,7 @@
         }
 
         // Valores enumerados guardados en inglés se muestran en español (config/admin_labels.php)
-        if (in_array($field, ['status', 'payment_method', 'role', 'operation'], true)) {
+        if (in_array($field, ['status', 'payment_method', 'role', 'operation', 'kind'], true)) {
             $variant['text'] = \App\Support\AdminGridCell::valueLabel($field, $raw);
         }
 

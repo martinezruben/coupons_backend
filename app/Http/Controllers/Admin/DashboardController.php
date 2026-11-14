@@ -29,7 +29,11 @@ class DashboardController extends Controller
         $outstanding = (float) $activeCoupons(Coupon::class)->sum('coupon_balance')
             + (float) $activeCoupons(BarcodeCoupon::class)->sum('coupon_balance');
 
-        $redeemed = fn ($from) => (float) CouponTransaction::query()->where('created_at', '>=', $from)->sum('transaction_amount');
+        // Cobrado neto: cobros menos reversas (las recargas no cuentan como cobro).
+        $redeemed = fn ($from) => (float) CouponTransaction::query()->where('created_at', '>=', $from)
+            ->whereIn('kind', [CouponTransaction::KIND_REDEEM, CouponTransaction::KIND_REVERSAL])->sum('transaction_amount');
+        $toppedUp = fn ($from) => (float) CouponTransaction::query()->where('created_at', '>=', $from)
+            ->where('kind', CouponTransaction::KIND_TOPUP)->sum('transaction_amount');
 
         $expiring = fn (string $model) => $activeCoupons($model)
             ->whereNotNull('coupon_expire_date')->where('coupon_expire_date', '<=', $soon)->where('coupon_balance', '>', 0)->count();
@@ -40,7 +44,8 @@ class DashboardController extends Controller
                 ['label' => 'Saldo pendiente', 'value' => Format::money($outstanding)],
                 ['label' => 'Cobrado hoy', 'value' => Format::money($redeemed($today))],
                 ['label' => 'Cobrado (7 días)', 'value' => Format::money($redeemed($week))],
-                ['label' => 'Cobros hoy', 'value' => (string) CouponTransaction::query()->where('created_at', '>=', $today)->where('transaction_amount', '>', 0)->count()],
+                ['label' => 'Cobros hoy', 'value' => (string) CouponTransaction::query()->where('created_at', '>=', $today)->where('kind', CouponTransaction::KIND_REDEEM)->count()],
+                ['label' => 'Recargado hoy', 'value' => Format::money($toppedUp($today))],
                 ['label' => 'Por vencer (30 días)', 'value' => (string) ($expiring(Coupon::class) + $expiring(BarcodeCoupon::class))],
             ],
             'stats' => [

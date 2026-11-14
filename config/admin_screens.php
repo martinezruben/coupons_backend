@@ -11,6 +11,7 @@ use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
 use App\Models\SystemParameter;
+use App\Models\TopUpRule;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 
@@ -198,7 +199,7 @@ return [
             'coupon_balance' => 'Saldo',
         ],
         'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
-        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo'],
+        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
                 'coupon_active' => [
@@ -233,7 +234,7 @@ return [
             'coupon_balance' => 'Saldo',
         ],
         'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
-        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo'],
+        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
                 'coupon_active' => [
@@ -262,6 +263,7 @@ return [
         'labels' => [
             'transaction_id' => 'N.º',
             'created_at' => 'Fecha/hora',
+            'kind' => 'Movimiento',
             'coupon_number' => 'Cupón',
             'coupon_type' => 'Tipo',
             'transaction_amount' => 'Monto',
@@ -270,7 +272,7 @@ return [
             'device_id' => 'Dispositivo',
             'reversed_of' => 'Reversa de',
         ],
-        'fields' => ['transaction_id', 'created_at', 'coupon_number', 'coupon_type', 'transaction_amount', 'user_id', 'location_id', 'device_id', 'reversed_of'],
+        'fields' => ['transaction_id', 'created_at', 'kind', 'coupon_number', 'coupon_type', 'transaction_amount', 'user_id', 'location_id', 'device_id', 'reversed_of'],
         'actions' => ['reverse' => 'Revertir'],
         'foreign_labels' => [
             'user_id' => ['relation' => 'user', 'attribute' => 'username', 'header' => 'Usuario'],
@@ -279,6 +281,12 @@ return [
         ],
         'grid' => [
             'filters' => [
+                'kind' => [
+                    'label' => 'Movimiento',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'REDEEM' => 'Cobro', 'TOPUP' => 'Recarga', 'REVERSAL' => 'Reversa'],
+                    'apply' => ['type' => 'column', 'column' => 'kind'],
+                ],
                 'coupon_type' => [
                     'label' => 'Tipo',
                     'type' => 'select',
@@ -305,7 +313,7 @@ return [
                 ],
             ],
             'money' => ['transaction_amount'],
-            'sortable' => ['transaction_id', 'created_at', 'coupon_number', 'coupon_type', 'transaction_amount'],
+            'sortable' => ['transaction_id', 'created_at', 'kind', 'coupon_number', 'coupon_type', 'transaction_amount'],
             'search_columns' => ['coupon_number'],
             'default_sort' => ['key' => 'transaction_id', 'direction' => 'desc'],
         ],
@@ -337,7 +345,7 @@ return [
                 'action' => [
                     'label' => 'Acción',
                     'type' => 'select',
-                    'options' => ['' => 'Todas', 'issue' => 'Emisión', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa', 'activate' => 'Activación', 'deactivate' => 'Desactivación'],
+                    'options' => ['' => 'Todas', 'issue' => 'Emisión', 'topup' => 'Recarga', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa', 'activate' => 'Activación', 'deactivate' => 'Desactivación'],
                     'apply' => ['type' => 'column', 'column' => 'action'],
                 ],
                 'date_from' => [
@@ -356,6 +364,53 @@ return [
             'default_sort' => ['key' => 'id', 'direction' => 'desc'],
         ],
     ],
+    'topup-rules' => [
+        'model' => TopUpRule::class,
+        'label' => 'Reglas de recarga',
+        'icon' => 'banknotes',
+        'labels' => [
+            'name' => 'Nombre',
+            'type' => 'Tipo de regla',
+            'coupon_type' => 'Aplica a',
+            'location_id' => 'Localidad',
+            'weekdays' => 'Días permitidos (1=lun … 7=dom, ej. 1,2,3)',
+            'max_daily_amount' => 'Tope diario por cupón',
+            'is_active' => 'Activa',
+        ],
+        'select_options' => [
+            'type' => [
+                'location' => 'Por localidad: solo se recarga en esa localidad',
+                'weekday' => 'Por día de la semana: solo se recarga esos días',
+                'daily_amount' => 'Por monto diario: tope de recarga por cupón y día',
+            ],
+            'coupon_type' => ['' => 'Cupones QR y de barras', 'QRCODE' => 'Solo QR', 'CODBAR' => 'Solo código de barras'],
+        ],
+        'fields' => ['name', 'type', 'coupon_type', 'location_id', 'weekdays', 'max_daily_amount', 'is_active'],
+        'foreign_labels' => [
+            'location_id' => ['relation' => 'location', 'attribute' => 'name', 'header' => 'Localidad'],
+        ],
+        'grid' => [
+            'filters' => [
+                'type' => [
+                    'label' => 'Tipo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'location' => 'Localidad', 'weekday' => 'Día de la semana', 'daily_amount' => 'Monto diario'],
+                    'apply' => ['type' => 'column', 'column' => 'type'],
+                ],
+                'is_active' => [
+                    'label' => 'Activa',
+                    'type' => 'select',
+                    'options' => ['' => 'Todas', '1' => 'Sí', '0' => 'No'],
+                    'apply' => ['type' => 'column', 'column' => 'is_active'],
+                ],
+            ],
+            'money' => ['max_daily_amount'],
+            'sortable' => ['name', 'type', 'coupon_type', 'is_active'],
+            'search_columns' => ['name'],
+            'default_sort' => ['key' => 'id', 'direction' => 'desc'],
+        ],
+    ],
+    'coupon-reports' => ['label' => 'Reportes de canjes', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.*'],
     'api-request-logs' => [
         'model' => ApiRequestLog::class,
         'label' => 'Llamadas API',

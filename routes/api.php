@@ -34,6 +34,12 @@ Route::middleware(['auth:sanctum', 'coupon.user', 'throttle:coupon-api'])->group
     Route::post('/transactioncb', [CouponsCodbarController::class, 'transaction'])
         ->middleware(['abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
 
+    // Recargas (TOP-UP) sujetas a las reglas de topup_rules (MANAGER / ADMIN)
+    Route::post('/topup', [CouponsController::class, 'topUp'])
+        ->name('topup')->middleware(['abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
+    Route::post('/topupcb', [CouponsCodbarController::class, 'topUp'])
+        ->name('topupcb')->middleware(['abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
+
     // Reversa auditada (MANAGER / ADMIN)
     Route::post('/transactions/{transaction}/reverse', [CouponTransactionsController::class, 'reverse'])
         ->middleware(['abilities:coupon:reverse', 'throttle:coupon-restricted']);

@@ -10,17 +10,34 @@ La app Coupify usa las mismas rutas y formatos que la API anterior. Autenticaci�
 | GET | `/api/balance` | `coupon:read` | Saldo QR (`coupon_number` + `coupon_token`) |
 | POST | `/api/transaction` | `coupon:redeem` | Cobro QR (`amount`, `coupons[]`, `tokens[]`) |
 | GET/POST | `/api/balancecb`, `/api/transactioncb` | read / redeem | Código de barras |
+| POST | `/api/topup` · `/api/topupcb` | `coupon:topup` | Recarga (TOP-UP) de un cupón QR (`coupon_number`, `coupon_token`, `amount`) o de barras; sujeta a las reglas de recarga |
 | POST | `/api/transactions/{id}/reverse` | `coupon:reverse` | Reversa auditada (MANAGER/ADMIN) |
 | POST | `/api/restore`, `/api/restorecb` | `coupon:restore` | Fijar saldo (solo ADMIN, con `reason`, auditado) |
 
 Habilidades por rol: `config/coupons.php` → `role_abilities`. Los usuarios se crean y desactivan en el panel (Operación → usuarios de la app); desactivar corta el acceso al instante.
 
+## Recargas (TOP-UP) y sus reglas
+Una recarga suma saldo (y monto) a un cupón activo y no vencido, deja un movimiento `TOPUP` y una auditoría. Nunca supera `COUPONS_MAX_BALANCE` (100000.00 por defecto). Por defecto solo MANAGER y ADMIN tienen `coupon:topup` (`config/coupons.php`); las recargas **no** se pueden revertir y **no** cuentan como cobro en los reportes.
+
+Las reglas viven en **Cupones → Reglas de recarga** (solo el super-admin las edita). Sin reglas de un tipo, ese tipo no restringe nada; las reglas inactivas se ignoran y cada regla puede limitarse a cupones QR o de barras:
+
+| Tipo | Efecto |
+|---|---|
+| **Por localidad** | Solo se puede recargar en las localidades de las reglas activas (la localidad sale del dispositivo, `Device-Fingerprint`; sin dispositivo no hay localidad y se rechaza) |
+| **Por día de la semana** | Solo se puede recargar los días indicados (`1`=lunes … `7`=domingo, p. ej. `1,2,3`) |
+| **Por monto diario** | Tope de lo que se recarga a un mismo cupón en un día (varias reglas: aplica la menor; puede limitarse a una localidad) |
+
+Las recargas hechas desde el panel respetan las reglas de día y de monto, pero no la de localidad (no tienen dispositivo). Errores: 422 con `Top-ups are not allowed on this weekday` (+ `allowed_weekdays`), `... at this location`, `Daily top-up limit exceeded` (+ `daily_limit`, `topped_up_today`, `remaining`) o `Balance limit exceeded`.
+
+> Interpretación: las notas de la app («TOP-UP por localidad / por monto por día / por día de la semana») se implementaron como restricciones de recarga. Si se pensaban como bonos o descuentos, hay que ajustarlo.
+
 ## Panel de cupones (`/admin`, grupo «Cupones»)
 - **Cupones QR / de barras:** listado con filtros (estado, vencimiento), saldo y búsqueda. El token QR **nunca** se muestra en el listado.
 - **Cobros de cupones:** historial por tipo, localidad y fecha, con usuario, dispositivo y reversas.
 - **Auditoría de cupones:** emisiones, ajustes de saldo, reversas y activaciones, con el administrador, el motivo y la IP.
-- **Acciones con permiso propio** (matriz RBAC, columna «Acciones»): `Emitir` (genera números aleatorios y, en QR, el token; el contenido del QR es `@coupon=<número>@token=<token>` y se entrega una sola vez con CSV), `Activar/desactivar`, `Ajustar saldo` (nunca por encima del monto original) y `Revertir` cobros. Todas piden motivo y quedan auditadas.
-- El rol `ops-manager` recibe ver, emitir y activar/desactivar; **ajustar saldo y revertir** solo el super-admin (o un rol a medida).
+- **Reporte de canjes** (Cupones → Reportes de canjes): cobrado, reversado, neto y recargado entre dos fechas, agrupado por día, localidad, dispositivo, usuario o tipo de cupón; filtros por tipo y localidad; exportación CSV (UTF-8 con BOM, abre bien en Excel).
+- **Acciones con permiso propio** (matriz RBAC, columna «Acciones»): `Recargar` (con nota opcional), `Emitir` (genera números aleatorios y, en QR, el token; el contenido del QR es `@coupon=<número>@token=<token>` y se entrega una sola vez con CSV), `Activar/desactivar`, `Ajustar saldo` (nunca por encima del monto original) y `Revertir` cobros. Todas piden motivo y quedan auditadas.
+- El rol `ops-manager` recibe ver, emitir y activar/desactivar, más ver reportes y reglas; **recargar, ajustar saldo, revertir y editar reglas** solo el super-admin (o un rol a medida).
 - Inicio: saldo pendiente, cobrado hoy y en 7 días, cobros de hoy, cupones por vencer y últimos cobros.
 
 ## Seguridad aplicada

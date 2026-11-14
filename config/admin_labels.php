@@ -47,6 +47,11 @@ return [
     ],
 
     'values' => [
+        'kind' => [
+            'REDEEM' => 'Cobro',
+            'TOPUP' => 'Recarga',
+            'REVERSAL' => 'Reversa',
+        ],
         'status' => [
             'ACTIVE' => 'Activa',
             'INACTIVE' => 'Inactiva',
