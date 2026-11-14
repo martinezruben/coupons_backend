@@ -295,34 +295,42 @@
         line-height: 2rem;
     }
 
-    /* ---- Menú horizontal (hmenu): 56px, subrayado azul en lo activo ---- */
-    .hmenu {
-        position: sticky;
-        top: 0;
-        z-index: 1020;
-        background: var(--surface);
-        border-bottom: 1px solid var(--border-color);
-    }
 
-    .hmenu-bar {
+
+
+
+
+
+
+
+
+
+
+
+
+    /* ---- Navegación lateral (vertical navbar): barra fija de 15rem, grupos plegables ---- */
+    .sidenav {
         display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        min-height: 3.5rem;
-        padding: 0 1rem;
+        width: 15rem;
+        flex-direction: column;
+        background: var(--surface);
+        border-right: 1px solid var(--border-color);
     }
 
-    .hmenu-brand {
+    .sidenav-brand {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        min-height: 3.5rem;
+        padding: 0 1rem;
         font-size: 1rem;
         font-weight: 600;
         color: var(--body-color);
         text-decoration: none;
+        border-bottom: 1px solid var(--border-color);
     }
 
-    .hmenu-mark {
+    .brand-mark {
         display: flex;
         width: 1.5rem;
         height: 1.5rem;
@@ -335,65 +343,60 @@
         border-radius: var(--radius-sm);
     }
 
-    .hmenu-nav {
-        display: none;
-        align-self: stretch;
-        gap: 0.125rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .hmenu-item {
-        position: relative;
+    .sidenav-group-btn {
         display: flex;
-    }
-
-    .hmenu-link {
-        display: flex;
+        width: 100%;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        line-height: 1.25rem;
+        justify-content: space-between;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
         color: var(--text-secondary);
-        text-decoration: none;
         background: none;
         border: 0;
+        border-radius: var(--radius-sm);
         cursor: pointer;
     }
 
-    .hmenu-link:hover {
+    .sidenav-group-btn:hover {
         color: var(--body-color);
-        background: var(--surface-tertiary);
     }
 
-    .hmenu-link.is-active,
-    .hmenu-item.is-open > .hmenu-link {
-        color: var(--body-color);
-        box-shadow: inset 0 -2px 0 var(--blue);
-    }
-
-    .hmenu-item.is-open > .hmenu-link {
-        background: var(--surface-tertiary);
-    }
-
-    .hmenu-chevron::after {
-        content: '';
-        width: 0.4rem;
-        height: 0.4rem;
-        margin-top: -0.2rem;
-        border: solid currentColor;
-        border-width: 0 1.5px 1.5px 0;
-        transform: rotate(45deg);
-    }
-
-    .hmenu-end {
+    .sidenav-link {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-left: auto;
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        color: var(--body-color);
+        text-decoration: none;
+        border-radius: var(--radius);
+    }
+
+    .sidenav-link:hover {
+        background: var(--surface-tertiary);
+    }
+
+    .sidenav-link.is-active {
+        color: var(--blue);
+        background: color-mix(in srgb, var(--blue) 9%, var(--surface));
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        display: flex;
+        min-height: 3.5rem;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0 1rem;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border-color);
     }
 
     .dropdown-menu {
@@ -497,60 +500,11 @@
         border-radius: var(--radius-pill);
     }
 
-    .navbar-toggler {
-        display: inline-flex;
-        width: 2.25rem;
-        height: 2.25rem;
-        flex-direction: column;
-        justify-content: center;
-        gap: 4px;
-        padding: 0 0.5rem;
-        background: transparent;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius);
-        cursor: pointer;
-    }
 
-    .navbar-toggler span {
-        height: 2px;
-        background: var(--body-color);
-        border-radius: 1px;
-    }
 
-    .hmenu-collapse {
-        display: grid;
-        padding: 0.5rem;
-        border-top: 1px solid var(--border-color);
-    }
 
-    .hmenu-collapse .hmenu-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        width: 100%;
-        min-height: 2.5rem;
-        padding: 0.625rem 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--body-color);
-        text-decoration: none;
-        text-align: left;
-        background: none;
-        border: 0;
-        border-radius: var(--radius);
-        cursor: pointer;
-    }
 
-    .hmenu-collapse .hmenu-row.is-active {
-        background: color-mix(in srgb, var(--blue) 10%, var(--surface));
-        box-shadow: inset 3px 0 0 var(--blue);
-    }
 
-    .hmenu-collapse .nested {
-        display: grid;
-        padding-left: 1.5rem;
-    }
 
     /* ---- Avisos (alert) ---- */
     .alert {
@@ -584,16 +538,6 @@
         }
     }
 
-    @media (min-width: 992px) {
-        .hmenu-nav {
-            display: flex;
-        }
-
-        .navbar-toggler,
-        .hmenu-collapse {
-            display: none;
-        }
-    }
 }
 
 /*

@@ -22,6 +22,16 @@ return [
     // Vida del token de la app (minutos). 720 = 12 h.
     'token_ttl_minutes' => (int) env('COUPONS_TOKEN_TTL_MINUTES', 720),
 
+    // El archivo CSV de un lote (único lugar con los tokens en claro) se borra tras su primera
+    // descarga o al pasar estas horas, lo que ocurra primero.
+    'export_ttl_hours' => (int) env('COUPONS_EXPORT_TTL_HOURS', 24),
+
+    // Quien genera un lote no puede asignarlo ni activarlo (separación de funciones).
+    'separation_of_duties' => (bool) env('COUPONS_SEPARATION_OF_DUTIES', true),
+
+    // Máximo de cupones por orden de activación.
+    'max_activation_size' => 20000,
+
     // Horas de vida de la clave de idempotencia.
     'idempotency_ttl_hours' => 48,
 

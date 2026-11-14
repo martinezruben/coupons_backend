@@ -46,11 +46,12 @@ class RbacSeeder extends Seeder
         // cobros son acciones sensibles que solo recibe el super-admin (o un rol a medida).
         foreach (['coupons', 'coupon-barcodes'] as $screenKey) {
             $r = AdminRbac::resourceKey($screenKey);
-            array_push($manager, "$r.view", "$r.issue", "$r.toggle");
+            array_push($manager, "$r.view", "$r.toggle");
             $viewer[] = "$r.view";
         }
         // Reportes y reglas de recarga: ver. Editar reglas (crea condiciones de dinero) es del super-admin.
-        foreach (['coupon-transactions', 'coupon-audit-logs', 'coupon-reports', 'topup-rules'] as $screenKey) {
+        // Lotes, activaciones y clientes: ver. Generar, descargar, activar y anular se asignan por rol (fase de permisos).
+        foreach (['coupon-transactions', 'coupon-audit-logs', 'coupon-reports', 'topup-rules', 'coupon-batches', 'coupon-activations', 'customers'] as $screenKey) {
             $r = AdminRbac::resourceKey($screenKey);
             $manager[] = "$r.view";
             $viewer[] = "$r.view";

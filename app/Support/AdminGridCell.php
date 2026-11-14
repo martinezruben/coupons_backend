@@ -220,6 +220,11 @@ class AdminGridCell
             return Format::money($raw);
         }
 
+        // Valores enumerados guardados en inglés/código se muestran con su texto (config/admin_labels.php)
+        if (is_string($raw) && config("admin_labels.values.$field") !== null) {
+            return self::valueLabel($field, $raw);
+        }
+
         if (is_scalar($raw) || $raw === null) {
             return $raw === null ? '—' : (string) $raw;
         }

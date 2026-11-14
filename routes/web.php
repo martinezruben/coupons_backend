@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ApiRequestLogDetailController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CouponAdminController;
+use App\Http\Controllers\Admin\CouponBatchController;
 use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
@@ -70,8 +71,17 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/mail/test', [MailTestController::class, 'sendTest'])->name('mail.test');
 
         // Cupones: acciones del panel (cada una con su permiso y auditoría)
-        Route::get('/coupons/{type}/issue', [CouponAdminController::class, 'issueForm'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue');
-        Route::post('/coupons/{type}/issue', [CouponAdminController::class, 'issue'])->whereIn('type', ['qr', 'barcode'])->name('coupons.issue.store');
+        // Lotes de cupones: generar, descargar el archivo de tokens, asignar/activar, cancelar, liberar y anular
+        Route::get('/coupon-batches/create', [CouponBatchController::class, 'create'])->name('coupon-batches.create');
+        Route::post('/coupon-batches', [CouponBatchController::class, 'store'])->name('coupon-batches.store');
+        Route::get('/coupon-batches/{batch}', [CouponBatchController::class, 'show'])->name('coupon-batches.show');
+        Route::get('/coupon-batches/{batch}/download', [CouponBatchController::class, 'download'])->name('coupon-batches.download');
+        Route::get('/coupon-batches/{batch}/activate', [CouponBatchController::class, 'activateForm'])->name('coupon-batches.activate.form');
+        Route::post('/coupon-batches/{batch}/activate', [CouponBatchController::class, 'activate'])->name('coupon-batches.activate');
+        Route::post('/coupon-batches/{batch}/unassign', [CouponBatchController::class, 'unassign'])->name('coupon-batches.unassign');
+        Route::post('/coupon-batches/{batch}/void', [CouponBatchController::class, 'void'])->name('coupon-batches.void');
+        Route::post('/activation-orders/{order}/cancel', [CouponBatchController::class, 'cancelOrder'])->name('activation-orders.cancel');
+
         Route::post('/coupons/{type}/{id}/toggle', [CouponAdminController::class, 'toggle'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.toggle');
         Route::post('/coupons/{type}/{id}/topup', [CouponAdminController::class, 'topUp'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.topup');
         Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');

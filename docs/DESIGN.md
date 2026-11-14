@@ -6,8 +6,8 @@ El panel sigue el sistema de diseño **Tabler/UI** del proyecto (artefacto «Tab
 | Qué | Dónde |
 |---|---|
 | Tokens (color, radio, sombra) | `resources/css/app.css` (`:root`, valores OKLCH del sistema) y `tailwind.config.js` (escalas en hex para las utilidades) |
-| Componentes (botón, tarjeta, tabla, badge, formulario, menú, alerta) | `resources/css/app.css` — clases `snow-*`, `hmenu*`, `dropdown-*`, `alert`, `page-header` |
-| Menú horizontal | `resources/views/admin/partials/hmenu.blade.php` |
+| Componentes (botón, tarjeta, tabla, badge, formulario, menú, alerta) | `resources/css/app.css` — clases `snow-*`, `sidenav*`, `topbar`, `dropdown-*`, `alert`, `page-header` |
+| Navegación lateral | `resources/views/admin/partials/sidebar.blade.php` (grupos en `config/admin_nav_groups.php`) |
 | Estructura de página | `resources/views/components/admin/layouts/app.blade.php` |
 
 Los nombres de clase `snow-*` y `hope-*` se conservaron para no tocar cada vista; solo cambió su estilo.
@@ -18,7 +18,7 @@ Los nombres de clase `snow-*` y `hope-*` se conservaron para no tocar cada vista
 - **Espaciado y forma:** radio de 6px (4px en controles pequeños); control de 36px de alto; rejilla de 1.5rem; tarjetas con borde de 1px + `shadow-sm`; contenedor máximo de 1320px.
 - **Ancho:** todo el contenido usa el ancho del layout (`max-w-[1320px]` del `<main>`); ninguna página fija un ancho propio. Solo se limitan campos sueltos (p. ej. un selector), nunca la tarjeta o la página.
 - **Foco:** contorno azul de 2px con separación de 2px, nunca se quita.
-- **Menú:** barra de 56px, máximo 6 elementos de primer nivel, desplegables al hacer clic (Esc o clic fuera para cerrar), subrayado azul de 2px en lo activo; menos de 992px se colapsa como acordeón. Un desplegable de 6 o más enlaces usa dos columnas y cada enlace lleva una descripción de una línea (`description` en `config/admin_screens.php`).
+- **Navegación:** barra lateral fija de 15rem (Tabler/UI admite barra lateral o superior) con Inicio y secciones plegables (Clientes, Cupones, Reportes, Infraestructura, Configuración), buscador y cuenta en la barra superior; menos de 992px la barra pasa a un panel deslizable. La estructura sigue la referencia de módulos del proyecto; los colores y componentes, los de Tabler/UI.
 - **Texto:** frases cortas en minúscula inicial, sin emoji ni signos de exclamación; los botones empiezan con un verbo.
 - **Tablas:** dentro de una tarjeta, sin relleno exterior; números a la derecha con cifras tabulares; estado con badge de una palabra.
 

@@ -10,6 +10,7 @@ use App\Models\CouponAuditLog;
 use App\Models\CouponTransaction;
 use App\Models\Device;
 use App\Models\User;
+use App\Support\CouponToken;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -302,51 +303,9 @@ class CouponService
     }
 
     /**
-     * Emite cupones nuevos (panel). Números aleatorios no adivinables; los QR llevan además un token
-     * secreto que solo se devuelve aquí (nunca se vuelve a mostrar).
-     *
-     * @return list<array{coupon_number: string, coupon_token: ?string, qr_payload: ?string}>
+     * Desactiva (ACTIVE → INACTIVE) o reactiva (INACTIVE → ACTIVE) un cupón desde el panel, con auditoría.
+     * Un cupón GENERATED/ASSIGNED/VOID no se activa aquí: eso se hace con una orden de activación del lote.
      */
-    public function issue(int $quantity, string $amount, ?string $expireDate, string $prefix, Authenticatable $actor, ?string $ip): array
-    {
-        $amountDec = BigDecimal::of($amount)->toScale(2, self::rounding());
-        $isQr = $this->type === self::TYPE_QR;
-
-        return DB::transaction(function () use ($quantity, $amountDec, $expireDate, $prefix, $actor, $ip, $isQr) {
-            $issued = [];
-            for ($i = 0; $i < $quantity; $i++) {
-                do {
-                    $number = $prefix.str_pad((string) random_int(0, 999_999_999_999), 12, '0', STR_PAD_LEFT);
-                } while ($this->model::where('coupon_number', $number)->exists());
-
-                $token = $isQr ? bin2hex(random_bytes(16)) : null;
-                $row = [
-                    'coupon_number' => $number,
-                    'coupon_active' => 1,
-                    'coupon_date' => now()->toDateString(),
-                    'coupon_expire_date' => $expireDate,
-                    'coupon_amount' => $this->money($amountDec),
-                    'coupon_balance' => $this->money($amountDec),
-                ];
-                if ($isQr) {
-                    $row['coupon_token'] = $token;
-                }
-                DB::table((new $this->model)->getTable())->insert($row);
-
-                $issued[] = [
-                    'coupon_number' => $number,
-                    'coupon_token' => $token,
-                    'qr_payload' => $isQr ? "@coupon={$number}@token={$token}" : null,
-                ];
-            }
-
-            $this->audit('issue', $this->type, $issued[0]['coupon_number'] ?? '', '0', (string) $quantity, "Emisión de {$quantity} cupones de {$this->money($amountDec)}", $actor, $ip);
-
-            return $issued;
-        });
-    }
-
-    /** Activa o desactiva un cupón (panel), con auditoría. */
     public function setActive(int $couponId, bool $active, string $reason, Authenticatable $actor, ?string $ip): void
     {
         DB::transaction(function () use ($couponId, $active, $reason, $actor, $ip) {
@@ -354,21 +313,26 @@ class CouponService
             if (! $coupon) {
                 throw new CouponException('Coupon not found', 404);
             }
-            $old = (int) $coupon->coupon_active === 1 ? 'active' : 'inactive';
-            $this->model::where('coupon_id', $couponId)->update(['coupon_active' => $active ? 1 : 0]);
-            $this->audit($active ? 'activate' : 'deactivate', $this->type, $coupon->coupon_number, $old, $active ? 'active' : 'inactive', $reason, $actor, $ip);
+            $from = $active ? Coupon::STATUS_INACTIVE : Coupon::STATUS_ACTIVE;
+            if (($coupon->status ?? Coupon::STATUS_ACTIVE) !== $from) {
+                throw new CouponException('Only an active coupon can be deactivated and an inactive one reactivated; activate batches from the batch page', 422);
+            }
+            $this->model::where('coupon_id', $couponId)->update([
+                'status' => $active ? Coupon::STATUS_ACTIVE : Coupon::STATUS_INACTIVE,
+                'coupon_active' => $active ? 1 : 0,
+            ]);
+            $this->audit($active ? 'activate' : 'deactivate', $this->type, $coupon->coupon_number, strtolower($from), $active ? 'active' : 'inactive', $reason, $actor, $ip);
         });
     }
 
     private function tokenMatches(Model $coupon, ?string $token): bool
     {
-        return $token !== null && $coupon->coupon_token !== null
-            && hash_equals((string) $coupon->coupon_token, $token);
+        return CouponToken::matches($coupon->coupon_token, $token);
     }
 
     private function isUsable(Model $coupon): bool
     {
-        if ((int) $coupon->coupon_active !== 1) {
+        if ((int) $coupon->coupon_active !== 1 || ($coupon->status ?? Coupon::STATUS_ACTIVE) !== Coupon::STATUS_ACTIVE) {
             return false;
         }
         $expire = $coupon->coupon_expire_date;

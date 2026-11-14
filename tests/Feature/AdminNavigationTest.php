@@ -66,26 +66,32 @@ class AdminNavigationTest extends TestCase
             ->assertDontSee('disabled aria-disabled="true"', false);
     }
 
-    public function test_horizontal_menu_follows_the_design_system_rules(): void
+    public function test_sidebar_groups_the_menu_like_the_reference_structure(): void
     {
         $admin = AdminUser::factory()->create();
         $admin->assignRole(Role::findOrCreate('super-admin', 'admin'));
 
         $html = $this->actingAs($admin, 'admin')->get(route('admin.dashboard'))->assertOk()->getContent();
 
-        // Máximo 6 elementos de primer nivel (Inicio + grupos), sin sidebar
-        $this->assertLessThanOrEqual(6, preg_match_all('/class="hmenu-item"/', $html));
-        $this->assertGreaterThanOrEqual(2, preg_match_all('/class="hmenu-item"/', $html));
-        $this->assertStringNotContainsString('<aside', $html);
-        // Los desplegables se abren con clic y avisan su estado a los lectores de pantalla
-        $this->assertStringContainsString('aria-haspopup="menu"', $html);
-        $this->assertStringContainsString('hmenu-collapse', $html);
+        // Barra lateral con las secciones del menú y la página actual marcada
+        $this->assertStringContainsString('<aside', $html);
+        foreach (['Inicio', 'Clientes', 'Cupones', 'Reportes', 'Infraestructura', 'Configuración'] as $section) {
+            $this->assertStringContainsString($section, $html);
+        }
         $this->assertStringContainsString('aria-current="page"', $html);
+        // Lotes y activaciones están en el grupo de cupones
+        $this->assertStringContainsString(route('admin.screens.index', 'coupon-batches'), $html);
+        $this->assertStringContainsString(route('admin.screens.index', 'coupon-activations'), $html);
         // Sin fuentes web externas
         $this->assertStringNotContainsString('fonts.googleapis', $html);
         $this->assertStringNotContainsString('fonts.bunny', $html);
-        // Un grupo de 6 enlaces usa la variante de dos columnas con descripciones
-        $this->assertStringContainsString('is-mega', $html);
-        $this->assertStringContainsString('Cobrado, reversado y recargado por periodo', $html);
+    }
+
+    public function test_sidebar_hides_what_the_admin_cannot_see(): void
+    {
+        $this->actingAs($this->admin('customers.view'), 'admin')->get(route('admin.dashboard'))->assertOk()
+            ->assertSee(route('admin.screens.index', 'customers'))
+            ->assertDontSee(route('admin.screens.index', 'coupon-batches'))
+            ->assertDontSee(route('admin.screens.index', 'locations'));
     }
 }

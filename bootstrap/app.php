@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         // Purga de logs operativos (sync, api, auditoría)
         $schedule->command('pos:prune-logs')->dailyAt('03:00');
+
+        // Cupones: activaciones programadas cada minuto y borrado de archivos CSV vencidos
+        $schedule->command('coupons:activate-due')->everyMinute()->withoutOverlapping();
+        $schedule->command('coupons:purge-exports')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(function (Request $request) {

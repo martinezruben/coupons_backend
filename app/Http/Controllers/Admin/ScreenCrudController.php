@@ -407,6 +407,18 @@ class ScreenCrudController extends Controller
             $rules['role_names.*'] = ['string', Rule::exists('roles', 'name')->where('guard_name', 'admin')];
         }
 
+        if ($screen === 'customers') {
+            $documentUnique = Rule::unique('customers', 'document');
+            if ($updating && $request->route('id')) {
+                $documentUnique = $documentUnique->ignore($request->route('id'), 'id');
+            }
+            $rules['name'] = ['required', 'string', 'max:150'];
+            $rules['document'] = ['nullable', 'string', 'max:50', $documentUnique];
+            $rules['email'] = ['nullable', 'email', 'max:150'];
+            $rules['phone'] = ['nullable', 'string', 'max:50'];
+            $rules['notes'] = ['nullable', 'string', 'max:1000'];
+        }
+
         if ($screen === 'topup-rules') {
             $rules['name'] = ['required', 'string', 'max:100'];
             $rules['type'] = ['required', Rule::in(TopUpRule::TYPES)];

@@ -1,12 +1,15 @@
 <?php
 
+use App\Models\ActivationOrder;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\ApiRequestLog;
 use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Models\CouponAuditLog;
+use App\Models\CouponBatch;
 use App\Models\CouponTransaction;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
@@ -124,7 +127,7 @@ return [
     ],
     'android-users' => [
         'model' => User::class,
-        'label' => 'Usuarios de la app (Coupify)',
+        'label' => 'Usuarios de la app',
         'icon' => 'users',
         'labels' => [
             'username' => 'Usuario',
@@ -193,21 +196,44 @@ return [
         'readonly' => true,
         'labels' => [
             'coupon_number' => 'Número',
-            'coupon_active' => 'Estado',
+            'status' => 'Estado',
+            'batch_id' => 'Lote',
+            'customer_id' => 'Cliente',
             'coupon_date' => 'Emisión',
             'coupon_expire_date' => 'Vence',
+            'activated_at' => 'Activado',
             'coupon_amount' => 'Monto inicial',
             'coupon_balance' => 'Saldo',
         ],
-        'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
-        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'fields' => ['coupon_number', 'status', 'batch_id', 'customer_id', 'coupon_expire_date', 'activated_at', 'coupon_amount', 'coupon_balance'],
+        'foreign_labels' => [
+            'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
+            'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
+        ],
+        'actions' => ['toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
-                'coupon_active' => [
+                'status' => [
                     'label' => 'Estado',
                     'type' => 'select',
-                    'options' => ['' => 'Todos', '1' => 'Activo', '0' => 'Inactivo'],
-                    'apply' => ['type' => 'column', 'column' => 'coupon_active'],
+                    'options' => ['' => 'Todos', 'GENERATED' => 'Generado', 'ASSIGNED' => 'Asignado', 'ACTIVE' => 'Activo', 'INACTIVE' => 'Inactivo', 'VOID' => 'Anulado'],
+                    'apply' => ['type' => 'column', 'column' => 'status'],
+                ],
+                'customer_id' => [
+                    'label' => 'Cliente',
+                    'type' => 'select',
+                    'model' => Customer::class,
+                    'order_by' => 'name',
+                    'label_column' => 'name',
+                    'apply' => ['type' => 'column', 'column' => 'customer_id'],
+                ],
+                'batch_id' => [
+                    'label' => 'Lote',
+                    'type' => 'select',
+                    'model' => CouponBatch::class,
+                    'order_by' => 'code',
+                    'label_column' => 'code',
+                    'apply' => ['type' => 'column', 'column' => 'batch_id'],
                 ],
                 'expire_to' => [
                     'label' => 'Vence hasta',
@@ -216,7 +242,7 @@ return [
                 ],
             ],
             'money' => ['coupon_amount', 'coupon_balance'],
-            'sortable' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+            'sortable' => ['coupon_number', 'status', 'coupon_expire_date', 'activated_at', 'coupon_amount', 'coupon_balance'],
             'search_columns' => ['coupon_number'],
             'default_sort' => ['key' => 'coupon_id', 'direction' => 'desc'],
         ],
@@ -229,21 +255,44 @@ return [
         'readonly' => true,
         'labels' => [
             'coupon_number' => 'Número',
-            'coupon_active' => 'Estado',
+            'status' => 'Estado',
+            'batch_id' => 'Lote',
+            'customer_id' => 'Cliente',
             'coupon_date' => 'Emisión',
             'coupon_expire_date' => 'Vence',
+            'activated_at' => 'Activado',
             'coupon_amount' => 'Monto inicial',
             'coupon_balance' => 'Saldo',
         ],
-        'fields' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
-        'actions' => ['issue' => 'Emitir', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'fields' => ['coupon_number', 'status', 'batch_id', 'customer_id', 'coupon_expire_date', 'activated_at', 'coupon_amount', 'coupon_balance'],
+        'foreign_labels' => [
+            'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
+            'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
+        ],
+        'actions' => ['toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
-                'coupon_active' => [
+                'status' => [
                     'label' => 'Estado',
                     'type' => 'select',
-                    'options' => ['' => 'Todos', '1' => 'Activo', '0' => 'Inactivo'],
-                    'apply' => ['type' => 'column', 'column' => 'coupon_active'],
+                    'options' => ['' => 'Todos', 'GENERATED' => 'Generado', 'ASSIGNED' => 'Asignado', 'ACTIVE' => 'Activo', 'INACTIVE' => 'Inactivo', 'VOID' => 'Anulado'],
+                    'apply' => ['type' => 'column', 'column' => 'status'],
+                ],
+                'customer_id' => [
+                    'label' => 'Cliente',
+                    'type' => 'select',
+                    'model' => Customer::class,
+                    'order_by' => 'name',
+                    'label_column' => 'name',
+                    'apply' => ['type' => 'column', 'column' => 'customer_id'],
+                ],
+                'batch_id' => [
+                    'label' => 'Lote',
+                    'type' => 'select',
+                    'model' => CouponBatch::class,
+                    'order_by' => 'code',
+                    'label_column' => 'code',
+                    'apply' => ['type' => 'column', 'column' => 'batch_id'],
                 ],
                 'expire_to' => [
                     'label' => 'Vence hasta',
@@ -252,9 +301,140 @@ return [
                 ],
             ],
             'money' => ['coupon_amount', 'coupon_balance'],
-            'sortable' => ['coupon_number', 'coupon_active', 'coupon_date', 'coupon_expire_date', 'coupon_amount', 'coupon_balance'],
+            'sortable' => ['coupon_number', 'status', 'coupon_expire_date', 'activated_at', 'coupon_amount', 'coupon_balance'],
             'search_columns' => ['coupon_number'],
             'default_sort' => ['key' => 'coupon_id', 'direction' => 'desc'],
+        ],
+    ],
+    'customers' => [
+        'model' => Customer::class,
+        'label' => 'Clientes',
+        'description' => 'A quién se asignan y activan los cupones',
+        'icon' => 'user-group',
+        'disable_delete' => true,
+        'labels' => [
+            'name' => 'Nombre o razón social',
+            'document' => 'Documento (RNC / cédula)',
+            'email' => 'Correo',
+            'phone' => 'Teléfono',
+            'notes' => 'Notas',
+            'is_active' => 'Activo',
+        ],
+        'fields' => ['name', 'document', 'email', 'phone', 'notes', 'is_active'],
+        'grid' => [
+            'exclude_from_grid' => ['notes'],
+            'filters' => [
+                'is_active' => [
+                    'label' => 'Activo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', '1' => 'Sí', '0' => 'No'],
+                    'apply' => ['type' => 'column', 'column' => 'is_active'],
+                ],
+            ],
+            'sortable' => ['name', 'document', 'email', 'phone', 'is_active'],
+            'search_columns' => ['name', 'document', 'email', 'phone'],
+            'default_sort' => ['key' => 'name', 'direction' => 'asc'],
+        ],
+    ],
+    'coupon-batches' => [
+        'model' => CouponBatch::class,
+        'label' => 'Lotes de cupones',
+        'description' => 'Generar lotes y activarlos por selección',
+        'icon' => 'squares-plus',
+        'readonly' => true,
+        'labels' => [
+            'code' => 'Lote',
+            'name' => 'Nombre',
+            'coupon_type' => 'Tipo',
+            'quantity' => 'Cantidad',
+            'amount' => 'Monto por cupón',
+            'status' => 'Estado',
+            'expire_date' => 'Vence',
+            'created_by_admin_id' => 'Generado por',
+            'generated_at' => 'Generado',
+        ],
+        'fields' => ['code', 'name', 'coupon_type', 'quantity', 'amount', 'status', 'expire_date'],
+        'actions' => [
+            'generate' => 'Generar lotes',
+            'download' => 'Descargar archivo (tokens)',
+            'activate' => 'Asignar y activar selección',
+            'cancel' => 'Cancelar activaciones programadas',
+            'void' => 'Anular lote',
+        ],
+        'foreign_labels' => [
+            'created_by_admin_id' => ['relation' => 'creator', 'attribute' => 'name', 'header' => 'Generado por'],
+        ],
+        'grid' => [
+            'filters' => [
+                'status' => [
+                    'label' => 'Estado',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'generating' => 'Generando', 'ready' => 'Listo', 'failed' => 'Fallido', 'void' => 'Anulado'],
+                    'apply' => ['type' => 'column', 'column' => 'status'],
+                ],
+                'coupon_type' => [
+                    'label' => 'Tipo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'QRCODE' => 'QR', 'CODBAR' => 'Barras'],
+                    'apply' => ['type' => 'column', 'column' => 'coupon_type'],
+                ],
+                'date_from' => ['label' => 'Desde', 'type' => 'date', 'apply' => ['type' => 'date_from', 'column' => 'created_at']],
+                'date_to' => ['label' => 'Hasta', 'type' => 'date', 'apply' => ['type' => 'date_to', 'column' => 'created_at']],
+            ],
+            'money' => ['amount'],
+            'sortable' => ['code', 'name', 'coupon_type', 'quantity', 'amount', 'status', 'generated_at'],
+            'search_columns' => ['code', 'name'],
+            'default_sort' => ['key' => 'created_at', 'direction' => 'desc'],
+        ],
+    ],
+    'coupon-activations' => [
+        'model' => ActivationOrder::class,
+        'label' => 'Activaciones',
+        'description' => 'Asignaciones y activaciones, ahora o programadas',
+        'icon' => 'calendar-days',
+        'readonly' => true,
+        'labels' => [
+            'created_at' => 'Solicitada',
+            'batch_id' => 'Lote',
+            'customer_id' => 'Cliente',
+            'mode' => 'Modo',
+            'activate_at' => 'Activar el',
+            'coupons_count' => 'Cupones',
+            'status' => 'Estado',
+            'requested_by_admin_id' => 'Solicitó',
+        ],
+        'fields' => ['created_at', 'batch_id', 'customer_id', 'mode', 'activate_at', 'coupons_count', 'status', 'requested_by_admin_id'],
+        'foreign_labels' => [
+            'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
+            'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
+            'requested_by_admin_id' => ['relation' => 'requester', 'attribute' => 'name', 'header' => 'Solicitó'],
+        ],
+        'grid' => [
+            'filters' => [
+                'status' => [
+                    'label' => 'Estado',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'pending' => 'Programada', 'applied' => 'Aplicada', 'cancelled' => 'Cancelada'],
+                    'apply' => ['type' => 'column', 'column' => 'status'],
+                ],
+                'mode' => [
+                    'label' => 'Modo',
+                    'type' => 'select',
+                    'options' => ['' => 'Todos', 'assign' => 'Asignación', 'now' => 'Activación inmediata', 'scheduled' => 'Activación programada'],
+                    'apply' => ['type' => 'column', 'column' => 'mode'],
+                ],
+                'customer_id' => [
+                    'label' => 'Cliente',
+                    'type' => 'select',
+                    'model' => Customer::class,
+                    'order_by' => 'name',
+                    'label_column' => 'name',
+                    'apply' => ['type' => 'column', 'column' => 'customer_id'],
+                ],
+            ],
+            'sortable' => ['created_at', 'mode', 'activate_at', 'coupons_count', 'status'],
+            'search_columns' => [],
+            'default_sort' => ['key' => 'created_at', 'direction' => 'desc'],
         ],
     ],
     'coupon-transactions' => [
@@ -338,18 +518,26 @@ return [
             'user_id' => 'Usuario app',
             'admin_user_id' => 'Admin',
             'ip_address' => 'IP',
+            'batch_id' => 'Lote',
         ],
-        'fields' => ['created_at', 'action', 'coupon_type', 'coupon_number', 'old_value', 'new_value', 'reason', 'user_id', 'admin_user_id', 'ip_address'],
+        'fields' => ['created_at', 'action', 'batch_id', 'coupon_type', 'coupon_number', 'old_value', 'new_value', 'reason', 'user_id', 'admin_user_id', 'ip_address'],
         'foreign_labels' => [
             'user_id' => ['relation' => 'user', 'attribute' => 'username', 'header' => 'Usuario app'],
             'admin_user_id' => ['relation' => 'adminUser', 'attribute' => 'name', 'header' => 'Admin'],
+            'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
         ],
         'grid' => [
             'filters' => [
                 'action' => [
                     'label' => 'Acción',
                     'type' => 'select',
-                    'options' => ['' => 'Todas', 'issue' => 'Emisión', 'topup' => 'Recarga', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa', 'activate' => 'Activación', 'deactivate' => 'Desactivación'],
+                    'options' => [
+                        '' => 'Todas',
+                        'batch_create' => 'Lote creado', 'batch_generate' => 'Lote generado', 'batch_download' => 'Archivo descargado', 'export_expired' => 'Archivo vencido',
+                        'assign' => 'Asignación', 'schedule' => 'Activación programada', 'activate' => 'Activación', 'cancel_activation' => 'Activación cancelada',
+                        'unassign' => 'Liberación', 'deactivate' => 'Desactivación', 'void_batch' => 'Lote anulado',
+                        'topup' => 'Recarga', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa',
+                    ],
                     'apply' => ['type' => 'column', 'column' => 'action'],
                 ],
                 'date_from' => [

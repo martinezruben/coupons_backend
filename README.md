@@ -14,6 +14,8 @@ Backend administrativo de **Coupify** (cupones prepago). Es el panel web con el 
 - **Ingreso**: login por guard `admin`, verificación en dos pasos (TOTP), bloqueo por intentos fallidos y cierre de sesiones.
 - **Usuarios del panel** (`admin-users`) y **usuarios de la app** (`android-users`, con PIN offline).
 - **Roles y permisos**: RBAC con Spatie (`{recurso}.view/.edit/.delete`), matriz de permisos por rol, rol `super-admin`.
+- **Lotes de cupones**: generación masiva (1 a 20 000, QR o barras) con tokens que solo existen en el CSV de descarga única; asignación a clientes y activación por selección, ahora o en una fecha, con separación de funciones y auditoría.
+- **Clientes**: registro de clientes a los que se asignan los cupones.
 - **Cupones**: listados QR y de barras, cobros, auditoría, emisión con token de un solo uso, activar/desactivar, recargar, ajustar saldo y revertir (cada acción con su permiso y auditoría); reglas de recarga (por localidad, día de la semana y monto diario) y reporte de canjes con exportación CSV.
 - **Infraestructura**: localidades (con mapa), dispositivos (bloqueo remoto) y licencias.
 - **Auditoría**: cambios de modelos clave y login/logout; bitácora de peticiones de la API.

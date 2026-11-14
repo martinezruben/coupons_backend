@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\CouponToken;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -81,8 +82,12 @@ class ImportLegacyCouponsTest extends TestCase
     {
         $this->artisan('coupons:import-legacy')->assertSuccessful();
 
-        $this->assertDatabaseHas('coupons', ['coupon_id' => 7, 'coupon_number' => 'Q1', 'coupon_token' => 't1']);
-        $this->assertDatabaseHas('coupons', ['coupon_id' => 9, 'coupon_active' => 0]);
+        $this->assertDatabaseHas('coupons', ['coupon_id' => 7, 'coupon_number' => 'Q1', 'status' => 'ACTIVE']);
+        // El token en claro nunca entra: se guarda su hash y sigue validando
+        $stored = DB::table('coupons')->where('coupon_id', 7)->value('coupon_token');
+        $this->assertSame(CouponToken::hash('t1'), $stored);
+        $this->assertTrue(CouponToken::matches($stored, 't1'));
+        $this->assertDatabaseHas('coupons', ['coupon_id' => 9, 'coupon_active' => 0, 'status' => 'INACTIVE']);
         $this->assertDatabaseHas('coupons_codbar', ['coupon_id' => 3, 'coupon_number' => 'B1']);
         $this->assertDatabaseHas('coupon_transactions', [
             'transaction_id' => 11, 'coupon_id' => 7, 'legacy_device_id' => 5, 'legacy_site_id' => 2, 'user_id' => null,

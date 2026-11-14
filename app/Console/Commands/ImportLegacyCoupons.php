@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\CouponToken;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -87,7 +88,16 @@ class ImportLegacyCoupons extends Command
         $total = $imported = 0;
 
         $source->table($table)->orderBy('coupon_id')->chunk((int) $this->option('chunk'), function ($chunk) use ($table, $cols, $dry, &$total, &$imported) {
-            $data = $chunk->map(fn ($r) => collect((array) $r)->only($cols)->all())->all();
+            $data = $chunk->map(function ($r) use ($cols) {
+                $row = collect((array) $r)->only($cols)->all();
+                // El token en claro nunca entra a esta base: se guarda su hash (validan igual).
+                if (isset($row['coupon_token']) && $row['coupon_token'] !== '') {
+                    $row['coupon_token'] = CouponToken::isHashed($row['coupon_token']) ? $row['coupon_token'] : CouponToken::hash($row['coupon_token']);
+                }
+                $row['status'] = (int) ($row['coupon_active'] ?? 1) === 1 ? 'ACTIVE' : 'INACTIVE';
+
+                return $row;
+            })->all();
             $total += count($data);
             if ($dry) {
                 return;

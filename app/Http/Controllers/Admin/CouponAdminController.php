@@ -11,49 +11,15 @@ use App\Services\CouponService;
 use App\Support\AdminRbac;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 /**
  * Acciones del panel sobre cupones: emitir, activar/desactivar, ajustar saldo y revertir cobros.
- * Cada acción tiene su permiso (`coupons.issue`, `coupons.toggle`, `coupons.adjust`,
+ * Cada acción tiene su permiso (`coupons.toggle`, `coupons.adjust`,
  * `coupon_barcodes.*`, `coupon_transactions.reverse`) y deja auditoría con el administrador.
  */
 class CouponAdminController extends Controller
 {
     private const SCREENS = ['qr' => 'coupons', 'barcode' => 'coupon-barcodes'];
-
-    public function issueForm(string $type): View
-    {
-        $screen = $this->screenFor($type);
-        $this->authorizeAction($screen, 'issue');
-
-        return view('admin.coupons.issue', ['type' => $type, 'screen' => $screen, 'issued' => null]);
-    }
-
-    public function issue(Request $request, string $type): View
-    {
-        $screen = $this->screenFor($type);
-        $this->authorizeAction($screen, 'issue');
-
-        $data = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1', 'max:500'],
-            'amount' => ['required', 'numeric', 'gt:0', 'max:'.config('coupons.max_amount'), 'decimal:0,2'],
-            'expire_date' => ['nullable', 'date', 'after:today'],
-            'prefix' => ['nullable', 'alpha_num', 'max:6'],
-        ], [], ['quantity' => 'cantidad', 'amount' => 'monto', 'expire_date' => 'fecha de vencimiento', 'prefix' => 'prefijo']);
-
-        $issued = $this->service($type)->issue(
-            (int) $data['quantity'],
-            (string) $data['amount'],
-            $data['expire_date'] ?? null,
-            strtoupper($data['prefix'] ?? ''),
-            $request->user('admin'),
-            $request->ip(),
-        );
-
-        // Los tokens QR solo se muestran aquí: no se guardan en ningún otro lugar visible.
-        return view('admin.coupons.issue', ['type' => $type, 'screen' => $screen, 'issued' => $issued, 'amount' => $data['amount']]);
-    }
 
     public function toggle(Request $request, string $type, int $id): RedirectResponse
     {

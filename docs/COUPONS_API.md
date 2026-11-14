@@ -16,6 +16,26 @@ La app Coupify usa las mismas rutas y formatos que la API anterior. Autenticaci�
 
 Habilidades por rol: `config/coupons.php` → `role_abilities`. Los usuarios se crean y desactivan en el panel (Operación → usuarios de la app); desactivar corta el acceso al instante.
 
+## Lotes, activación y clientes (panel)
+Los cupones se **generan** en lotes y se **activan** aparte, para un cliente:
+
+```
+GENERATED ──asignar──▶ ASSIGNED ──activar (ahora o en una fecha)──▶ ACTIVE ⇄ INACTIVE
+    └────────────────────── anular lote (solo los no activos) ──────────────▶ VOID
+```
+
+- **Generar** (Cupones → Lotes de cupones → Generar lote): de 1 a 20 000 cupones, QR o de barras, con monto, vencimiento y prefijo opcional. Corre en segundo plano (cola) y es todo o nada. Los números son aleatorios (12 dígitos, únicos entre ambos tipos de cupón) y los QR llevan un token aleatorio de 128 bits. Los cupones nacen **sin activar**: no se pueden consultar como activos ni cobrar.
+- **Los tokens solo existen en el archivo CSV del lote.** En la base se guarda únicamente su hash (`h1:` + SHA-256); ninguna pantalla ni listado los muestra. El archivo (`lote, secuencia, numero, token, contenido_qr, monto, vence`) se descarga **una sola vez** (permiso `Descargar archivo`) y se elimina al terminar la descarga, o a las `COUPONS_EXPORT_TTL_HOURS` (24 h) si nadie lo descargó (`coupons:purge-exports`, cada hora). Si se pierde, se anula el lote y se genera otro. La descarga queda auditada.
+- **Asignar y activar** (en el lote): se elige la selección (todos los elegibles, un rango de la secuencia, los primeros N o una lista de números pegada o subida en CSV, hasta 20 000), el **cliente** y el momento: *solo asignar* (reserva para el cliente), *activar ahora* o *activar en una fecha y hora* (entre 1 minuto y 1 año hacia adelante). Antes de aplicar se muestra un resumen con la cantidad. Solo se asignan los cupones generados; se activan los generados o los asignados al mismo cliente. «Al vender» equivale a activar ahora.
+- **Activaciones programadas:** `coupons:activate-due` corre cada minuto, es idempotente y las aplica cuando llega su fecha. Se pueden **cancelar** mientras estén pendientes (los cupones quedan asignados, sin activarse). Los asignados sin activación pendiente se pueden **liberar**.
+- **Anular lote:** anula los cupones aún no activos y cancela las activaciones pendientes; los activos no se tocan.
+- **Separación de funciones:** quien generó un lote **no puede asignarlo, activarlo ni liberarlo** (`COUPONS_SEPARATION_OF_DUTIES`, activa por defecto).
+- **Auditoría:** cada operación deja una fila en la auditoría de cupones (`batch_create`, `batch_generate`, `batch_download`, `assign`, `activate`, `schedule`, `cancel_activation`, `unassign`, `void_batch`, `export_expired`) con el administrador, el motivo, la IP, el lote y la orden; cada orden guarda quién la pidió, cuándo, la selección y el cliente, y cada cupón guarda su orden, su cliente y su fecha de activación.
+- **Clientes** (Clientes): registro simple (nombre, documento, correo, teléfono, notas); se desactivan, no se borran.
+- **Permisos** (matriz de roles, columna «Acciones» de *Lotes de cupones*): `generate`, `download`, `activate` (asignar, activar y liberar), `cancel` y `void`; los listados de lotes, activaciones y clientes tienen su propio permiso de ver.
+
+Los cupones que ya existían (importados) quedan como `ACTIVE`/`INACTIVE` según su bandera, sin lote.
+
 ## Recargas (TOP-UP) y sus reglas
 Una recarga suma saldo (y monto) a un cupón activo y no vencido, deja un movimiento `TOPUP` y una auditoría. Nunca supera `COUPONS_MAX_BALANCE` (100000.00 por defecto). Por defecto solo MANAGER y ADMIN tienen `coupon:topup` (`config/coupons.php`); las recargas **no** se pueden revertir y **no** cuentan como cobro en los reportes.
 
@@ -36,7 +56,7 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 - **Cobros de cupones:** historial por tipo, localidad y fecha, con usuario, dispositivo y reversas.
 - **Auditoría de cupones:** emisiones, ajustes de saldo, reversas y activaciones, con el administrador, el motivo y la IP.
 - **Reporte de canjes** (Cupones → Reportes de canjes): cobrado, reversado, neto y recargado entre dos fechas, agrupado por día, localidad, dispositivo, usuario o tipo de cupón; filtros por tipo y localidad; exportación CSV (UTF-8 con BOM, abre bien en Excel).
-- **Acciones con permiso propio** (matriz RBAC, columna «Acciones»): `Recargar` (con nota opcional), `Emitir` (genera números aleatorios y, en QR, el token; el contenido del QR es `@coupon=<número>@token=<token>` y se entrega una sola vez con CSV), `Activar/desactivar`, `Ajustar saldo` (nunca por encima del monto original) y `Revertir` cobros. Todas piden motivo y quedan auditadas.
+- **Acciones con permiso propio** (matriz RBAC, columna «Acciones»): `Recargar` (con nota opcional), `Activar/desactivar` (solo cupones activos/inactivos; los demás se activan por lote), `Ajustar saldo` (nunca por encima del monto original) y `Revertir` cobros. Todas piden motivo y quedan auditadas.
 - El rol `ops-manager` recibe ver, emitir y activar/desactivar, más ver reportes y reglas; **recargar, ajustar saldo, revertir y editar reglas** solo el super-admin (o un rol a medida).
 - Inicio: saldo pendiente, cobrado hoy y en 7 días, cobros de hoy, cupones por vencer y últimos cobros.
 
