@@ -14,8 +14,7 @@
 <x-admin.layouts.app :title="$title">
     <div class="snow-card overflow-hidden">
         <div class="border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:px-4">
-            <h1 class="text-sm font-semibold text-slate-900">{{ $title }}</h1>
-            <p class="mt-0.5 text-[10px] text-slate-500">
+            <p class="mt-0.5 text-xs text-slate-500">
                 Los números se generan al azar. @if($isQr) El token de cada cupón QR solo se muestra una vez, en esta pantalla. @endif
             </p>
         </div>
@@ -31,7 +30,7 @@
                     <a href="{{ route('admin.screens.index', $screen) }}" class="snow-btn-secondary">Volver al listado</a>
                 </div>
                 <div class="max-h-96 overflow-auto rounded-lg border border-slate-200">
-                    <table class="w-full border-collapse text-left text-[11px]">
+                    <table class="w-full border-collapse text-left text-xs">
                         <thead class="bg-slate-50"><tr><th class="px-2 py-1">Número</th>@if($isQr)<th class="px-2 py-1">Contenido del QR</th>@endif</tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             @foreach($issued as $row)

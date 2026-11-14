@@ -1,8 +1,7 @@
 <x-admin.layouts.app title="Reportes de canjes">
     <div class="snow-card overflow-hidden">
         <div class="border-b border-slate-100 bg-slate-50/80 px-3 py-2 sm:px-4">
-            <h1 class="text-sm font-semibold text-slate-900">Reporte de canjes</h1>
-            <p class="mt-0.5 text-[10px] text-slate-500">
+            <p class="mt-0.5 text-xs text-slate-500">
                 Cobrado = cobros de cupones. Neto = cobrado menos reversas. Las recargas se muestran aparte y no cuentan como cobro.
             </p>
         </div>
@@ -59,14 +58,14 @@
                 ['Recargado', \App\Support\Format::money($totals['topups'])],
             ] as [$label, $value])
                 <div class="rounded-xl border border-slate-200/90 bg-white p-3">
-                    <div class="text-[11px] text-slate-500">{{ $label }}</div>
+                    <div class="text-xs text-slate-500">{{ $label }}</div>
                     <div class="mt-1 text-lg font-semibold text-slate-900">{{ $value }}</div>
                 </div>
             @endforeach
         </div>
 
         <div class="overflow-x-auto p-3 pt-0">
-            <table class="w-full min-w-[640px] border-collapse text-left text-[11px]">
+            <table class="w-full min-w-[640px] border-collapse text-left text-xs">
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-2 py-1.5">{{ $groups[$group] }}</th>

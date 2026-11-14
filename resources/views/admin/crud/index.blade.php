@@ -61,7 +61,7 @@
                 <div class="flex flex-wrap items-end gap-1.5 border-t border-slate-50 bg-slate-50/70 px-2 py-3 sm:px-3 sm:py-3.5" x-data="selectCascade">
                     @foreach($gridFilters as $param => $fdef)
                         <div class="flex min-w-[7rem] flex-col gap-0.5">
-                            <label class="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-500" for="flt-{{ $param }}">{{ $fdef['label'] ?? $param }}</label>
+                            <label class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500" for="flt-{{ $param }}">{{ $fdef['label'] ?? $param }}</label>
                             @if(($fdef['type'] ?? '') === 'date')
                                 <input
                                     id="flt-{{ $param }}"
@@ -79,8 +79,8 @@
                             @endif
                         </div>
                     @endforeach
-                    <button type="submit" class="rounded-md bg-primary-600 px-2 py-1 text-[10px] font-semibold text-white shadow-sm transition hover:bg-primary-700">Aplicar</button>
-                    <a href="{{ route('admin.screens.index', $screen) }}" class="rounded-md py-1 text-[10px] font-medium text-slate-500 hover:text-primary-600">Limpiar</a>
+                    <button type="submit" class="snow-btn-primary">Aplicar</button>
+                    <a href="{{ route('admin.screens.index', $screen) }}" class="snow-btn-ghost">Limpiar</a>
                 </div>
             @endif
         </form>
@@ -90,12 +90,12 @@
             <div class="border-b border-slate-100 bg-gradient-to-b from-slate-50/90 to-white px-2 py-2 sm:px-3">
                 <div class="mb-1.5 flex flex-wrap items-end justify-between gap-2">
                     <div>
-                        <h3 class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">Mapa de localidades</h3>
-                        <p class="text-[11px] text-slate-500">Mismos filtros que la tabla · el número es la cantidad de dispositivos activos · el estado se actualiza cada minuto</p>
+                        <h3 class="text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Mapa de localidades</h3>
+                        <p class="text-xs text-slate-500">Mismos filtros que la tabla · el número es la cantidad de dispositivos activos · el estado se actualiza cada minuto</p>
                     </div>
                     <div class="flex min-w-0 flex-col gap-0.5 sm:items-end">
-                        <label for="admin-locations-map-period" class="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">Sync exitosa en</label>
-                        <select id="admin-locations-map-period" class="hope-filter-select max-w-full py-1 text-[11px] sm:min-w-[12rem]">
+                        <label for="admin-locations-map-period" class="text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Sync exitosa en</label>
+                        <select id="admin-locations-map-period" class="hope-filter-select max-w-full py-1 text-xs sm:min-w-[12rem]">
                             <option value="today" selected>Hoy</option>
                             <option value="yesterday">Ayer</option>
                             <option value="last_week">Última semana</option>
@@ -117,9 +117,9 @@
                             type="button"
                             data-map-filter="{{ $key }}"
                             aria-pressed="true"
-                            class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 shadow-sm transition hover:border-primary-300"
+                            class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:border-primary-300"
                         >
-                            <span class="flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white {{ $st['dot'] }}" aria-hidden="true">{{ $st['glyph'] }}</span>
+                            <span class="flex h-4 w-4 items-center justify-center rounded-full text-2xs font-bold text-white {{ $st['dot'] }}" aria-hidden="true">{{ $st['glyph'] }}</span>
                             {{ $st['label'] }}
                             <span data-map-count="{{ $key }}" class="font-mono tabular-nums text-slate-500">{{ collect($locationsMapPins ?? [])->where('status', $key)->count() }}</span>
                         </button>
@@ -138,7 +138,7 @@
                     );
                 @endphp
                 @if (count($locationsMapPins ?? []) > 0)
-                    <details class="mt-2 text-[11px] text-slate-700">
+                    <details class="mt-2 text-xs text-slate-700">
                         <summary class="cursor-pointer font-semibold text-slate-600">Ver estado en lista</summary>
                         <ul id="admin-locations-map-list" class="mt-1.5 divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
                             @foreach ($locationsMapPins as $pin)
@@ -154,7 +154,7 @@
                     </details>
                 @endif
                 @if (! $hasCoords && count($locationsMapPins ?? []) > 0)
-                    <p class="mt-1.5 text-center text-[11px] text-amber-800">
+                    <p class="mt-1.5 text-center text-xs text-amber-800">
                         Indica latitud y longitud en cada localidad para mostrarla en el mapa.
                     </p>
                 @endif
@@ -169,8 +169,8 @@
         @enderror
 
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[640px] border-collapse text-left text-[10px] leading-tight">
-                <thead class="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/95 backdrop-blur-sm">
+            <table class="w-full min-w-[640px] border-collapse text-left text-xs leading-tight">
+                <thead class="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/95 ">
                 <tr class="snow-table-head">
                     @foreach($visibleFields as $f)
                         <th class="whitespace-nowrap px-2 py-1 font-semibold">
@@ -208,7 +208,7 @@
                             </td>
                         @endforeach
                         <td class="whitespace-nowrap px-2 py-1 text-right align-middle">
-                            <div class="inline-flex items-center gap-0">
+                            <div class="inline-flex items-center gap-1">
                                 @if($auditLogDetail)
                                     <button
                                         type="button"

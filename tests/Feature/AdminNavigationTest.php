@@ -65,4 +65,27 @@ class AdminNavigationTest extends TestCase
             ->assertSee('adminPalette(', false)
             ->assertDontSee('disabled aria-disabled="true"', false);
     }
+
+    public function test_horizontal_menu_follows_the_design_system_rules(): void
+    {
+        $admin = AdminUser::factory()->create();
+        $admin->assignRole(Role::findOrCreate('super-admin', 'admin'));
+
+        $html = $this->actingAs($admin, 'admin')->get(route('admin.dashboard'))->assertOk()->getContent();
+
+        // Máximo 6 elementos de primer nivel (Inicio + grupos), sin sidebar
+        $this->assertLessThanOrEqual(6, preg_match_all('/class="hmenu-item"/', $html));
+        $this->assertGreaterThanOrEqual(2, preg_match_all('/class="hmenu-item"/', $html));
+        $this->assertStringNotContainsString('<aside', $html);
+        // Los desplegables se abren con clic y avisan su estado a los lectores de pantalla
+        $this->assertStringContainsString('aria-haspopup="menu"', $html);
+        $this->assertStringContainsString('hmenu-collapse', $html);
+        $this->assertStringContainsString('aria-current="page"', $html);
+        // Sin fuentes web externas
+        $this->assertStringNotContainsString('fonts.googleapis', $html);
+        $this->assertStringNotContainsString('fonts.bunny', $html);
+        // Un grupo de 6 enlaces usa la variante de dos columnas con descripciones
+        $this->assertStringContainsString('is-mega', $html);
+        $this->assertStringContainsString('Cobrado, reversado y recargado por periodo', $html);
+    }
 }
