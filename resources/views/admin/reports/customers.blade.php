@@ -13,7 +13,7 @@
                     <option value="0" @selected($active === '0')>Inactivos</option>
                 </select>
             </div>
-            <div class="flex gap-2"><button type="submit" class="snow-btn-primary">Ver</button><a href="{{ $exportUrl }}" class="snow-btn-secondary">CSV</a></div>
+            <div class="flex gap-2"><button type="submit" class="snow-btn-primary">Ver</button>@can('coupon_customer_report.export')<a href="{{ $exportUrl }}" class="snow-btn-secondary">CSV</a>@endcan</div>
             @if($errors->any())<p class="col-span-full text-xs text-red-600">{{ $errors->first() }}</p>@endif
         </form>
 

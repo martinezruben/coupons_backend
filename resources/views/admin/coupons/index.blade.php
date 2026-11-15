@@ -9,6 +9,7 @@
         };
         $th = fn (string $key, string $label, string $class = 'text-left') => '<th class="'.$class.'"><a href="'.e($sortLink($key)).'" class="inline-flex items-center gap-1 hover:text-slate-900">'.$label.($sort === $key ? '<span aria-hidden="true">'.($dir === 'asc' ? '↑' : '↓').'</span>' : '').'</a></th>';
     @endphp
+    @php $canDetail = ['QRCODE' => auth('admin')->user()->can('coupons.detail'), 'CODBAR' => auth('admin')->user()->can('coupon_barcodes.detail')]; @endphp
     <div class="snow-card">
         <div class="border-b border-slate-200 bg-slate-100 px-5 py-3">
             <p class="text-sm text-slate-500">
@@ -70,12 +71,13 @@
                         $slug = \App\Http\Controllers\Admin\CouponListController::TYPES[$c->ctype]['slug'];
                         $url = route('admin.coupons.show', [$slug, $c->coupon_id]);
                     @endphp
-                    <tr class="cursor-pointer hover:bg-slate-50" onclick="if (!event.target.closest('a')) window.location = '{{ $url }}'">
+                    @php $open = $canDetail[$c->ctype]; @endphp
+                    <tr class="{{ $open ? 'cursor-pointer ' : '' }}hover:bg-slate-50" @if($open) onclick="if (!event.target.closest('a')) window.location = '{{ $url }}'" @endif>
                         <td class="whitespace-nowrap px-3 py-2">
-                            <a href="{{ $url }}" class="inline-flex items-center gap-2 font-medium text-primary-600 hover:underline">
+                            <{{ $open ? 'a' : 'span' }} @if($open) href="{{ $url }}" @endif class="inline-flex items-center gap-2 font-medium {{ $open ? 'text-primary-600 hover:underline' : 'text-slate-700' }}">
                                 <x-admin.snow.icon :name="$c->ctype === 'QRCODE' ? 'qr-code' : 'ticket'" class="h-4 w-4 shrink-0 text-slate-400" title="{{ $c->ctype === 'QRCODE' ? 'Cupón QR' : 'Cupón de barras' }}" />
                                 <span class="font-mono text-xs">{{ $c->coupon_number }}</span>
-                            </a>
+                            </{{ $open ? 'a' : 'span' }}>
                         </td>
                         <td class="px-3 py-2"><span class="snow-tag {{ $statusTag[$c->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statuses[$c->status] ?? $c->status }}</span></td>
                         <td class="px-3 py-2 text-slate-700">{{ $c->batch_id ? ($batchCodes[$c->batch_id] ?? '—') : '—' }}</td>
@@ -84,7 +86,7 @@
                         <td class="whitespace-nowrap px-3 py-2 tabular-nums text-slate-700">{{ $c->activated_at ? \Carbon\Carbon::parse($c->activated_at)->format('d/m/Y H:i') : '—' }}</td>
                         <td class="px-3 py-2 text-right tabular-nums text-slate-700">{{ $money($c->coupon_amount) }}</td>
                         <td class="px-3 py-2 text-right font-medium tabular-nums text-slate-900">{{ $money($c->coupon_balance) }}</td>
-                        <td class="px-2 py-2 text-right"><a href="{{ $url }}" class="snow-icon-btn h-6 w-6" title="Ver historial completo"><x-admin.snow.icon name="eye" class="h-4 w-4" /></a></td>
+                        <td class="px-2 py-2 text-right">@if($open)<a href="{{ $url }}" class="snow-icon-btn h-6 w-6" title="Ver historial completo"><x-admin.snow.icon name="eye" class="h-4 w-4" /></a>@endif</td>
                     </tr>
                 @empty
                     <tr><td colspan="9" class="px-4 py-10 text-center text-slate-500">No hay cupones con esos filtros.</td></tr>

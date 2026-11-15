@@ -42,7 +42,7 @@
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="snow-btn-primary">Ver</button>
-                <a href="{{ $exportUrl }}" class="snow-btn-secondary">CSV</a>
+                @can('coupon_reports.export')<a href="{{ $exportUrl }}" class="snow-btn-secondary">CSV</a>@endcan
             </div>
             @if($errors->any())
                 <p class="col-span-full text-xs font-medium text-red-600">{{ $errors->first() }}</p>

@@ -50,6 +50,8 @@ class CouponReportController extends Controller
         ];
 
         if ($request->query('export') === 'csv') {
+            abort_unless($user->can(AdminRbac::actionPermissions('coupon-reports')['export']['permission']), 403);
+
             return $this->csv($rows, $totals, $group, $from, $to);
         }
 

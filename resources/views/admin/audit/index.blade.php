@@ -43,7 +43,7 @@
             <div class="col-span-2 flex gap-2 sm:col-span-4 lg:col-span-8">
                 <button type="submit" class="snow-btn-primary">Filtrar</button>
                 <a href="{{ route('admin.audit.index') }}" class="snow-btn-secondary">Limpiar</a>
-                <a href="{{ $exportUrl }}" class="snow-btn-secondary">Exportar CSV</a>
+                @can('audit_log.export')<a href="{{ $exportUrl }}" class="snow-btn-secondary">Exportar CSV</a>@endcan
                 <span class="ml-auto self-center text-xs text-slate-500">{{ number_format($logs->total()) }} registros</span>
             </div>
             @if($errors->any())<p class="col-span-full text-xs text-red-600">{{ $errors->first() }}</p>@endif

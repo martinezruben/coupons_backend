@@ -47,6 +47,7 @@ class AuditLogController extends Controller
             ->orderByDesc('created_at')->orderByDesc('id');
 
         if ($request->query('export') === 'csv') {
+            abort_unless($admin->can(AdminRbac::actionPermissions('audit-log')['export']['permission']), 403);
             $rows = (clone $query)->limit(5000)->get()->map(fn (AdminAuditLog $l) => [
                 $l->created_at?->format('Y-m-d H:i:s'), $l->admin_name, AuditLabels::action($l->action), $l->summary, AuditLabels::entity($l->entity_type), $l->entity_id,
                 collect($l->changes ?? [])->map(fn ($p, $k) => $k.': '.$this->show($p[0] ?? null).' → '.$this->show($p[1] ?? null))->implode(' | '),
