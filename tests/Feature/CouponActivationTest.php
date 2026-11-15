@@ -474,4 +474,37 @@ class CouponActivationTest extends TestCase
         $this->get(route('admin.coupons.index').'?customer='.$customer->id)->assertOk()->assertSee('Cliente Visible')->assertSee('Asignado');
         $this->get(route('admin.screens.index', 'customers'))->assertOk()->assertSee('Cliente Visible');
     }
+
+    public function test_every_activation_links_to_its_coupons_and_batch(): void
+    {
+        $batch = $this->batch(6, 'CODBAR');
+        $customer = Customer::create(['name' => 'Banco Popular']);
+        $order = $this->service->submit($batch, $customer, 'now', null, 'quantity', ['quantity' => 2], null, $this->operator, null);
+        $other = $this->service->submit($batch, $customer, 'assign', null, 'quantity', ['quantity' => 1], null, $this->operator, null);
+        $viewer = AdminUser::factory()->create();
+        foreach (['coupon_activations.view', 'coupon_barcodes.view', 'coupon_batches.view'] as $p) {
+            Permission::findOrCreate($p, 'admin');
+            $viewer->givePermissionTo($p);
+        }
+        $this->actingAs($viewer, 'admin');
+
+        $this->get(route('admin.screens.index', 'coupon-activations'))->assertOk()
+            ->assertSee('Ver cupones')->assertSee('Ver lote')
+            ->assertSee(e(route('admin.coupons.index', ['order' => $order->id, 'type' => 'CODBAR'])), false)
+            ->assertSee(route('admin.coupon-batches.show', $batch), false);
+
+        $numbers = DB::table('coupons_codbar')->where('activation_order_id', $order->id)->pluck('coupon_number');
+        $others = DB::table('coupons_codbar')->where('activation_order_id', $other->id)->pluck('coupon_number');
+        $html = $this->get(route('admin.coupons.index', ['order' => $order->id]))->assertOk()->assertSee('Cupones de la activación')->assertSee('Banco Popular')->getContent();
+        foreach ($numbers as $n) {
+            $this->assertStringContainsString($n, $html);
+        }
+        $this->assertStringNotContainsString($others->first(), $html);
+
+        // Sin permiso para ver cupones de barras no se ofrece el enlace
+        $limited = AdminUser::factory()->create();
+        $limited->givePermissionTo('coupon_activations.view');
+        $this->actingAs($limited, 'admin')->get(route('admin.screens.index', 'coupon-activations'))->assertOk()->assertDontSee('Ver cupones');
+        $this->get(route('admin.coupons.index', ['order' => 'no-es-uuid']))->assertForbidden();
+    }
 }

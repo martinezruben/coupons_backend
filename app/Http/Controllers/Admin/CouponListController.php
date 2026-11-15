@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivationOrder;
 use App\Models\AdminUser;
 use App\Models\CouponBatch;
 use App\Models\Customer;
@@ -34,6 +35,7 @@ class CouponListController extends Controller
             'status' => ['nullable', 'in:GENERATED,ASSIGNED,ACTIVE,INACTIVE,VOID'],
             'customer' => ['nullable', 'uuid'],
             'batch' => ['nullable', 'uuid'],
+            'order' => ['nullable', 'uuid'],
             'q' => ['nullable', 'string', 'max:64'],
             'expire_to' => ['nullable', 'date'],
             'sort' => ['nullable', 'in:'.implode(',', array_keys(self::SORTS))],
@@ -49,6 +51,7 @@ class CouponListController extends Controller
                 ->when($f['status'] ?? null, fn (Builder $b, $v) => $b->where('status', $v))
                 ->when($f['customer'] ?? null, fn (Builder $b, $v) => $b->where('customer_id', $v))
                 ->when($f['batch'] ?? null, fn (Builder $b, $v) => $b->where('batch_id', $v))
+                ->when($f['order'] ?? null, fn (Builder $b, $v) => $b->where('activation_order_id', $v))
                 ->when($f['q'] ?? null, fn (Builder $b, $v) => $b->where('coupon_number', 'like', '%'.addcslashes($v, '%_\\').'%'))
                 ->when($f['expire_to'] ?? null, fn (Builder $b, $v) => $b->whereDate('coupon_expire_date', '<=', $v))
                 ->when($scope !== null, fn (Builder $b) => $b->whereIn('customer_id', $scope));
@@ -68,6 +71,7 @@ class CouponListController extends Controller
             'allowedTypes' => $allowed,
             'batchCodes' => $batches,
             'customerNames' => $customers,
+            'order' => ($f['order'] ?? null) ? ActivationOrder::with(['batch', 'customer'])->find($f['order']) : null,
             'filterCustomers' => Customer::query()->visibleTo($admin)->orderBy('name')->get(['id', 'name']),
             'filterBatches' => CouponBatch::query()->orderByDesc('created_at')->limit(300)->get(['id', 'code', 'name']),
             'sort' => $f['sort'] ?? 'created',

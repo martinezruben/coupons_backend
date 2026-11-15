@@ -19,6 +19,12 @@
             </p>
         </div>
 
+        @if($order)
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-100 bg-blue-50 px-5 py-2 text-sm text-blue-900">
+                <span>Cupones de la activación del {{ $order->created_at?->format('d/m/Y H:i') }} · lote <strong>{{ $order->batch?->code }}</strong> · cliente <strong>{{ $order->customer?->name }}</strong></span>
+                <a href="{{ route('admin.coupons.index') }}" class="text-primary-600 hover:underline">Quitar este filtro</a>
+            </div>
+        @endif
         <form method="GET" action="{{ route('admin.coupons.index') }}" class="grid grid-cols-2 items-end gap-2 border-b border-slate-200 p-3 sm:grid-cols-4 lg:grid-cols-8">
             <div class="col-span-2">
                 <label class="snow-label" for="q">Número</label>
@@ -49,6 +55,7 @@
                 <label class="snow-label" for="expire_to">Vence hasta</label>
                 <input id="expire_to" name="expire_to" type="date" value="{{ $f['expire_to'] ?? '' }}" class="snow-input">
             </div>
+            @if($f['order'] ?? null)<input type="hidden" name="order" value="{{ $f['order'] }}">@endif
             <div class="col-span-2 flex gap-2 sm:col-span-4 lg:col-span-8">
                 <button type="submit" class="snow-btn-primary">Filtrar</button>
                 <a href="{{ route('admin.coupons.index') }}" class="snow-btn-secondary">Limpiar</a>
