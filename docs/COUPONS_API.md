@@ -95,6 +95,10 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 
 Una regla suma las condiciones que se activen y **todas deben cumplirse**: localidades, días de la semana, horario (puede cruzar la medianoche), tope por recarga y tope por día y cupón. Con varias reglas activas basta con que **una** se cumpla completa; sin reglas no hay restricciones. Pueden aplicar a QR, a barras o a ambos. Las recargas desde el panel no tienen localidad y no evalúan esa condición. Las reglas anteriores de un solo tipo siguen funcionando igual y pasan al formato nuevo al editarlas.
 
+## Permisos específicos por usuario
+
+`/admin/rbac/users` (solo super-admin, menú Configuración): además de los permisos de sus roles, a una persona se le pueden dar permisos directos con la misma matriz que los roles. Los que ya vienen de un rol aparecen en gris y no se quitan aquí. Un super-admin no necesita permisos. Cada cambio guarda en la auditoría qué se agregó y qué se quitó, y las visitas a la pantalla quedan como consultas.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

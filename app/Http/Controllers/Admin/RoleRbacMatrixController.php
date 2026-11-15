@@ -180,7 +180,7 @@ class RoleRbacMatrixController extends Controller
      *
      * @return list<array{label: string, screens: list<array{key: string, label: string, readonly: bool}>}>
      */
-    private function screensGroupedByNavSection(): array
+    public function screensGroupedByNavSection(): array
     {
         $managed = collect(AdminRbac::managedScreens())->keyBy('key');
         $groups = [];
