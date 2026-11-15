@@ -8,6 +8,7 @@ use App\Models\TopUpRule;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Evalúa las reglas de recarga activas (tabla topup_rules) para un cupón y un momento dado.
@@ -29,7 +30,7 @@ class TopUpRules
             ->where(fn ($q) => $q->whereNull('coupon_type')->orWhere('coupon_type', $couponType))
             ->get();
 
-        self::assertModernRules($rules->where('type', TopUpRule::MODERN), $couponType, $amount, $couponNumber, $locationId, $enforceLocation, $now);
+        self::assertModernRules(self::assignedTo($rules->where('type', TopUpRule::MODERN), $couponType, $couponNumber), $couponType, $amount, $couponNumber, $locationId, $enforceLocation, $now);
         $rules = $rules->where('type', '!=', TopUpRule::MODERN);
 
         $weekday = $rules->where('type', 'weekday');
@@ -151,5 +152,25 @@ class TopUpRules
         }
 
         return null;
+    }
+
+    /**
+     * Las reglas con condiciones solo aplican a los cupones a los que están asignadas (por lote, fechas o número).
+     *
+     * @param  Collection<int, TopUpRule>  $rules
+     * @return Collection<int, TopUpRule>
+     */
+    private static function assignedTo($rules, string $couponType, string $couponNumber)
+    {
+        if ($rules->isEmpty()) {
+            return $rules;
+        }
+
+        $table = $couponType === 'QRCODE' ? 'coupons' : 'coupons_codbar';
+        $coupon = DB::table($table)->where('coupon_number', $couponNumber)->first(['coupon_number', 'batch_id', 'coupon_date', 'coupon_expire_date'])
+            ?? (object) ['coupon_number' => $couponNumber, 'batch_id' => null, 'coupon_date' => null, 'coupon_expire_date' => null];
+        $listed = DB::table('topup_rule_coupons')->whereIn('rule_id', $rules->pluck('id'))->where('coupon_number', $couponNumber)->pluck('rule_id')->all();
+
+        return $rules->filter(fn (TopUpRule $r) => $r->coversCoupon($coupon, in_array($r->getKey(), $listed, true)))->values();
     }
 }

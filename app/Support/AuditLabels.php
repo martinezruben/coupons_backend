@@ -26,7 +26,7 @@ class AuditLabels
         'Panel' => 'Navegación del panel',
         'Location' => 'Localidad', 'Device' => 'Dispositivo', 'License' => 'Licencia', 'User' => 'Usuario de la app',
         'AdminUser' => 'Administrador', 'Role' => 'Rol', 'SystemParameter' => 'Parámetro del sistema', 'PairingToken' => 'Token de emparejamiento',
-        'CouponBatch' => 'Lote de cupones', 'Customer' => 'Cliente', 'TopUpRule' => 'Regla de recarga', 'CouponPrefix' => 'Prefijo de cupones',
+        'CouponBatch' => 'Lote de cupones', 'Customer' => 'Cliente', 'TopUpRule' => 'Regla de uso', 'CouponPrefix' => 'Prefijo de cupones',
         'ActivationOrder' => 'Activación', 'Coupon' => 'Cupón QR', 'BarcodeCoupon' => 'Cupón de barras', 'RoleLimit' => 'Límites del rol',
     ];
 

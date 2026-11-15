@@ -116,6 +116,9 @@ class AdminGridCell
         }
 
         if ($item instanceof TopUpRule) {
+            if ($field === 'assignment') {
+                return $item->assignmentSummary();
+            }
             if ($field === 'conditions') {
                 $parts = $item->conditionsSummary();
                 if ($item->isLegacy()) {

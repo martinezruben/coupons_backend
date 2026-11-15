@@ -593,21 +593,23 @@ return [
 
     'topup-rules' => [
         'model' => TopUpRule::class,
-        'label' => 'Reglas de recarga',
-        'description' => 'Cuándo, dónde y cuánto se puede recargar un cupón',
+        'label' => 'Reglas de uso',
+        'description' => 'Condiciones de recarga asignadas a cupones, lotes o fechas',
         'icon' => 'banknotes',
         'labels' => [
             'name' => 'Regla',
             'coupon_type' => 'Aplica a',
             'conditions' => 'Condiciones (todas se cumplen)',
+            'assignment' => 'Asignada a',
             'is_active' => 'Activa',
         ],
         'select_options' => [
             'coupon_type' => ['' => 'QR y barras', 'QRCODE' => 'Solo QR', 'CODBAR' => 'Solo barras'],
         ],
-        'fields' => ['name', 'coupon_type', 'conditions', 'is_active'],
+        'fields' => ['name', 'coupon_type', 'conditions', 'assignment', 'is_active'],
         'foreign_labels' => [
             'conditions' => ['virtual' => true, 'header' => 'Condiciones (todas se cumplen)'],
+            'assignment' => ['virtual' => true, 'header' => 'Asignada a'],
         ],
         'grid' => [
             'filters' => [

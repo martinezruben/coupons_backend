@@ -39,7 +39,7 @@ Los cupones que ya existían (importados) quedan como `ACTIVE`/`INACTIVE` según
 ## Recargas (TOP-UP) y sus reglas
 Una recarga suma saldo (y monto) a un cupón activo y no vencido, deja un movimiento `TOPUP` y una auditoría. Nunca supera `COUPONS_MAX_BALANCE` (100000.00 por defecto). Por defecto solo MANAGER y ADMIN tienen `coupon:topup` (`config/coupons.php`); las recargas **no** se pueden revertir y **no** cuentan como cobro en los reportes.
 
-Las reglas viven en **Cupones → Reglas de recarga** (solo el super-admin las edita). Sin reglas de un tipo, ese tipo no restringe nada; las reglas inactivas se ignoran y cada regla puede limitarse a cupones QR o de barras:
+Las reglas viven en **Cupones → Reglas de uso** (solo el super-admin las edita). Sin reglas de un tipo, ese tipo no restringe nada; las reglas inactivas se ignoran y cada regla puede limitarse a cupones QR o de barras:
 
 | Tipo | Efecto |
 |---|---|
@@ -91,7 +91,9 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 
 **Detalle (`/admin/coupons/{qr|barcode}/{id}`):** al hacer clic en un cupón se ve su historial completo, lo más reciente primero: creación (lote, creador, monto inicial), asignación y activación, cada cobro, recarga y reversa (monto, **localidad**, dispositivo, usuario, IP y **saldo tras el movimiento**), ajustes y cambios de estado con su motivo y el antes/después, los cambios de datos de la auditoría del panel y quién consultó el cupón. Incluye un resumen (cobrado neto, recargado, localidades donde se usó) y respeta el alcance por cliente. El token de los QR nunca se muestra.
 
-## Reglas de recarga con varias condiciones
+## Reglas de uso (condiciones asignadas a cupones)
+
+Las reglas de uso se **asignan a cupones**: por lote, por rango de fechas (emisión o vencimiento), por número de cupón (hasta 5,000) o a todos. Una regla solo se aplica a los cupones asignados; el detalle de un cupón lista las reglas que le aplican.
 
 Una regla suma las condiciones que se activen y **todas deben cumplirse**: localidades, días de la semana, horario (puede cruzar la medianoche), tope por recarga y tope por día y cupón. Con varias reglas activas basta con que **una** se cumpla completa; sin reglas no hay restricciones. Pueden aplicar a QR, a barras o a ambos. Las recargas desde el panel no tienen localidad y no evalúan esa condición. Las reglas anteriores de un solo tipo siguen funcionando igual y pasan al formato nuevo al editarlas.
 

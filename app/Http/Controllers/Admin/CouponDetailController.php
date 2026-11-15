@@ -14,10 +14,12 @@ use App\Models\CouponTransaction;
 use App\Models\Customer;
 use App\Models\Device;
 use App\Models\Location;
+use App\Models\TopUpRule;
 use App\Models\User;
 use App\Support\AdminRbac;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -164,7 +166,14 @@ class CouponDetailController extends Controller
         $redeemed = (float) $transactions->where('kind', 'REDEEM')->sum('transaction_amount');
         $reversed = (float) $transactions->where('kind', 'REVERSAL')->sum('transaction_amount');
 
+        // Reglas de uso que hoy aplican a este cupón (por asignación) y qué exigen
+        $listed = DB::table('topup_rule_coupons')->where('coupon_number', $coupon->coupon_number)->pluck('rule_id')->all();
+        $rules = TopUpRule::query()->where('is_active', true)
+            ->where(fn ($q) => $q->whereNull('coupon_type')->orWhere('coupon_type', $couponType))->orderBy('name')->get()
+            ->filter(fn ($r) => $r->coversCoupon($coupon, in_array($r->getKey(), $listed, true)))->values();
+
         return view('admin.coupons.show', [
+            'rules' => $rules,
             'coupon' => $coupon, 'type' => $type, 'couponType' => $couponType, 'screen' => $screen,
             'batch' => $batch, 'customer' => $customer, 'order' => $order,
             'events' => array_reverse($events), // lo más reciente primero
