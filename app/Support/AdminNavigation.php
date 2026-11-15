@@ -50,7 +50,10 @@ class AdminNavigation
 
             $key = $group['key'] ?? '';
             if ($key === 'system' && $admin->can('roles.edit')) {
-                $items[] = self::item('Permisos por rol', 'adjustments-horizontal', 'admin.rbac.matrix.index', 'admin.rbac.*');
+                $items[] = self::item('Permisos por rol', 'adjustments-horizontal', 'admin.rbac.matrix.index', 'admin.rbac.matrix.*');
+            }
+            if ($key === 'system' && AdminRbac::isSuperAdmin($admin)) {
+                $items[] = self::item('Permisos por usuario', 'finger-print', 'admin.rbac.users.index', 'admin.rbac.users.*');
             }
             if ($key === 'system' && $admin->can('system_settings.view')) {
                 $items[] = self::item('Parámetros del sistema', 'cog-6-tooth', 'admin.system-settings.edit', 'admin.system-settings.*');

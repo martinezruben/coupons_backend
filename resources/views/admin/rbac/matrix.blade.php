@@ -171,6 +171,7 @@
                                 <span class="block truncate text-xs text-slate-500">{{ $account->email }} · {{ $account->customer_scope === 'selected' ? 'solo clientes seleccionados' : 'todos los clientes' }}@unless($account->is_active) · inactiva @endunless</span>
                             </span>
                         </span>
+                        <a href="{{ route('admin.rbac.users.edit', $account) }}" class="snow-btn-secondary snow-btn-sm ml-auto">Permisos propios</a>
                         <form method="POST" action="{{ route('admin.rbac.accounts.remove', [$role, $account]) }}" onsubmit="return confirm('¿Quitar el rol «{{ $role->name }}» a {{ $account->name }}?');">
                             @csrf
                             @method('DELETE')

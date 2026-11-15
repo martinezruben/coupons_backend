@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\RoleRbacMatrixController;
 use App\Http\Controllers\Admin\ScreenCrudController;
 use App\Http\Controllers\Admin\SystemSettingsController;
+use App\Http\Controllers\Admin\UserPermissionController;
 use App\Http\Middleware\AuditAdminActivity;
 use Illuminate\Support\Facades\Route;
 
@@ -69,6 +70,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/rbac', [RoleRbacMatrixController::class, 'index'])->name('rbac.matrix.index');
         Route::get('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'edit'])->name('rbac.matrix.edit');
         Route::post('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'update'])->name('rbac.matrix.update');
+        Route::get('/rbac/users', [UserPermissionController::class, 'index'])->name('rbac.users.index');
+        Route::get('/rbac/users/{adminUser}', [UserPermissionController::class, 'edit'])->name('rbac.users.edit');
+        Route::post('/rbac/users/{adminUser}', [UserPermissionController::class, 'update'])->name('rbac.users.update');
         Route::post('/rbac/roles/{role}/accounts', [RoleRbacMatrixController::class, 'addAccount'])->name('rbac.accounts.add');
         Route::delete('/rbac/roles/{role}/accounts/{adminUser}', [RoleRbacMatrixController::class, 'removeAccount'])->name('rbac.accounts.remove');
 
