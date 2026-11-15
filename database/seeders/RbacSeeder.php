@@ -64,8 +64,8 @@ class RbacSeeder extends Seeder
             $viewer[] = $extra;
         }
 
-        Role::firstOrCreate(['name' => 'ops-manager', 'guard_name' => 'admin'])->syncPermissions($manager);
-        Role::firstOrCreate(['name' => 'ops-viewer', 'guard_name' => 'admin'])->syncPermissions($viewer);
+        Role::firstOrCreate(['name' => 'ops-manager', 'guard_name' => 'admin'])->syncPermissions(self::withCompanions($manager));
+        Role::firstOrCreate(['name' => 'ops-viewer', 'guard_name' => 'admin'])->syncPermissions(self::withCompanions($viewer));
 
         $this->seedCouponProfiles();
 
@@ -107,13 +107,31 @@ class RbacSeeder extends Seeder
             if (! $role->wasRecentlyCreated) {
                 continue;
             }
-            foreach ($profile['permissions'] as $permission) {
+            $permissions = self::withCompanions($profile['permissions']);
+            foreach ($permissions as $permission) {
                 Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'admin']);
             }
-            $role->syncPermissions($profile['permissions']);
+            $role->syncPermissions($permissions);
             if ($profile['limits']) {
                 RoleLimit::query()->updateOrCreate(['role_id' => $role->getKey()], $profile['limits']);
             }
         }
+    }
+
+    /** Ver una pantalla incluye sus permisos independientes de solo consulta (historial completo, exportar CSV). */
+    private static function withCompanions(array $permissions): array
+    {
+        $companions = [
+            'coupons.view' => 'coupons.detail', 'coupon_barcodes.view' => 'coupon_barcodes.detail', 'audit_log.view' => 'audit_log.export',
+            'coupon_reports.view' => 'coupon_reports.export', 'coupon_batch_report.view' => 'coupon_batch_report.export', 'coupon_customer_report.view' => 'coupon_customer_report.export',
+        ];
+        foreach ($companions as $view => $extra) {
+            if (in_array($view, $permissions, true)) {
+                Permission::firstOrCreate(['name' => $extra, 'guard_name' => 'admin']);
+                $permissions[] = $extra;
+            }
+        }
+
+        return array_values(array_unique($permissions));
     }
 }

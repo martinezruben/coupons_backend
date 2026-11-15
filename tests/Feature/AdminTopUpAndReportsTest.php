@@ -329,7 +329,7 @@ class AdminTopUpAndReportsTest extends TestCase
     public function test_report_csv_export(): void
     {
         $this->seedReportData();
-        $this->actingAs($this->admin('coupon_reports.view'), 'admin');
+        $this->actingAs($this->admin('coupon_reports.view', 'coupon_reports.export'), 'admin');
 
         $res = $this->get(route('admin.reports.redemptions', ['from' => '2026-11-01', 'to' => '2026-11-14', 'group' => 'location', 'export' => 'csv']))->assertOk();
         $csv = $res->streamedContent();

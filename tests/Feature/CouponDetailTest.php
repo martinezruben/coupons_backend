@@ -149,7 +149,8 @@ class CouponDetailTest extends TestCase
         // Con el permiso de barras pero otro cliente en su alcance: 404
         $restricted = AdminUser::factory()->create(['customer_scope' => 'selected']);
         Permission::findOrCreate('coupon_barcodes.view', 'admin');
-        $restricted->givePermissionTo('coupon_barcodes.view');
+        Permission::findOrCreate('coupon_barcodes.detail', 'admin');
+        $restricted->givePermissionTo('coupon_barcodes.view', 'coupon_barcodes.detail');
         $restricted->customers()->sync([Customer::create(['name' => 'Otro'])->id]);
         $this->actingAs($restricted, 'admin')->get($this->url())->assertNotFound();
 

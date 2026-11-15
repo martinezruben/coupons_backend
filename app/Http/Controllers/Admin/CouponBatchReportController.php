@@ -72,6 +72,8 @@ class CouponBatchReportController extends Controller
         });
 
         if ($request->query('export') === 'csv') {
+            abort_unless($admin->can(AdminRbac::actionPermissions('coupon-batch-report')['export']['permission']), 403);
+
             return $this->streamCsv("reporte-lotes-{$from->format('Ymd')}_{$to->format('Ymd')}.csv",
                 ['Lote', 'Nombre', 'Tipo', 'Creado', 'Estado', 'Cantidad', 'Sin asignar', 'Asignados', 'Activos', 'Inactivos', 'Anulados', 'Saldo en circulación', 'Cobrado neto'],
                 $rows->map(fn ($r) => [

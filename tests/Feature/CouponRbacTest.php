@@ -314,7 +314,7 @@ class CouponRbacTest extends TestCase
         $this->assertTrue($auditor->hasPermissionTo('coupon_audit_logs.view'));
         $this->assertTrue($auditor->hasPermissionTo('coupon_batch_report.view'));
         foreach (Permission::where('guard_name', 'admin')->pluck('name') as $name) {
-            if (str_starts_with($name, 'coupon') && ! str_ends_with($name, '.view') && $auditor->hasPermissionTo($name)) {
+            if (str_starts_with($name, 'coupon') && ! str_ends_with($name, '.view') && ! str_ends_with($name, '.detail') && ! str_ends_with($name, '.export') && $auditor->hasPermissionTo($name)) {
                 $this->fail("el auditor no debe tener $name");
             }
         }

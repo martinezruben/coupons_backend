@@ -41,7 +41,7 @@ class CouponDetailController extends Controller
         $admin = $request->user('admin');
         $isQr = $type === 'qr';
         $screen = $isQr ? 'coupons' : 'coupon-barcodes';
-        abort_unless($admin->can(AdminRbac::permissionsForScreen($screen)['view']), 403);
+        abort_unless($admin->can(AdminRbac::permissionsForScreen($screen)['view']) && $admin->can(AdminRbac::actionPermissions($screen)['detail']['permission']), 403);
 
         $model = $isQr ? Coupon::class : BarcodeCoupon::class;
         $coupon = $model::query()->visibleTo($admin)->where('coupon_id', $id)->firstOrFail();

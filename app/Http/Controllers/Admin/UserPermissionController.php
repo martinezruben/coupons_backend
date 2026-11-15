@@ -47,7 +47,21 @@ class UserPermissionController extends Controller
             }
         }
 
+        // Permisos independientes: cada acción sensible se concede sola, sin depender de editar la pantalla
+        $independent = [];
+        foreach (app(RoleRbacMatrixController::class)->screensGroupedByNavSection() as $group) {
+            foreach ($group['screens'] as $screen) {
+                foreach (AdminRbac::actionPermissions($screen['key']) as $action => $info) {
+                    $independent[$group['label']][] = [
+                        'permission' => $info['permission'], 'label' => $info['label'], 'screen' => $screen['label'],
+                        'sensitive' => in_array($action, ['adjust', 'topup', 'reverse', 'void', 'activate_all', 'generate', 'download', 'export'], true),
+                    ];
+                }
+            }
+        }
+
         return view('admin.rbac.user-permissions', [
+            'independent' => $independent,
             'target' => $adminUser,
             'screenGroups' => app(RoleRbacMatrixController::class)->screensGroupedByNavSection(),
             'direct' => $adminUser->getDirectPermissions()->pluck('name')->all(),

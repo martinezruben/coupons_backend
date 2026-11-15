@@ -174,7 +174,7 @@ class AdminActivityAuditTest extends TestCase
     public function test_the_audit_screen_exports_csv_and_needs_permission(): void
     {
         $customer = Customer::create(['name' => 'Antes']);
-        $admin = $this->admin('audit_log.view', 'customers.edit', 'customers.view');
+        $admin = $this->admin('audit_log.view', 'audit_log.export', 'customers.edit', 'customers.view');
         $this->actingAs($admin, 'admin')->put(route('admin.screens.update', ['customers', $customer->id]), ['name' => 'Después']);
 
         $csv = $this->get(route('admin.audit.index', ['export' => 'csv', 'kind' => 'changes']))->assertOk()->streamedContent();

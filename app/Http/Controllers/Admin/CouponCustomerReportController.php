@@ -65,6 +65,8 @@ class CouponCustomerReportController extends Controller
         });
 
         if ($request->query('export') === 'csv') {
+            abort_unless($admin->can(AdminRbac::actionPermissions('coupon-customer-report')['export']['permission']), 403);
+
             return $this->streamCsv('reporte-clientes-'.now()->format('Ymd').'.csv',
                 ['Cliente', 'Documento', 'Activo', 'Asignados', 'Activos', 'Inactivos', 'Programados', 'Saldo en circulación', 'Cobrado neto', 'Última activación'],
                 $rows->map(fn ($r) => [

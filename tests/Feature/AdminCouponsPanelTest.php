@@ -155,10 +155,10 @@ class AdminCouponsPanelTest extends TestCase
         $this->qr('Q1');
 
         $id = DB::table('coupons')->value('coupon_id');
-        $this->actingAs($this->admin('coupons.view'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
+        $this->actingAs($this->admin('coupons.view', 'coupons.detail'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
             ->assertOk()->assertDontSee('Ajustar saldo');
 
-        $this->actingAs($this->admin('coupons.view', 'coupons.adjust'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
+        $this->actingAs($this->admin('coupons.view', 'coupons.detail', 'coupons.adjust'), 'admin')->get(route('admin.coupons.show', ['qr', $id]))
             ->assertOk()->assertSee('Ajustar saldo');
     }
 

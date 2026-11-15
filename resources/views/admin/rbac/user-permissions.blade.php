@@ -33,6 +33,28 @@
             </div>
             @error('permissions.*')<p class="mb-2 text-sm text-red-600">{{ $message }}</p>@enderror
 
+            <div class="mb-4 rounded-lg border border-slate-200">
+                <div class="border-b border-slate-200 bg-slate-50 px-3 py-2">
+                    <h3 class="text-sm font-medium text-slate-800">Permisos independientes</h3>
+                    <p class="text-xs text-slate-500">Acciones puntuales que se dan una por una, sin dar acceso a editar la pantalla. Las marcadas como <span class="snow-tag bg-amber-50 text-amber-800">sensible</span> mueven dinero o sacan información.</p>
+                </div>
+                <div class="grid grid-cols-1 gap-x-6 gap-y-1 p-3 md:grid-cols-2">
+                    @foreach($independent as $groupLabel => $items)
+                        <div class="md:col-span-2 mt-2 text-2xs font-bold uppercase tracking-[0.04em] text-slate-500 first:mt-0">{{ $groupLabel }}</div>
+                        @foreach($items as $it)
+                            @php $c = $cell($it['permission']); @endphp
+                            <label class="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-50" @if($c['roles']) title="Viene del rol: {{ implode(', ', $c['roles']) }}" @endif>
+                                <input type="checkbox" name="permissions[]" value="{{ $it['permission'] }}" @checked($c['direct'] || $c['roles']) @disabled((bool) $c['roles'])
+                                       class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 {{ $c['roles'] ? 'opacity-50' : '' }}">
+                                @if($c['roles'] && $c['direct'])<input type="hidden" name="permissions[]" value="{{ $it['permission'] }}">@endif
+                                <span class="{{ $c['roles'] ? 'text-slate-400' : 'text-slate-800' }}"><strong class="font-medium">{{ $it['label'] }}</strong> <span class="text-slate-500">· {{ $it['screen'] }}</span></span>
+                                @if($it['sensitive'])<span class="snow-tag bg-amber-50 text-amber-800">sensible</span>@endif
+                            </label>
+                        @endforeach
+                    @endforeach
+                </div>
+            </div>
+
             <div class="overflow-x-auto rounded-lg border border-slate-200">
                 <table class="w-full min-w-[640px] border-collapse text-left text-xs">
                     <thead class="border-b border-slate-100 bg-slate-50/95">
@@ -41,12 +63,11 @@
                             <th class="px-2 py-1.5 text-center font-semibold">Ver</th>
                             <th class="px-2 py-1.5 text-center font-semibold">Editar</th>
                             <th class="px-2 py-1.5 text-center font-semibold">Eliminar</th>
-                            <th class="px-2 py-1.5 font-semibold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                     @foreach($screenGroups as $group)
-                        <tr class="bg-slate-50/80"><td colspan="5" class="px-2 py-1 text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">{{ $group['label'] }}</td></tr>
+                        <tr class="bg-slate-50/80"><td colspan="4" class="px-2 py-1 text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">{{ $group['label'] }}</td></tr>
                         @foreach($group['screens'] as $s)
                             @php $p = \App\Support\AdminRbac::permissionsForScreen($s['key']); $ro = $s['readonly']; @endphp
                             <tr class="hover:bg-slate-50/80">
@@ -64,19 +85,6 @@
                                         @endif
                                     </td>
                                 @endforeach
-                                <td class="px-2 py-1">
-                                    @forelse(\App\Support\AdminRbac::actionPermissions($s['key']) as $action)
-                                        @php $c = $cell($action['permission']); @endphp
-                                        <label class="mr-2 inline-flex items-center gap-1 whitespace-nowrap" @if($c['roles']) title="Viene del rol: {{ implode(', ', $c['roles']) }}" @endif>
-                                            <input type="checkbox" name="permissions[]" value="{{ $action['permission'] }}" @checked($c['direct'] || $c['roles']) @disabled((bool) $c['roles'])
-                                                   class="h-3.5 w-3.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500 {{ $c['roles'] ? 'opacity-50' : '' }}">
-                                            @if($c['roles'] && $c['direct'])<input type="hidden" name="permissions[]" value="{{ $action['permission'] }}">@endif
-                                            <span class="{{ $c['roles'] ? 'text-slate-400' : '' }}">{{ $action['label'] }}</span>
-                                        </label>
-                                    @empty
-                                        <span class="text-slate-300">—</span>
-                                    @endforelse
-                                </td>
                             </tr>
                         @endforeach
                     @endforeach

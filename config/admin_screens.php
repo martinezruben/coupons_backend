@@ -213,7 +213,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'actions' => ['detail' => 'Ver historial completo', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -275,7 +275,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'actions' => ['detail' => 'Ver historial completo', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -624,9 +624,9 @@ return [
         ],
     ],
 
-    'coupon-batch-report' => ['label' => 'Reporte de lotes', 'description' => 'Estado, saldo y cobrado por lote', 'icon' => 'rectangle-stack', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.batches', 'active_pattern' => 'admin.reports.batches'],
-    'coupon-customer-report' => ['label' => 'Reporte de clientes', 'description' => 'Cupones, saldo y cobrado por cliente', 'icon' => 'building-storefront', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.customers', 'active_pattern' => 'admin.reports.customers'],
-    'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.redemptions'],
+    'coupon-batch-report' => ['label' => 'Reporte de lotes', 'description' => 'Estado, saldo y cobrado por lote', 'icon' => 'rectangle-stack', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.batches', 'active_pattern' => 'admin.reports.batches', 'actions' => ['export' => 'Exportar CSV']],
+    'coupon-customer-report' => ['label' => 'Reporte de clientes', 'description' => 'Cupones, saldo y cobrado por cliente', 'icon' => 'building-storefront', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.customers', 'active_pattern' => 'admin.reports.customers', 'actions' => ['export' => 'Exportar CSV']],
+    'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.redemptions', 'actions' => ['export' => 'Exportar CSV']],
     'api-request-logs' => [
         'model' => ApiRequestLog::class,
         'label' => 'Llamadas API',
@@ -830,6 +830,7 @@ return [
         'readonly' => true,
         'route' => 'admin.audit.index',
         'active_pattern' => 'admin.audit.*',
+        'actions' => ['export' => 'Exportar CSV'],
         'fields' => ['created_at', 'admin_user_id', 'action', 'entity_type', 'entity_id', 'changes', 'ip'],
         'labels' => [
             'created_at' => 'Fecha / hora',
