@@ -91,6 +91,10 @@ Las recargas hechas desde el panel respetan las reglas de día y de monto, pero 
 
 **Detalle (`/admin/coupons/{qr|barcode}/{id}`):** al hacer clic en un cupón se ve su historial completo, lo más reciente primero: creación (lote, creador, monto inicial), asignación y activación, cada cobro, recarga y reversa (monto, **localidad**, dispositivo, usuario, IP y **saldo tras el movimiento**), ajustes y cambios de estado con su motivo y el antes/después, los cambios de datos de la auditoría del panel y quién consultó el cupón. Incluye un resumen (cobrado neto, recargado, localidades donde se usó) y respeta el alcance por cliente. El token de los QR nunca se muestra.
 
+## Reglas de recarga con varias condiciones
+
+Una regla suma las condiciones que se activen y **todas deben cumplirse**: localidades, días de la semana, horario (puede cruzar la medianoche), tope por recarga y tope por día y cupón. Con varias reglas activas basta con que **una** se cumpla completa; sin reglas no hay restricciones. Pueden aplicar a QR, a barras o a ambos. Las recargas desde el panel no tienen localidad y no evalúan esa condición. Las reglas anteriores de un solo tipo siguen funcionando igual y pasan al formato nuevo al editarlas.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

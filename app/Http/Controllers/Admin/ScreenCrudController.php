@@ -110,6 +110,9 @@ class ScreenCrudController extends Controller
 
     public function create(string $screen)
     {
+        if ($screen === 'topup-rules') {
+            return app(TopUpRuleController::class)->create();
+        }
         $this->authorize($screen, 'edit');
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);
@@ -126,6 +129,9 @@ class ScreenCrudController extends Controller
 
     public function store(Request $request, string $screen)
     {
+        if ($screen === 'topup-rules') {
+            return app(TopUpRuleController::class)->store($request);
+        }
         $this->authorize($screen, 'edit');
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);
@@ -151,6 +157,9 @@ class ScreenCrudController extends Controller
 
     public function edit(string $screen, string $id)
     {
+        if ($screen === 'topup-rules') {
+            return app(TopUpRuleController::class)->edit($id);
+        }
         $this->authorize($screen, 'edit');
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);
@@ -177,6 +186,9 @@ class ScreenCrudController extends Controller
 
     public function update(Request $request, string $screen, string $id)
     {
+        if ($screen === 'topup-rules') {
+            return app(TopUpRuleController::class)->update($request, $id);
+        }
         $this->authorize($screen, 'edit');
         $cfg = $this->getScreen($screen);
         $this->assertScreenWritable($cfg);

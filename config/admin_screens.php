@@ -594,37 +594,23 @@ return [
     'topup-rules' => [
         'model' => TopUpRule::class,
         'label' => 'Reglas de recarga',
-        'description' => 'Localidad, día y monto diario',
+        'description' => 'Cuándo, dónde y cuánto se puede recargar un cupón',
         'icon' => 'banknotes',
         'labels' => [
-            'name' => 'Nombre',
-            'type' => 'Tipo de regla',
+            'name' => 'Regla',
             'coupon_type' => 'Aplica a',
-            'location_id' => 'Localidad',
-            'weekdays' => 'Días permitidos (1=lun … 7=dom, ej. 1,2,3)',
-            'max_daily_amount' => 'Tope diario por cupón',
+            'conditions' => 'Condiciones (todas se cumplen)',
             'is_active' => 'Activa',
         ],
         'select_options' => [
-            'type' => [
-                'location' => 'Por localidad: solo se recarga en esa localidad',
-                'weekday' => 'Por día de la semana: solo se recarga esos días',
-                'daily_amount' => 'Por monto diario: tope de recarga por cupón y día',
-            ],
-            'coupon_type' => ['' => 'Cupones QR y de barras', 'QRCODE' => 'Solo QR', 'CODBAR' => 'Solo código de barras'],
+            'coupon_type' => ['' => 'QR y barras', 'QRCODE' => 'Solo QR', 'CODBAR' => 'Solo barras'],
         ],
-        'fields' => ['name', 'type', 'coupon_type', 'location_id', 'weekdays', 'max_daily_amount', 'is_active'],
+        'fields' => ['name', 'coupon_type', 'conditions', 'is_active'],
         'foreign_labels' => [
-            'location_id' => ['relation' => 'location', 'attribute' => 'name', 'header' => 'Localidad'],
+            'conditions' => ['virtual' => true, 'header' => 'Condiciones (todas se cumplen)'],
         ],
         'grid' => [
             'filters' => [
-                'type' => [
-                    'label' => 'Tipo',
-                    'type' => 'select',
-                    'options' => ['' => 'Todos', 'location' => 'Localidad', 'weekday' => 'Día de la semana', 'daily_amount' => 'Monto diario'],
-                    'apply' => ['type' => 'column', 'column' => 'type'],
-                ],
                 'is_active' => [
                     'label' => 'Activa',
                     'type' => 'select',
@@ -632,12 +618,12 @@ return [
                     'apply' => ['type' => 'column', 'column' => 'is_active'],
                 ],
             ],
-            'money' => ['max_daily_amount'],
-            'sortable' => ['name', 'type', 'coupon_type', 'is_active'],
+            'sortable' => ['name', 'coupon_type', 'is_active'],
             'search_columns' => ['name'],
             'default_sort' => ['key' => 'id', 'direction' => 'desc'],
         ],
     ],
+
     'coupon-batch-report' => ['label' => 'Reporte de lotes', 'description' => 'Estado, saldo y cobrado por lote', 'icon' => 'rectangle-stack', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.batches', 'active_pattern' => 'admin.reports.batches'],
     'coupon-customer-report' => ['label' => 'Reporte de clientes', 'description' => 'Cupones, saldo y cobrado por cliente', 'icon' => 'building-storefront', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.customers', 'active_pattern' => 'admin.reports.customers'],
     'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.redemptions'],

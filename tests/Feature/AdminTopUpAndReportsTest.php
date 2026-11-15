@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\CouponException;
 use App\Models\AdminUser;
 use App\Models\Device;
 use App\Models\License;
 use App\Models\Location;
 use App\Models\TopUpRule;
 use App\Models\User;
+use App\Services\TopUpRules;
+use Brick\Math\BigDecimal;
 use Carbon\Carbon;
 use Database\Seeders\RbacSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -94,33 +97,121 @@ class AdminTopUpAndReportsTest extends TestCase
 
     // ---- Reglas (CRUD)
 
-    public function test_topup_rules_crud_validates_by_type_and_clears_unused_fields(): void
+    public function test_topup_rules_accept_several_conditions_and_validate_them(): void
     {
-        $location = Location::factory()->create();
+        $a = Location::factory()->create(['name' => 'Sede A']);
+        $b = Location::factory()->create(['name' => 'Sede B']);
         $this->actingAs($this->admin('topup_rules.view', 'topup_rules.edit', 'topup_rules.delete'), 'admin');
         $store = fn (array $data) => $this->post(route('admin.screens.store', 'topup-rules'), $data);
 
-        $store(['name' => 'Sin sede', 'type' => 'location', 'is_active' => 1])->assertSessionHasErrors('location_id');
-        $store(['name' => 'Sin días', 'type' => 'weekday', 'is_active' => 1])->assertSessionHasErrors('weekdays');
-        $store(['name' => 'Días malos', 'type' => 'weekday', 'weekdays' => '1,8', 'is_active' => 1])->assertSessionHasErrors('weekdays');
-        $store(['name' => 'Sin tope', 'type' => 'daily_amount', 'is_active' => 1])->assertSessionHasErrors('max_daily_amount');
-        $store(['name' => 'Tipo malo', 'type' => 'otro', 'is_active' => 1])->assertSessionHasErrors('type');
+        $this->get(route('admin.screens.create', 'topup-rules'))->assertOk()->assertSee('Condiciones')->assertSee('Sede A')->assertSee('Solo ciertos días de la semana');
+
+        $store(['name' => 'Sin condiciones', 'is_active' => 1])->assertSessionHasErrors('conditions');
+        $store(['name' => 'Días malos', 'weekdays' => [1, 8]])->assertSessionHasErrors('weekdays.1');
+        $store(['name' => 'Hora sola', 'time_from' => '08:00'])->assertSessionHasErrors('time_to');
+        $store(['name' => 'Hora mala', 'time_from' => '25:00', 'time_to' => '10:00'])->assertSessionHasErrors('time_from');
+        $store(['name' => 'Localidad falsa', 'location_ids' => ['no-uuid']])->assertSessionHasErrors('location_ids.0');
+        $store(['name' => 'Topes cruzados', 'max_per_topup' => 50, 'max_daily_amount' => 20])->assertSessionHasErrors('max_per_topup');
+        $store(['name' => 'Tope decimal', 'max_daily_amount' => '1.005'])->assertSessionHasErrors('max_daily_amount');
+        $store(['name' => '', 'weekdays' => [1]])->assertSessionHasErrors('name');
         $this->assertDatabaseCount('topup_rules', 0);
 
-        $store(['name' => 'Sede A', 'type' => 'location', 'location_id' => $location->id, 'weekdays' => '1,2', 'max_daily_amount' => '5', 'is_active' => 1])->assertSessionHasNoErrors();
-        $rule = TopUpRule::first();
-        $this->assertSame($location->id, $rule->location_id);
-        $this->assertNull($rule->weekdays, 'cada tipo guarda solo sus datos');
-        $this->assertNull($rule->max_daily_amount);
+        $store([
+            'name' => 'Caja entre semana', 'coupon_type' => 'QRCODE', 'is_active' => 1, 'location_ids' => [$a->id, $b->id, $a->id], 'weekdays' => [5, 1, 3, 1],
+            'time_from' => '08:00', 'time_to' => '18:30', 'max_per_topup' => '40', 'max_daily_amount' => '100.50',
+        ])->assertSessionHasNoErrors()->assertRedirect(route('admin.screens.index', 'topup-rules'));
 
-        $this->put(route('admin.screens.update', ['topup-rules', $rule->id]), ['name' => 'Sede A', 'type' => 'weekday', 'weekdays' => '1,2,3', 'is_active' => 0])->assertSessionHasNoErrors();
+        $rule = TopUpRule::first();
+        $this->assertSame('rule', $rule->type);
+        $this->assertSame('QRCODE', $rule->coupon_type);
+        $this->assertEqualsCanonicalizing([$a->id, $b->id], $rule->location_ids);
+        $this->assertSame('1,3,5', $rule->weekdays);
+        $this->assertSame(['08:00', '18:30'], [$rule->time_from, $rule->time_to]);
+        $this->assertSame('40.00', number_format((float) $rule->max_per_topup, 2, '.', ''));
+        $this->assertSame('100.50', number_format((float) $rule->max_daily_amount, 2, '.', ''));
+
+        $this->get(route('admin.screens.edit', ['topup-rules', $rule->id]))->assertOk()->assertSee('\\u0022from\\u0022:\\u002208:00\\u0022', false)->assertSee('\\u0022useDays\\u0022:true', false)->assertSee('Caja entre semana');
+        $this->get(route('admin.screens.index', 'topup-rules'))->assertOk()->assertSee('Localidades: Sede A, Sede B')->assertSee('Días: lun, mié, vie')->assertSee('Horario: 08:00 a 18:30');
+
+        // Editar: quitar condiciones y apagar la regla
+        $this->put(route('admin.screens.update', ['topup-rules', $rule->id]), ['name' => 'Solo tope', 'max_daily_amount' => '30', 'is_active' => 0])->assertSessionHasNoErrors();
         $rule->refresh();
-        $this->assertSame('weekday', $rule->type);
-        $this->assertNull($rule->location_id);
+        $this->assertNull($rule->location_ids);
+        $this->assertNull($rule->weekdays);
+        $this->assertNull($rule->time_from);
+        $this->assertNull($rule->max_per_topup);
         $this->assertFalse($rule->is_active);
 
         $this->delete(route('admin.screens.destroy', ['topup-rules', $rule->id]))->assertRedirect();
         $this->assertDatabaseCount('topup_rules', 0);
+    }
+
+    public function test_legacy_rules_still_show_and_become_modern_when_edited(): void
+    {
+        $location = Location::factory()->create(['name' => 'Sede Vieja']);
+        $legacy = TopUpRule::create(['name' => 'Antigua', 'type' => 'location', 'location_id' => $location->id]);
+        $this->actingAs($this->admin('topup_rules.view', 'topup_rules.edit'), 'admin');
+
+        $this->get(route('admin.screens.index', 'topup-rules'))->assertOk()->assertSee('Localidades: Sede Vieja')->assertSee('regla anterior');
+        $this->get(route('admin.screens.edit', ['topup-rules', $legacy->id]))->assertOk()->assertSee('\\u0022useLoc\\u0022:true', false)->assertSee('\\u0022useDays\\u0022:false', false);
+
+        $this->put(route('admin.screens.update', ['topup-rules', $legacy->id]), ['name' => 'Antigua', 'location_ids' => [$location->id], 'weekdays' => [1, 2], 'is_active' => 1])->assertSessionHasNoErrors();
+        $legacy->refresh();
+        $this->assertFalse($legacy->isLegacy());
+        $this->assertNull($legacy->location_id);
+        $this->assertSame([$location->id], $legacy->location_ids);
+    }
+
+    public function test_all_conditions_of_a_rule_must_hold_and_any_rule_is_enough(): void
+    {
+        $centro = Location::factory()->create();
+        $norte = Location::factory()->create();
+        $monday = Carbon::parse('2026-11-16 10:00:00'); // lunes
+        $saturday = Carbon::parse('2026-11-21 10:00:00');
+        $check = fn ($amount, $location, $at) => TopUpRules::assertAllowed('QRCODE', BigDecimal::of((string) $amount), 'Q-1', $location?->id, true, $at);
+        $fails = function (callable $f) {
+            try {
+                $f();
+            } catch (CouponException $e) {
+                return $e->getMessage();
+            }
+
+            return null;
+        };
+
+        TopUpRule::create(['name' => 'Centro L-V', 'type' => 'rule', 'location_ids' => [$centro->id], 'weekdays' => '1,2,3,4,5', 'time_from' => '08:00', 'time_to' => '18:00', 'max_per_topup' => '50']);
+
+        // Una sola regla: se cumplen todas sus condiciones, o se explica la que falla
+        $this->assertNull($fails(fn () => $check(30, $centro, $monday)));
+        $this->assertSame('Top-ups are not allowed on this weekday', $fails(fn () => $check(30, $centro, $saturday)));
+        $this->assertSame('Top-ups are not allowed at this location', $fails(fn () => $check(30, $norte, $monday)));
+        $this->assertSame('Top-ups are not allowed at this time of day', $fails(fn () => $check(30, $centro, $monday->copy()->setTime(19, 0))));
+        $this->assertSame('Top-up amount exceeds the per-top-up limit', $fails(fn () => $check(60, $centro, $monday)));
+
+        // Dos reglas: basta con que una se cumpla completa
+        TopUpRule::create(['name' => 'Norte sábados', 'type' => 'rule', 'location_ids' => [$norte->id], 'weekdays' => '6']);
+        $this->assertNull($fails(fn () => $check(30, $norte, $saturday)));
+        $this->assertNull($fails(fn () => $check(30, $centro, $monday)));
+        $this->assertSame('No top-up rule allows this operation', $fails(fn () => $check(30, $norte, $monday)));
+
+        // Una regla apagada o de otro tipo de cupón no cuenta
+        TopUpRule::query()->update(['is_active' => false]);
+        $this->assertNull($fails(fn () => $check(999, $norte, $monday)));
+        TopUpRule::query()->update(['is_active' => true, 'coupon_type' => 'CODBAR']);
+        $this->assertNull($fails(fn () => $check(999, $norte, $monday)));
+    }
+
+    public function test_the_daily_cap_of_a_rule_counts_what_was_topped_up_today(): void
+    {
+        $id = $this->qr(); // cupón Q1
+        TopUpRule::create(['name' => 'Tope diario', 'type' => 'rule', 'max_daily_amount' => '30']);
+        $admin = $this->admin('coupons.view', 'coupons.topup');
+        $this->actingAs($admin, 'admin');
+        $url = route('admin.coupons.topup', ['qr', $id]);
+
+        $this->post($url, ['amount' => 20])->assertSessionHasNoErrors();
+        $this->post($url, ['amount' => 20])->assertSessionHasErrors('coupon'); // 40 > 30
+        $this->post($url, ['amount' => 10])->assertSessionHasNoErrors();
     }
 
     public function test_topup_rules_screen_requires_permission(): void

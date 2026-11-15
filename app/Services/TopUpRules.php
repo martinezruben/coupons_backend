@@ -7,6 +7,7 @@ use App\Models\CouponTransaction;
 use App\Models\TopUpRule;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 
 /**
  * Evalúa las reglas de recarga activas (tabla topup_rules) para un cupón y un momento dado.
@@ -27,6 +28,9 @@ class TopUpRules
         $rules = TopUpRule::query()->where('is_active', true)
             ->where(fn ($q) => $q->whereNull('coupon_type')->orWhere('coupon_type', $couponType))
             ->get();
+
+        self::assertModernRules($rules->where('type', TopUpRule::MODERN), $couponType, $amount, $couponNumber, $locationId, $enforceLocation, $now);
+        $rules = $rules->where('type', '!=', TopUpRule::MODERN);
 
         $weekday = $rules->where('type', 'weekday');
         if ($weekday->isNotEmpty()) {
@@ -68,5 +72,84 @@ class TopUpRules
                 ]);
             }
         }
+    }
+
+    /**
+     * Reglas con varias condiciones: cada regla exige que se cumplan TODAS sus condiciones y basta con que
+     * UNA regla se cumpla completa para permitir la recarga.
+     *
+     * @param  Collection<int, TopUpRule>  $rules
+     *
+     * @throws CouponException
+     */
+    private static function assertModernRules($rules, string $couponType, BigDecimal $amount, string $couponNumber, ?string $locationId, bool $enforceLocation, CarbonInterface $now): void
+    {
+        if ($rules->isEmpty()) {
+            return;
+        }
+
+        $failures = [];
+        foreach ($rules as $rule) {
+            $failure = self::failure($rule, $couponType, $amount, $couponNumber, $locationId, $enforceLocation, $now);
+            if ($failure === null) {
+                return;
+            }
+            $failures[$rule->name] = $failure;
+        }
+
+        if (count($failures) === 1) {
+            $first = array_values($failures)[0];
+            throw new CouponException($first['message'], 422, $first['details']);
+        }
+
+        throw new CouponException('No top-up rule allows this operation', 422, ['rules' => array_map(fn ($f) => $f['message'], $failures)]);
+    }
+
+    /** @return array{message: string, details: array<string, mixed>}|null */
+    private static function failure(TopUpRule $rule, string $couponType, BigDecimal $amount, string $couponNumber, ?string $locationId, bool $enforceLocation, CarbonInterface $now): ?array
+    {
+        if ($days = $rule->weekdayList()) {
+            if (! in_array($now->dayOfWeekIso, $days, true)) {
+                return ['message' => 'Top-ups are not allowed on this weekday', 'details' => ['allowed_weekdays' => array_map(fn (int $d) => self::DAYS[$d], $days)]];
+            }
+        }
+
+        if ($rule->time_from && $rule->time_to) {
+            $time = $now->format('H:i');
+            $inside = $rule->time_from <= $rule->time_to
+                ? ($time >= $rule->time_from && $time <= $rule->time_to)
+                : ($time >= $rule->time_from || $time <= $rule->time_to); // ventana que cruza la medianoche
+            if (! $inside) {
+                return ['message' => 'Top-ups are not allowed at this time of day', 'details' => ['allowed_from' => $rule->time_from, 'allowed_to' => $rule->time_to]];
+            }
+        }
+
+        if ($enforceLocation && ($ids = $rule->locationIdList())) {
+            if ($locationId === null || ! in_array((string) $locationId, $ids, true)) {
+                return ['message' => 'Top-ups are not allowed at this location', 'details' => []];
+            }
+        }
+
+        if ($rule->max_per_topup !== null && $amount->isGreaterThan(BigDecimal::of((string) $rule->max_per_topup))) {
+            return ['message' => 'Top-up amount exceeds the per-top-up limit', 'details' => ['max_per_topup' => (string) BigDecimal::of((string) $rule->max_per_topup)->toScale(2)]];
+        }
+
+        if ($rule->max_daily_amount !== null) {
+            $limit = BigDecimal::of((string) $rule->max_daily_amount);
+            $already = BigDecimal::of((string) (CouponTransaction::query()
+                ->where('kind', CouponTransaction::KIND_TOPUP)->where('coupon_number', $couponNumber)->where('coupon_type', $couponType)
+                ->where('created_at', '>=', $now->copy()->startOfDay())->sum('transaction_amount') ?: '0'));
+            if ($already->plus($amount)->isGreaterThan($limit)) {
+                $remaining = $limit->minus($already);
+
+                return ['message' => 'Daily top-up limit exceeded', 'details' => [
+                    'daily_limit' => (string) $limit->toScale(2),
+                    'topped_up_today' => (string) $already->toScale(2),
+                    'remaining' => (string) ($remaining->isNegative() ? BigDecimal::zero() : $remaining)->toScale(2),
+                ]];
+            }
+        }
+
+        return null;
     }
 }

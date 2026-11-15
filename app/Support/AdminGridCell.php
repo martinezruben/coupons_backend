@@ -7,6 +7,7 @@ use App\Models\AdminUser;
 use App\Models\ApiRequestLog;
 use App\Models\Device;
 use App\Models\Location;
+use App\Models\TopUpRule;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -112,6 +113,17 @@ class AdminGridCell
 
         if ($item instanceof User && $field === 'pin_status') {
             return $item->hasOfflinePin() ? 'Listo' : 'Restablecer contraseña';
+        }
+
+        if ($item instanceof TopUpRule) {
+            if ($field === 'conditions') {
+                $parts = $item->conditionsSummary();
+                if ($item->isLegacy()) {
+                    $parts[] = '(regla anterior de un solo tipo; al editarla pasa al formato nuevo)';
+                }
+
+                return $parts === [] ? '—' : implode(' · ', $parts);
+            }
         }
 
         if ($item instanceof AdminAuditLog) {
