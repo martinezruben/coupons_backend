@@ -12,6 +12,16 @@
         <a href="{{ route('admin.coupon-batches.download', $item) }}" class="{{ $btn }}">Descargar</a>
     @endif
 @elseif($screen === 'coupon-activations')
+    @php
+        $batchType = $item->batch?->coupon_type;
+        $couponsScreen = $batchType === 'QRCODE' ? 'coupons' : 'coupon-barcodes';
+    @endphp
+    @if($admin?->can(\App\Support\AdminRbac::permissionsForScreen($couponsScreen)['view']))
+        <a href="{{ route('admin.coupons.index', ['order' => $item->getKey(), 'type' => $batchType]) }}" class="{{ $btn }}" title="Cupones de esta activación">Ver cupones</a>
+    @endif
+    @if($item->batch && $admin?->can('coupon_batches.view'))
+        <a href="{{ route('admin.coupon-batches.show', $item->batch) }}" class="{{ $btn }}">Ver lote</a>
+    @endif
     @if($item->status === 'pending' && ($cancelPerm = \App\Support\AdminRbac::actionPermissions('coupon-batches')['cancel']['permission'] ?? null) && $admin?->can($cancelPerm))
         <form method="POST" action="{{ route('admin.activation-orders.cancel', $item) }}" class="inline"
               onsubmit="const r = prompt('Motivo de la cancelación (opcional):'); if (r === null) return false; this.reason.value = r;">

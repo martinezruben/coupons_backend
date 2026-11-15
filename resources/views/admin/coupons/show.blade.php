@@ -65,6 +65,21 @@
                 </dl>
             </section>
 
+            {{-- Reglas de uso asignadas --}}
+            <section class="snow-card">
+                <header class="border-b border-slate-200 px-5 py-3"><h2 class="text-base font-medium text-slate-800">Reglas de uso</h2></header>
+                <div class="space-y-3 p-5 text-sm">
+                    @forelse($rules as $r)
+                        <div>
+                            <p class="font-medium text-slate-900">{{ $r->name }}@if($r->isLegacy()) <span class="text-xs font-normal text-slate-500">(regla global anterior)</span>@endif</p>
+                            @foreach($r->conditionsSummary() as $c)<p class="text-xs text-slate-600">{{ $c }}</p>@endforeach
+                        </div>
+                    @empty
+                        <p class="text-slate-500">Ninguna regla de uso aplica a este cupón: se puede recargar sin restricciones.</p>
+                    @endforelse
+                </div>
+            </section>
+
             {{-- Resumen de uso --}}
             <section class="snow-card">
                 <header class="border-b border-slate-200 px-5 py-3"><h2 class="text-base font-medium text-slate-800">Resumen de uso</h2></header>
