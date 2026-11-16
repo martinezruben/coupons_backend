@@ -9,7 +9,7 @@
     $appName = config('app.name', 'Coupify');
     $initials = collect(explode(' ', $admin?->name ?? '?'))->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('');
 @endphp
-<header class="topnav" x-data="{ open: null, nav: false, user: false }"
+<header class="topnav" x-data="{ open: null, nav: false, user: false, t: null, enter(k) { clearTimeout(this.t); this.open = k; }, leave() { clearTimeout(this.t); this.t = setTimeout(() => this.open = null, 400); } }"
         x-on:keydown.escape.window="open = null; nav = false; user = false" x-on:click.outside="open = null; user = false">
     <div class="topnav-inner">
         <button type="button" class="snow-icon-btn h-9 w-9 lg:hidden" :aria-expanded="nav ? 'true' : 'false'" aria-label="Abrir menú" x-on:click="nav = !nav">
@@ -28,7 +28,7 @@
             </a>
             @foreach($groups as $group)
                 @php $groupActive = collect($group['items'])->contains(fn ($i) => $i['active']); @endphp
-                <div class="relative" x-on:mouseenter="open = '{{ $group['key'] }}'" x-on:mouseleave="open = null">
+                <div class="relative" x-on:mouseenter="enter('{{ $group['key'] }}')" x-on:mouseleave="leave()">
                     <button type="button" class="topnav-link {{ $groupActive ? 'is-active' : '' }}" aria-haspopup="true"
                             :aria-expanded="open === '{{ $group['key'] }}' ? 'true' : 'false'"
                             x-on:click="open = open === '{{ $group['key'] }}' ? null : '{{ $group['key'] }}'">
@@ -36,10 +36,10 @@
                         {{ $group['label'] }}
                         <svg class="h-3 w-3 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
                     </button>
-                    <div x-show="open === '{{ $group['key'] }}'" x-cloak class="dropdown-menu" style="margin-top: .25rem; min-width: 15rem">
+                    <div x-show="open === '{{ $group['key'] }}'" x-cloak class="dropdown-menu" style="margin-top: .125rem; min-width: 15rem">
                         @foreach($group['items'] as $item)
                             <a href="{{ $item['url'] }}" class="dropdown-item {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
-                                <x-admin.snow.icon :name="$item['icon']" class="h-5 w-5 shrink-0 text-slate-500" />
+                                <x-admin.snow.icon :name="$item['icon']" class="nav-ico" />
                                 <span class="min-w-0 flex-1">{{ $item['label'] }}</span>
                             </a>
                         @endforeach
@@ -68,13 +68,13 @@
                     </div>
                     <div class="dropdown-divider"></div>
                     <a href="{{ route('admin.2fa.show') }}" class="dropdown-item" role="menuitem">
-                        <x-admin.snow.icon name="lock-closed" class="h-5 w-5 text-slate-500" />
+                        <x-admin.snow.icon name="lock-closed" class="nav-ico" />
                         Verificación en dos pasos
                     </a>
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
                         <button type="submit" class="dropdown-item" role="menuitem">
-                            <x-admin.snow.icon name="arrow-right-on-rectangle" class="h-5 w-5 text-slate-500" />
+                            <x-admin.snow.icon name="arrow-right-on-rectangle" class="nav-ico" />
                             Salir
                         </button>
                     </form>
@@ -93,7 +93,7 @@
                 <span class="sidenav-group-btn">{{ $group['label'] }}</span>
                 @foreach($group['items'] as $item)
                     <a href="{{ $item['url'] }}" class="sidenav-link {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
-                        <x-admin.snow.icon :name="$item['icon']" class="h-5 w-5 shrink-0 {{ $item['active'] ? '' : 'text-slate-500' }}" />
+                        <x-admin.snow.icon :name="$item['icon']" class="nav-ico" />
                         <span class="min-w-0 flex-1 truncate">{{ $item['label'] }}</span>
                     </a>
                 @endforeach
