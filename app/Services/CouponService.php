@@ -70,11 +70,13 @@ class CouponService
      * @param  list<string>  $numbers
      * @param  list<string|null>|null  $tokens  paralelo a $numbers (solo QR)
      */
-    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip): array
+    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null): array
     {
         $required = BigDecimal::of($amount)->toScale(2, self::rounding());
 
-        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip) {
+        [$locId, $locSource] = self::locationFor($locationId, $device);
+
+        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip, $locId, $locSource) {
             // Orden fijo por numero => sin deadlocks entre cobros concurrentes.
             $rows = $this->model::whereIn('coupon_number', $numbers)
                 ->orderBy('coupon_number')
@@ -128,7 +130,8 @@ class CouponService
                         'customer_id' => $coupon->customer_id,
                         'user_id' => $user?->getKey(),
                         'device_id' => $device?->getKey(),
-                        'location_id' => $device?->location_id,
+                        'location_id' => $locId,
+                        'location_source' => $locSource,
                         'ip_address' => $ip,
                     ]);
                 }
@@ -206,6 +209,7 @@ class CouponService
                 'transaction_amount' => $service->money($service->decimal($tx->transaction_amount)->negated()),
                 'device_id' => $tx->device_id,
                 'location_id' => $tx->location_id,
+                'location_source' => $tx->location_source,
                 'legacy_device_id' => $tx->legacy_device_id,
                 'legacy_site_id' => $tx->legacy_site_id,
                 'coupon_type' => $tx->coupon_type,
@@ -246,11 +250,13 @@ class CouponService
      * Recarga (TOP-UP): suma saldo y monto al cupón, respetando las reglas de recarga activas y el
      * saldo máximo. En la API (QR) se exige el token; en el panel el administrador no lo necesita.
      */
-    public function topUp(string $number, ?string $token, string $amount, ?Device $device, Authenticatable $actor, ?string $ip, bool $verifyToken = true, ?string $note = null): array
+    public function topUp(string $number, ?string $token, string $amount, ?Device $device, Authenticatable $actor, ?string $ip, bool $verifyToken = true, ?string $note = null, ?string $locationId = null): array
     {
         $amountDec = BigDecimal::of($amount)->toScale(2, self::rounding());
 
-        return DB::transaction(function () use ($number, $token, $amountDec, $device, $actor, $ip, $verifyToken, $note) {
+        [$locId, $locSource] = self::locationFor($locationId, $device);
+
+        return DB::transaction(function () use ($number, $token, $amountDec, $device, $actor, $ip, $verifyToken, $note, $locId, $locSource) {
             $coupon = $this->model::where('coupon_number', $number)->lockForUpdate()->first();
 
             if (! $coupon || ($verifyToken && $this->type === self::TYPE_QR && ! $this->tokenMatches($coupon, $token))) {
@@ -260,7 +266,7 @@ class CouponService
                 throw new CouponException('Coupon is inactive or expired', 422, ['coupon_number' => $number]);
             }
 
-            TopUpRules::assertAllowed($this->type, $amountDec, $number, $device?->location_id, $device !== null || $verifyToken);
+            TopUpRules::assertAllowed($this->type, $amountDec, $number, $locId, $device !== null || $verifyToken);
 
             $old = $this->decimal($coupon->coupon_balance);
             $new = $old->plus($amountDec);
@@ -282,7 +288,8 @@ class CouponService
                 'customer_id' => $coupon->customer_id,
                 ...self::actor($actor),
                 'device_id' => $device?->getKey(),
-                'location_id' => $device?->location_id,
+                'location_id' => $locId,
+                'location_source' => $locSource,
                 'ip_address' => $ip,
             ]);
 
@@ -295,6 +302,21 @@ class CouponService
                 'transaction_id' => $tx->transaction_id,
             ];
         });
+    }
+
+    /**
+     * Localidad del movimiento: la que envía el dispositivo Android en la transacción y, si no viene, la del
+     * dispositivo registrado. Devuelve [id, origen].
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private static function locationFor(?string $requested, ?Device $device): array
+    {
+        if ($requested !== null && $requested !== '') {
+            return [$requested, 'request'];
+        }
+
+        return $device?->location_id ? [(string) $device->location_id, 'device'] : [null, null];
     }
 
     /** Quién actúa: usuario de la app (UUID) o administrador del panel (ID entero). */

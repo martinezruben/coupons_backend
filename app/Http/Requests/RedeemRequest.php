@@ -19,6 +19,8 @@ class RedeemRequest extends FormRequest
             'coupons.*' => ['required', 'string', 'max:64', 'distinct'],
             'tokens' => ['nullable', 'array'],
             'tokens.*' => ['nullable', 'string', 'max:128'],
+            // Localidad donde se hace el cobro; si no viene, se usa la del dispositivo registrado
+            'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
         ];
     }
 }

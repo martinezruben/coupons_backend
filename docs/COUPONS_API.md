@@ -101,6 +101,12 @@ Una regla suma las condiciones que se activen y **todas deben cumplirse**: local
 
 `/admin/rbac/users` (solo super-admin, menú Configuración): además de los permisos de sus roles, a una persona se le pueden dar permisos directos con la misma matriz que los roles. Los que ya vienen de un rol aparecen en gris y no se quitan aquí. Un super-admin no necesita permisos. Los botones del detalle de un cupón tienen cada uno su permiso por tipo de cupón: ver historial, activar, desactivar, recargar y ajustar saldo. La pantalla trae una sección **Permisos independientes**: acciones que se conceden una por una sin dar acceso a editar (ajustar saldo, recargar, revertir cobros, anular lotes, descargar, ver el historial completo de un cupón, exportar CSV…), con las sensibles marcadas. Cada cambio guarda en la auditoría qué se agregó y qué se quitó, y las visitas a la pantalla quedan como consultas.
 
+## Localidad del canje y auditoría de cupones
+
+**Localidad:** `/api/transaction`, `/api/transactioncb`, `/api/topup` y `/api/topupcb` aceptan un `location_id` opcional (uuid de una localidad existente) que envía el dispositivo Android. Si no viene, se usa la localidad del dispositivo registrado (`Device-Fingerprint`). La transacción guarda la localidad y su origen (`location_source`: `request` o `device`); las reglas de uso de localidad y las reversas usan/heredan ese valor. Los reportes por lote y por cliente (y su CSV) muestran **dónde se canjeó** (neto por localidad), y el detalle del cupón indica la localidad de cada movimiento.
+
+**Auditoría de cupones:** cada fila tiene **Ver detalle**, un modal con la acción explicada, quién la hizo, el cupón, el antes y después, el comentario completo (hasta ahora se recortaba a 255), el lote, la activación (modo, cliente, selección, fechas) y lo que se envió en el panel.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

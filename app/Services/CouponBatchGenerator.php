@@ -189,6 +189,7 @@ class CouponBatchGenerator
             'old_value' => $old,
             'new_value' => $new,
             'reason' => mb_substr($reason, 0, 255),
+            'reason_full' => mb_strlen($reason) > 255 ? $reason : null,
             'ip_address' => $ip,
             'batch_id' => $batch->getKey(),
             'activation_order_id' => $orderId,

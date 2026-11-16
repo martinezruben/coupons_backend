@@ -100,7 +100,30 @@ class AdminUsersManagementTest extends TestCase
 
         $html = $this->get(route('admin.screens.create', 'admin-users'))->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('/<select id="f-is_active"[^>]*>\s*<option value="1"\s+selected/s', $html);
+        $this->assertMatchesRegularExpression('/<input class="sw" type="checkbox" name="is_active" value="1" checked/', $html);
+    }
+
+    public function test_the_admin_user_form_is_the_redesigned_screen_with_a_single_role_choice(): void
+    {
+        Role::findOrCreate('gerente', 'admin');
+        $target = AdminUser::factory()->create(['name' => 'Tomás Objetivo']);
+        $target->assignRole(Role::findOrCreate('gerente', 'admin'));
+        $target->assignRole(Role::findOrCreate('soporte', 'admin'));
+        $this->actingAs($this->superAdmin(), 'admin');
+
+        $html = $this->get(route('admin.screens.edit', ['admin-users', $target->id]))->assertOk()
+            ->assertSee('Tomás Objetivo')->assertSee('Alcance por cliente')->assertSee('Seguridad de la cuenta')->assertSee('Generar contraseña')
+            ->assertSee('Cada usuario tiene un solo rol')->assertSee('se quedará solo con el que elijas')->getContent();
+        $this->assertStringContainsString('type="radio" name="role_names[]" value="gerente"', $html);
+        $this->assertStringNotContainsString('name="role_names[]" multiple', $html);
+
+        // Elegir un rol reemplaza el anterior
+        $this->put(route('admin.screens.update', ['admin-users', $target->id]), ['name' => 'Tomás Objetivo', 'email' => $target->email, 'is_active' => 1, 'role_names' => ['soporte'], 'customer_scope' => 'all'])->assertSessionHasNoErrors();
+        $this->assertSame(['soporte'], $target->fresh()->getRoleNames()->all());
+
+        // «Sin rol» quita el rol
+        $this->put(route('admin.screens.update', ['admin-users', $target->id]), ['name' => 'Tomás Objetivo', 'email' => $target->email, 'is_active' => 1, 'role_names' => [''], 'customer_scope' => 'all'])->assertSessionHasNoErrors();
+        $this->assertSame([], $target->fresh()->getRoleNames()->all());
     }
 
     public function test_super_admin_creates_an_admin_user_with_roles(): void

@@ -17,8 +17,8 @@
         </button>
 
         <a href="{{ route('admin.dashboard') }}" class="topnav-brand" aria-label="{{ $appName }}: inicio">
-            <span class="brand-mark">{{ strtoupper(mb_substr($appName, 0, 1)) }}</span>
-            <span>{{ $appName }}</span>
+            <span class="brand-mark" aria-hidden="true">{{ mb_strtolower(mb_substr($appName, 0, 1)) }}</span>
+            <span class="brand-word">{{ $appName }}</span>
         </a>
 
         {{-- Escritorio: enlaces y desplegables en línea --}}
@@ -28,7 +28,7 @@
             </a>
             @foreach($groups as $group)
                 @php $groupActive = collect($group['items'])->contains(fn ($i) => $i['active']); @endphp
-                <div class="relative">
+                <div class="relative" x-on:mouseenter="open = '{{ $group['key'] }}'" x-on:mouseleave="open = null">
                     <button type="button" class="topnav-link {{ $groupActive ? 'is-active' : '' }}" aria-haspopup="true"
                             :aria-expanded="open === '{{ $group['key'] }}' ? 'true' : 'false'"
                             x-on:click="open = open === '{{ $group['key'] }}' ? null : '{{ $group['key'] }}'">

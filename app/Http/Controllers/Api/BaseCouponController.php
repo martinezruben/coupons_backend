@@ -33,6 +33,7 @@ abstract class BaseCouponController extends Controller
             $this->resolveDevice($request),
             $request->user(),
             $request->ip(),
+            $request->input('location_id'),
         ));
     }
 
@@ -45,6 +46,9 @@ abstract class BaseCouponController extends Controller
             $this->resolveDevice($request),
             $request->user(),
             $request->ip(),
+            true,
+            null,
+            $request->input('location_id'),
         ));
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Models\CouponBatch;
+use App\Models\Location;
 use App\Support\AdminRbac;
 use App\Support\CouponStats;
 use Carbon\Carbon;
@@ -59,7 +60,24 @@ class CouponBatchReportController extends Controller
                 });
         }
 
-        $rows = $batches->map(function (CouponBatch $b) use ($stats, $net) {
+        // Dónde se canjearon (localidad de la transacción de canje), por lote
+        $perLocation = [];
+        foreach (CouponStats::TABLES as $type => $table) {
+            $ids = $batches->where('coupon_type', $type)->pluck('id');
+            if ($ids->isEmpty()) {
+                continue;
+            }
+            DB::table('coupon_transactions as t')->join("{$table} as c", 'c.coupon_id', '=', 't.coupon_id')
+                ->where('t.coupon_type', $type)->whereIn('c.batch_id', $ids)->whereIn('t.kind', ['REDEEM', 'REVERSAL'])
+                ->when($allowed !== null, fn ($q) => $q->whereIn('t.customer_id', $allowed))
+                ->selectRaw('c.batch_id, t.location_id, SUM(t.transaction_amount) as v')->groupBy('c.batch_id', 't.location_id')->get()
+                ->each(function ($r) use (&$perLocation) {
+                    $perLocation[$r->batch_id][$r->location_id ?? ''] = round((float) $r->v, 2);
+                });
+        }
+        $locationNames = Location::query()->whereIn('id', collect($perLocation)->flatMap(fn ($l) => array_keys($l))->filter()->unique())->pluck('name', 'id');
+
+        $rows = $batches->map(function (CouponBatch $b) use ($stats, $net, $perLocation, $locationNames) {
             $s = $stats[$b->id] ?? [];
             $n = fn (string $status) => $s[$status]['n'] ?? 0;
 
@@ -68,6 +86,7 @@ class CouponBatchReportController extends Controller
                 'generated' => $n('GENERATED'), 'assigned' => $n('ASSIGNED'), 'active' => $n('ACTIVE'), 'inactive' => $n('INACTIVE'), 'void' => $n('VOID'),
                 'circulating' => (float) ($s['ACTIVE']['bal'] ?? 0),
                 'redeemed' => round((float) ($net[$b->id] ?? 0), 2),
+                'locations' => CouponStats::locationBreakdown($perLocation[$b->id] ?? [], $locationNames->all()),
             ];
         });
 
@@ -75,11 +94,12 @@ class CouponBatchReportController extends Controller
             abort_unless($admin->can(AdminRbac::actionPermissions('coupon-batch-report')['export']['permission']), 403);
 
             return $this->streamCsv("reporte-lotes-{$from->format('Ymd')}_{$to->format('Ymd')}.csv",
-                ['Lote', 'Nombre', 'Tipo', 'Creado', 'Estado', 'Cantidad', 'Sin asignar', 'Asignados', 'Activos', 'Inactivos', 'Anulados', 'Saldo en circulación', 'Cobrado neto'],
+                ['Lote', 'Nombre', 'Tipo', 'Creado', 'Estado', 'Cantidad', 'Sin asignar', 'Asignados', 'Activos', 'Inactivos', 'Anulados', 'Saldo en circulación', 'Cobrado neto', 'Dónde se canjeó'],
                 $rows->map(fn ($r) => [
                     $r->batch->code, $r->batch->name, $r->batch->coupon_type === 'QRCODE' ? 'QR' : 'Barras', $r->batch->created_at->format('Y-m-d'), $r->batch->status,
                     $r->batch->quantity, $r->generated, $r->assigned, $r->active, $r->inactive, $r->void,
                     number_format($r->circulating, 2, '.', ''), number_format($r->redeemed, 2, '.', ''),
+                    collect($r->locations)->map(fn ($l) => $l['name'].': '.number_format($l['amount'], 2, '.', ''))->implode(' | '),
                 ])->all());
         }
 

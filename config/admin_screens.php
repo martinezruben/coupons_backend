@@ -540,13 +540,7 @@ return [
                 'action' => [
                     'label' => 'Acción',
                     'type' => 'select',
-                    'options' => [
-                        '' => 'Todas',
-                        'batch_create' => 'Lote creado', 'batch_generate' => 'Lote generado', 'batch_download' => 'Archivo descargado', 'export_expired' => 'Archivo vencido',
-                        'assign' => 'Asignación', 'schedule' => 'Activación programada', 'activate' => 'Activación', 'cancel_activation' => 'Activación cancelada',
-                        'unassign' => 'Liberación', 'deactivate' => 'Desactivación', 'void_batch' => 'Lote anulado',
-                        'topup' => 'Recarga', 'restore' => 'Ajuste de saldo', 'reverse' => 'Reversa',
-                    ],
+                    'options' => ['' => 'Todas'] + CouponAuditLog::ACTIONS,
                     'apply' => ['type' => 'column', 'column' => 'action'],
                 ],
                 'date_from' => [

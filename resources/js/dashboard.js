@@ -10,7 +10,7 @@ if (el) {
     const data = JSON.parse(el.textContent);
     const css = getComputedStyle(document.documentElement);
     const font = getComputedStyle(document.body).fontFamily;
-    const colors = { blue: '#066fd1', green: '#2fb344', azure: '#4299e1', yellow: '#f59f00', red: '#d63939', gray: '#a3a3a3' };
+    const colors = { blue: '#0F3D33', green: '#1E9E5A', azure: '#A8CE3A', yellow: '#D8941A', red: '#B42318', gray: '#C9D1C5' };
     const money = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const day = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('es-DO', { day: '2-digit', month: 'short' });
     const base = {

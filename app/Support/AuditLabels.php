@@ -51,6 +51,7 @@ class AuditLabels
         'admin.reports.redemptions' => 'Consultó el reporte de canjes',
         'admin.audit.index' => 'Consultó la auditoría',
         'admin.audit.show' => 'Abrió el detalle de un registro de auditoría',
+        'admin.coupon-audit-logs.show' => 'Abrió el detalle de un registro de auditoría de cupones',
         'admin.audit-logs.show' => 'Abrió el detalle de un registro de auditoría',
         'admin.rbac.matrix.index' => 'Abrió la matriz de permisos',
         'admin.rbac.matrix.edit' => 'Abrió los permisos de un rol',

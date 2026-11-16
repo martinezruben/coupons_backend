@@ -14,9 +14,9 @@
     @endif
 
     <div class="snow-card">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+        <div class="flex flex-wrap items-start justify-between gap-5 px-7 py-6">
             <div>
-                <h2 class="text-base font-medium text-slate-800">{{ $batch->name }}</h2>
+                <h2 class="!text-3xl !font-bold">{{ $batch->name }}</h2>
                 <p class="text-sm text-slate-500">
                     {{ $batch->code }} · {{ $batch->coupon_type === 'QRCODE' ? 'QR' : 'Código de barras' }} · {{ number_format($batch->quantity) }} cupones de {{ \App\Support\Format::money($batch->amount) }}
                     @if($batch->expire_date) · vence {{ $batch->expire_date->format('d/m/Y') }} @endif
@@ -35,17 +35,17 @@
         </div>
 
         @if($restricted)
-            <div class="border-b border-slate-200 bg-slate-100 px-5 py-3 text-sm text-slate-600">
+            <div class="mx-7 mb-4 rounded-[14px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
                 Tu alcance está limitado a los clientes que te asignaron: ves los cupones disponibles (generados) y solo los de tus clientes.
             </div>
         @endif
 
         @if($batch->hasExportFile())
-            <div class="border-b border-slate-200 bg-slate-100 px-5 py-3 text-sm text-slate-600">
+            <div class="mx-7 mb-4 rounded-[14px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
                 El archivo con los tokens vence el {{ $batch->export_expires_at->format('d/m/Y H:i') }} o al descargarse. Después no hay forma de recuperarlos.
             </div>
         @elseif($batch->status === 'ready')
-            <div class="border-b border-slate-200 bg-slate-100 px-5 py-3 text-sm text-slate-600">
+            <div class="mx-7 mb-4 rounded-[14px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
                 @if($batch->export_downloaded_at)
                     El archivo se descargó el {{ $batch->export_downloaded_at->format('d/m/Y H:i') }} y ya no existe en el servidor.
                 @else
@@ -54,72 +54,54 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-2 gap-4 p-5 sm:grid-cols-5">
-            @foreach($labels as $status => $label)
-                <div>
-                    <div class="subheader">{{ $label }}</div>
-                    <div class="stat-value">{{ number_format($funnel[$status] ?? 0) }}</div>
-                </div>
-            @endforeach
-        </div>
-        <div class="px-5 pb-5">
-            <div class="flex h-2 overflow-hidden rounded-full bg-slate-100" role="img" aria-label="Estado de los cupones del lote">
-                @foreach(['GENERATED' => 'bg-slate-400', 'ASSIGNED' => 'bg-sky-500', 'ACTIVE' => 'bg-emerald-500', 'INACTIVE' => 'bg-amber-500', 'VOID' => 'bg-rose-500'] as $status => $color)
-                    <div class="{{ $color }}" style="width: {{ round(($funnel[$status] ?? 0) / $total * 100, 2) }}%"></div>
+        <div class="perf" style="margin-top: 1.25rem"></div>
+        <div class="flex flex-col gap-5 px-7 pb-7 pt-6">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4">
+                @foreach($labels as $status => $label)
+                    <div>
+                        <span class="eyebrow">{{ $label }}</span>
+                        <div class="font-display text-[40px] font-bold leading-[1.1] {{ $status === 'ACTIVE' ? 'text-green-600' : '' }}">{{ number_format($funnel[$status] ?? 0) }}</div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="seg" role="img" aria-label="Estado de los cupones del lote">
+                @foreach(['GENERATED' => '#C9D1C5', 'ASSIGNED' => '#74C58D', 'ACTIVE' => '#1E9E5A', 'INACTIVE' => '#D8941A', 'VOID' => '#E15B4E'] as $status => $color)
+                    <div style="flex: {{ $funnel[$status] ?? 0 }}; background: {{ $color }}"></div>
                 @endforeach
             </div>
         </div>
     </div>
 
-    <div class="snow-card mt-6">
-        <div class="border-b border-slate-200 px-5 py-4">
-            <h2 class="text-base font-medium text-slate-800">Activaciones del lote</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table>
-                <thead><tr>
-                    <th class="text-left">Solicitada</th><th class="text-left">Cliente</th><th class="text-left">Modo</th>
-                    <th class="text-left">Activar el</th><th class="text-right">Cupones</th><th class="text-left">Estado</th><th></th>
-                </tr></thead>
-                <tbody>
-                    @forelse($orders as $order)
-                        <tr>
-                            <td>
-                                {{ $order->created_at->format('d/m/Y H:i') }}
-                                <span class="block text-xs text-slate-500">por {{ $order->requester?->name ?? '—' }}</span>
-                            </td>
-                            <td>
-                                {{ $order->customer?->name ?? '—' }}
-                                @if($order->reason)<span class="block text-xs text-slate-500">{{ $order->reason }}</span>@endif
-                            </td>
-                            <td><x-admin.snow.badge field="mode" :value="$order->mode" /></td>
-                            <td>{{ $order->activate_at?->format('d/m/Y H:i') ?? '—' }}</td>
-                            <td class="text-right tabular-nums">{{ number_format($order->coupons_count) }}</td>
-                            <td><x-admin.snow.badge field="status" :value="$order->status" /></td>
-                            <td class="text-right">
-                                @if($can['cancel'] && $order->status === 'pending')
-                                    <form method="POST" action="{{ route('admin.activation-orders.cancel', $order) }}" class="inline"
-                                          onsubmit="const r = prompt('Motivo de la cancelación (opcional):'); if (r === null) return false; this.reason.value = r;">
-                                        @csrf
-                                        <input type="hidden" name="reason" value="">
-                                        <button type="submit" class="snow-btn-secondary snow-btn-sm">Cancelar</button>
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="7" class="py-8 text-center text-slate-500">Aún no se asignó ni activó ningún cupón de este lote.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <section class="snow-card mt-6 flex flex-col gap-4 px-7 py-6">
+        <h2>Activaciones del lote</h2>
+        @forelse($orders as $order)
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] items-start gap-x-6 gap-y-4 rounded-2xl bg-slate-50 px-5 py-4">
+                <div><span class="eyebrow">Solicitada</span><div class="mt-1 font-semibold">{{ $order->created_at->format('d/m/Y H:i') }}</div><div class="font-mono text-xs text-slate-500">por {{ $order->requester?->name ?? '—' }}</div></div>
+                <div><span class="eyebrow">Cliente</span><div class="mt-1 font-semibold">{{ $order->customer?->name ?? '—' }}</div>@if($order->reason)<div class="text-[13px] text-slate-500">{{ $order->reason }}</div>@endif</div>
+                <div><span class="eyebrow">Modo</span><div class="mt-1.5"><x-admin.snow.badge field="mode" :value="$order->mode" /></div></div>
+                <div><span class="eyebrow">Activar el</span><div class="mt-1 text-slate-500">{{ $order->activate_at?->format('d/m/Y H:i') ?? '—' }}</div></div>
+                <div><span class="eyebrow">Cupones</span><div class="font-display text-2xl font-bold">{{ number_format($order->coupons_count) }}</div></div>
+                <div><span class="eyebrow">Estado</span><div class="mt-1.5"><x-admin.snow.badge field="status" :value="$order->status" /></div>
+                    @if($can['cancel'] && $order->status === 'pending')
+                        <form method="POST" action="{{ route('admin.activation-orders.cancel', $order) }}" class="mt-2"
+                              onsubmit="const r = prompt('Motivo de la cancelación (opcional):'); if (r === null) return false; this.reason.value = r;">
+                            @csrf
+                            <input type="hidden" name="reason" value="">
+                            <button type="submit" class="snow-btn-secondary snow-btn-sm">Cancelar</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <p class="py-6 text-center text-slate-500">Aún no se asignó ni activó ningún cupón de este lote.</p>
+        @endforelse
+    </section>
 
     @if($can['void'] && in_array($batch->status, ['ready', 'generating'], true))
-        <div class="snow-card mt-6">
-            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div class="snow-card mt-6" style="border-color: #F0C4BE">
+            <div class="flex flex-wrap items-center justify-between gap-3 px-7 py-5">
                 <div>
-                    <h2 class="text-base font-medium text-slate-800">Anular lote</h2>
+                    <h2>Anular lote</h2>
                     <p class="text-sm text-slate-500">Anula los cupones que aún no están activos y cancela las activaciones programadas. Los activos no se tocan.</p>
                 </div>
                 <form method="POST" action="{{ route('admin.coupon-batches.void', $batch) }}"

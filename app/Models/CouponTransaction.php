@@ -31,6 +31,7 @@ class CouponTransaction extends Model
         'customer_id',
         'device_id',
         'location_id',
+        'location_source',
         'legacy_device_id',
         'legacy_site_id',
         'ip_address',

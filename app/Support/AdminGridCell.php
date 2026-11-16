@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\ApiRequestLog;
+use App\Models\CouponAuditLog;
 use App\Models\Device;
 use App\Models\Location;
 use App\Models\TopUpRule;
@@ -127,6 +128,10 @@ class AdminGridCell
 
                 return $parts === [] ? '—' : implode(' · ', $parts);
             }
+        }
+
+        if ($item instanceof CouponAuditLog && $field === 'action') {
+            return CouponAuditLog::ACTIONS[$item->action] ?? $item->action;
         }
 
         if ($item instanceof AdminAuditLog) {
