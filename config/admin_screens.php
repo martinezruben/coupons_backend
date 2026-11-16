@@ -213,7 +213,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['detail' => 'Ver historial completo', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'actions' => ['detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -275,7 +275,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['detail' => 'Ver historial completo', 'toggle' => 'Activar/desactivar', 'adjust' => 'Ajustar saldo', 'topup' => 'Recargar'],
+        'actions' => ['detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [

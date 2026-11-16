@@ -15,8 +15,8 @@
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
         <a href="{{ route('admin.coupons.index') }}" class="text-sm text-primary-600 hover:underline">← Volver a cupones</a>
         <div class="flex flex-wrap gap-2">
-            @if($can['toggle'] && in_array($coupon->status, ['ACTIVE', 'INACTIVE'], true))
-                @php $isActive = $coupon->status === 'ACTIVE'; @endphp
+            @php $isActive = $coupon->status === 'ACTIVE'; @endphp
+            @if(($isActive ? $can['deactivate'] : $can['activate']) && in_array($coupon->status, ['ACTIVE', 'INACTIVE'], true))
                 <form method="POST" action="{{ route('admin.coupons.toggle', [$type, $coupon->getKey()]) }}"
                       onsubmit="const r = prompt('Motivo para {{ $isActive ? 'desactivar' : 'activar' }} este cupón:'); if (!r || r.trim().length < 3) return false; this.reason.value = r;">
                     @csrf<input type="hidden" name="active" value="{{ $isActive ? 0 : 1 }}"><input type="hidden" name="reason" value="">

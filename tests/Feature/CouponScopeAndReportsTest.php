@@ -52,7 +52,7 @@ class CouponScopeAndReportsTest extends TestCase
 
         $this->restricted = AdminUser::factory()->create(['customer_scope' => 'selected']);
         $this->restricted->customers()->sync([$this->visible->id]);
-        foreach (['customers.view', 'customers.edit', 'coupons.view', 'coupons.detail', 'coupon_batch_report.export', 'coupon_customer_report.export', 'coupons.toggle', 'coupon_batches.view', 'coupon_batches.assign', 'coupon_batches.activate', 'coupon_batches.activate_all', 'coupon_batches.cancel', 'coupon_batch_report.view', 'coupon_customer_report.view', 'coupon_reports.view'] as $p) {
+        foreach (['customers.view', 'customers.edit', 'coupons.view', 'coupons.detail', 'coupon_batch_report.export', 'coupon_customer_report.export', 'coupons.activate', 'coupons.deactivate', 'coupon_batches.view', 'coupon_batches.assign', 'coupon_batches.activate', 'coupon_batches.activate_all', 'coupon_batches.cancel', 'coupon_batch_report.view', 'coupon_customer_report.view', 'coupon_reports.view'] as $p) {
             Permission::findOrCreate($p, 'admin');
             $this->restricted->givePermissionTo($p);
         }

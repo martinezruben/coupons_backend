@@ -126,4 +126,61 @@ class IndependentPermissionsTest extends TestCase
         $this->assertTrue(Role::findByName('ops-viewer', 'admin')->hasPermissionTo('coupons.detail'));
         $this->assertFalse(Role::findByName('generador', 'admin')->hasPermissionTo('coupons.adjust'));
     }
+
+    public function test_activate_and_deactivate_are_separate_permissions_and_buttons(): void
+    {
+        $id = $this->coupon(); // ACTIVE
+        $url = route('admin.coupons.toggle', ['barcode', $id]);
+        $detail = route('admin.coupons.show', ['barcode', $id]);
+
+        // Solo activar: no puede desactivar y el botón no aparece
+        $onlyActivate = $this->admin('coupon_barcodes.view', 'coupon_barcodes.detail', 'coupon_barcodes.activate');
+        $this->actingAs($onlyActivate, 'admin')->post($url, ['active' => 0, 'reason' => 'Fraude'])->assertForbidden();
+        $this->get($detail)->assertOk()->assertDontSee('Desactivar')->assertDontSee('Ajustar saldo')->assertDontSee('Recargar');
+
+        // Solo desactivar: el botón aparece y funciona; activar sigue prohibido
+        $onlyDeactivate = $this->admin('coupon_barcodes.view', 'coupon_barcodes.detail', 'coupon_barcodes.deactivate');
+        $this->actingAs($onlyDeactivate, 'admin')->get($detail)->assertOk()->assertSee('Desactivar');
+        $this->post($url, ['active' => 0, 'reason' => 'Fraude'])->assertRedirect();
+        $this->assertSame('INACTIVE', DB::table('coupons_codbar')->where('coupon_id', $id)->value('status'));
+        $this->post($url, ['active' => 1, 'reason' => 'Error'])->assertForbidden();
+        $this->get($detail)->assertOk()->assertDontSee('>Activar<', false);
+
+        $this->actingAs($onlyActivate->fresh(), 'admin')->get($detail)->assertOk()->assertSee('Activar');
+    }
+
+    public function test_the_user_screen_groups_the_coupon_buttons_one_by_one(): void
+    {
+        $target = AdminUser::factory()->create();
+        $html = $this->actingAs($this->super(), 'admin')->get(route('admin.rbac.users.edit', $target))->assertOk()->assertSee('Botones del detalle de un cupón')->getContent();
+
+        foreach (['Desactivar cupón', 'Activar cupón', 'Recargar cupón', 'Ajustar saldo del cupón', 'Cupón QR', 'Cupón de barras'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        foreach (['coupons', 'coupon_barcodes'] as $r) {
+            foreach (['activate', 'deactivate', 'topup', 'adjust', 'detail'] as $a) {
+                $this->assertStringContainsString('value="'.$r.'.'.$a.'"', $html);
+            }
+        }
+        $this->assertStringNotContainsString('value="coupons.toggle"', $html);
+        $this->assertLessThan(strpos($html, 'Pantalla</th>') ?: strpos($html, 'Pantalla'), strpos($html, 'Botones del detalle de un cupón'));
+    }
+
+    public function test_the_migration_splits_the_old_toggle_permission(): void
+    {
+        $role = Role::findOrCreate('gestor', 'admin');
+        Permission::findOrCreate('coupons.toggle', 'admin');
+        $role->givePermissionTo('coupons.toggle');
+        $direct = $this->admin('coupons.toggle');
+        $none = $this->admin('coupons.view');
+
+        (require database_path('migrations/2026_11_22_000001_split_coupon_toggle_permission.php'))->up();
+        (require database_path('migrations/2026_11_22_000001_split_coupon_toggle_permission.php'))->up();
+
+        $names = $role->fresh()->permissions->pluck('name')->all();
+        $this->assertEqualsCanonicalizing(['coupons.activate', 'coupons.deactivate'], $names);
+        $this->assertEqualsCanonicalizing(['coupons.activate', 'coupons.deactivate'], $direct->fresh()->getDirectPermissions()->pluck('name')->all());
+        $this->assertSame([], $none->fresh()->getDirectPermissions()->pluck('name')->diff(['coupons.view'])->all());
+        $this->assertDatabaseMissing('permissions', ['name' => 'coupons.toggle']);
+    }
 }

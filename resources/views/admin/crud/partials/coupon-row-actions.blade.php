@@ -31,8 +31,8 @@
         </form>
     @endif
 @elseif($couponType)
-    @if($perm('toggle') && in_array($item->status, ['ACTIVE', 'INACTIVE'], true))
-        @php $isActive = $item->status === 'ACTIVE'; @endphp
+    @php $isActive = $item->status === 'ACTIVE'; @endphp
+    @if($perm($isActive ? 'deactivate' : 'activate') && in_array($item->status, ['ACTIVE', 'INACTIVE'], true))
         <form method="POST" action="{{ route('admin.coupons.toggle', [$couponType, $item->getKey()]) }}" class="inline"
               onsubmit="const r = prompt('Motivo para {{ $isActive ? 'desactivar' : 'activar' }} este cupón:'); if (!r || r.trim().length < 3) return false; this.reason.value = r;">
             @csrf

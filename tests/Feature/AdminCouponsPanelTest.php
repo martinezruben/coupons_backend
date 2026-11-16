@@ -101,7 +101,7 @@ class AdminCouponsPanelTest extends TestCase
         $this->actingAs($this->admin('coupons.view'), 'admin')->post($url, ['active' => 0, 'reason' => 'Fraude'])->assertForbidden();
         $this->assertSame(1, (int) DB::table('coupons')->value('coupon_active'));
 
-        $admin = $this->admin('coupons.view', 'coupons.toggle');
+        $admin = $this->admin('coupons.view', 'coupons.activate', 'coupons.deactivate');
         $this->actingAs($admin, 'admin')->post($url, ['active' => 0])->assertSessionHasErrors('reason');
         $this->post($url, ['active' => 0, 'reason' => 'Fraude detectado'])->assertRedirect(route('admin.screens.index', 'coupons'));
 
@@ -114,7 +114,7 @@ class AdminCouponsPanelTest extends TestCase
         $id = $this->qr('Q1', '10.00');
         $url = route('admin.coupons.adjust', ['qr', $id]);
 
-        $this->actingAs($this->admin('coupons.view', 'coupons.toggle'), 'admin')->post($url, ['balance' => 20, 'reason' => 'Ajuste de caja'])->assertForbidden();
+        $this->actingAs($this->admin('coupons.view', 'coupons.activate', 'coupons.deactivate'), 'admin')->post($url, ['balance' => 20, 'reason' => 'Ajuste de caja'])->assertForbidden();
         $this->assertSame('10.00', $this->balance('coupons', $id));
 
         $admin = $this->admin('coupons.view', 'coupons.adjust');
@@ -173,7 +173,7 @@ class AdminCouponsPanelTest extends TestCase
 
         $this->seed(RbacSeeder::class);
         $manager = Role::findByName('ops-manager', 'admin');
-        $this->assertTrue($manager->hasPermissionTo('coupons.toggle'));
+        $this->assertTrue($manager->hasPermissionTo('coupons.deactivate'));
         $this->assertFalse($manager->hasPermissionTo('coupons.adjust'), 'ajustar saldo es solo super-admin');
         $this->assertFalse($manager->hasPermissionTo('coupon_transactions.reverse'));
         $this->assertTrue(Role::findByName('super-admin', 'admin')->hasPermissionTo('coupons.adjust'));

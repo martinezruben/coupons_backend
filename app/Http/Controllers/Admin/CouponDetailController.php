@@ -189,7 +189,8 @@ class CouponDetailController extends Controller
             'balanceCheck' => abs($running - (float) $coupon->coupon_balance) < 0.005,
             'truncated' => $transactions->count() >= self::MAX_EVENTS || $audits->count() >= self::MAX_EVENTS,
             'can' => [
-                'toggle' => $admin->can(AdminRbac::actionPermissions($screen)['toggle']['permission'] ?? '-'),
+                'activate' => $admin->can(AdminRbac::actionPermissions($screen)['activate']['permission'] ?? '-'),
+                'deactivate' => $admin->can(AdminRbac::actionPermissions($screen)['deactivate']['permission'] ?? '-'),
                 'adjust' => $admin->can(AdminRbac::actionPermissions($screen)['adjust']['permission'] ?? '-'),
                 'topup' => $admin->can(AdminRbac::actionPermissions($screen)['topup']['permission'] ?? '-'),
             ],
