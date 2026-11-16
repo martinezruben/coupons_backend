@@ -95,6 +95,8 @@ class ScreenCrudController extends Controller
         $locationsMapPins = [];
         if ($screen === 'locations') {
             $locationsMapPins = LocationMapSyncPins::forRequest($request, $user->can($p['edit']));
+
+            return $this->locationsView($request, $items, $locationsMapPins, $user->can($p['edit']), $user->can($p['delete']));
         }
 
         return view('admin.crud.index', [
@@ -108,6 +110,31 @@ class ScreenCrudController extends Controller
         ]);
     }
 
+    /** Localidades con el diseño de tarjetas perforadas: contadores por estado, filtros y una tarjeta por localidad. */
+    private function locationsView(Request $request, $items, array $pins, bool $canEdit, bool $canDelete)
+    {
+        $byId = collect($pins)->keyBy('id');
+        $period = in_array($request->query('sync'), ['today', 'yesterday', 'last_week', 'last_month'], true) ? $request->query('sync') : null;
+        $q = trim((string) $request->query('q', ''));
+
+        $rows = collect($items->items())->map(fn ($loc) => ['loc' => $loc, 'pin' => $byId->get((string) $loc->getKey())])
+            ->filter(fn ($r) => $r['pin'] !== null)
+            ->when($period, fn ($c) => $c->filter(fn ($r) => $r['pin']['syncInPeriod'][$period] ?? false))
+            ->when($q !== '', fn ($c) => $c->filter(fn ($r) => mb_stripos($r['loc']->name.' '.$r['loc']->address, $q) !== false))
+            ->values();
+
+        return view('admin.locations.index', [
+            'rows' => $rows,
+            'items' => $items,
+            'counts' => collect(['online', 'stale', 'contingency', 'inactive'])->mapWithKeys(fn ($k) => [$k => collect($pins)->where('status', $k)->count()]),
+            'active' => $request->query('filter.is_active', data_get($request->query('filter'), 'is_active', '')),
+            'sync' => $period,
+            'q' => $q,
+            'canEdit' => $canEdit,
+            'canDelete' => $canDelete,
+        ]);
+    }
+
     public function create(string $screen)
     {
         if ($screen === 'topup-rules') {
@@ -118,7 +145,7 @@ class ScreenCrudController extends Controller
         $this->assertScreenWritable($cfg);
         abort_if(! empty($cfg['disable_create']), 404);
 
-        return view('admin.crud.form', [
+        return view($screen === 'admin-users' ? 'admin.admin-users.form' : 'admin.crud.form', [
             'item' => null,
             'screen' => $screen,
             'cfg' => $cfg,
@@ -175,7 +202,7 @@ class ScreenCrudController extends Controller
             $item->load('location');
         }
 
-        return view('admin.crud.form', [
+        return view($screen === 'admin-users' ? 'admin.admin-users.form' : 'admin.crud.form', [
             'item' => $item,
             'screen' => $screen,
             'cfg' => $cfg,
@@ -408,6 +435,8 @@ class ScreenCrudController extends Controller
         }
 
         if ($screen === 'admin-users') {
+            // «Sin rol» llega como valor vacío: no es un rol
+            $request->merge(['role_names' => array_values(array_filter((array) $request->input('role_names', []), fn ($v) => is_string($v) && $v !== ''))]);
             if (is_string($request->input('email'))) {
                 $request->merge(['email' => strtolower(trim($request->input('email')))]);
             }

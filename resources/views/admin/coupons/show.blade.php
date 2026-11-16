@@ -49,6 +49,7 @@
                     <h2 class="text-base font-medium text-slate-800">{{ $couponType === 'QRCODE' ? 'Cupón QR' : 'Cupón de barras' }}</h2>
                     <span class="snow-tag ml-auto {{ $statusTag[$coupon->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statuses[$coupon->status] ?? $coupon->status }}</span>
                 </header>
+                <div class="perf" style="margin-top: 0"></div>
                 <dl class="space-y-3 p-5 text-sm">
                     <div><dt class="text-xs text-slate-500">Número</dt><dd class="break-all font-mono text-slate-900">{{ $coupon->coupon_number }}</dd></div>
                     <div class="grid grid-cols-2 gap-3">

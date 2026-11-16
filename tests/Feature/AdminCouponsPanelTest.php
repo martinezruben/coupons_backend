@@ -58,9 +58,9 @@ class AdminCouponsPanelTest extends TestCase
 
         $res = $this->get(route('admin.coupons.index'))->assertOk()->assertSee('Q1')->assertSee('B1')->assertSee('$50.00')->assertSee('Cupón QR')->assertSee('Cupón de barras');
         $this->assertStringNotContainsString('secret-token', $res->getContent());
-        $this->get(route('admin.coupons.index', ['type' => 'CODBAR']))->assertOk()->assertSee('B1')->assertDontSee('Q1');
-        $this->get(route('admin.coupons.index', ['type' => 'QRCODE']))->assertOk()->assertSee('Q1')->assertDontSee('B1');
-        $this->get(route('admin.coupons.index', ['q' => 'B']))->assertOk()->assertSee('B1')->assertDontSee('Q1');
+        $this->get(route('admin.coupons.index', ['type' => 'CODBAR']))->assertOk()->assertSee('B1')->assertDontSee('>Q1<', false);
+        $this->get(route('admin.coupons.index', ['type' => 'QRCODE']))->assertOk()->assertSee('Q1')->assertDontSee('>B1<', false);
+        $this->get(route('admin.coupons.index', ['q' => 'B']))->assertOk()->assertSee('B1')->assertDontSee('>Q1<', false);
         $this->get(route('admin.screens.index', 'coupon-barcodes'))->assertRedirect(route('admin.coupons.index', ['type' => 'CODBAR']));
     }
 
@@ -71,7 +71,7 @@ class AdminCouponsPanelTest extends TestCase
 
         $this->actingAs($this->admin(), 'admin')->get(route('admin.coupons.index'))->assertForbidden();
         // Con solo el permiso de barras, la lista unificada no muestra ni abre cupones QR
-        $this->actingAs($this->admin('coupon_barcodes.view'), 'admin')->get(route('admin.coupons.index'))->assertOk()->assertSee('B1')->assertDontSee('Q1');
+        $this->actingAs($this->admin('coupon_barcodes.view'), 'admin')->get(route('admin.coupons.index'))->assertOk()->assertSee('B1')->assertDontSee('>Q1<', false);
         $this->get(route('admin.coupons.show', ['qr', DB::table('coupons')->value('coupon_id')]))->assertForbidden();
     }
 

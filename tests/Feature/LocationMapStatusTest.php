@@ -101,9 +101,9 @@ class LocationMapStatusTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get('/admin/screens/locations')
             ->assertOk()
-            ->assertSee('data-map-filter="contingency"', false)
-            ->assertSee('data-status-url', false)
             ->assertSee('Sede Sur')
-            ->assertSee('Ver estado en lista');
+            ->assertSee('En contingencia')
+            ->assertSee('Sin sincronizar')
+            ->assertSee('Sin coordenadas');
     }
 }

@@ -769,3 +769,23 @@ input[type='checkbox'], input[type='radio'] { accent-color: #0F3D33; }
 .stat-value { font-weight: 700; }
 
 .snow-card h2, .snow-card h3.font-medium { font-family: 'Bricolage Grotesque', Figtree, sans-serif; font-weight: 600; letter-spacing: -0.01em; font-size: 1.25rem; }
+
+/* Etiquetas de estado del diseño (.b) */
+.b { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font: 600 12px Figtree, sans-serif; white-space: nowrap; }
+.b::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.b-ok { background: #E3F4E8; color: #0B6B3A; }
+.b-warn { background: #FFF0D1; color: #8A4B00; }
+.b-bad { background: #FDE7E4; color: #A3261B; }
+.b-mute { background: #ECEFE8; color: #44544C; }
+
+/* Chips de permisos y tarjetas de opción (rol, alcance) */
+.chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1.5px solid #CBD3C6; border-radius: 999px; font-size: 14px; font-weight: 500; background: #fff; cursor: pointer; }
+.chip input { accent-color: #0F3D33; width: 16px; height: 16px; margin: 0; }
+.chip:has(input:checked) { background: #E3F4E8; border-color: #0F3D33; }
+.rcard { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #CBD3C6; border-radius: 16px; background: #fff; cursor: pointer; min-height: 56px; }
+.rcard input { accent-color: #0F3D33; width: 18px; height: 18px; margin: 2px 0 0; }
+.rcard:has(input:checked) { background: #E3F4E8; border-color: #0F3D33; }
+.sw { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; background: #CBD3C6; position: relative; cursor: pointer; margin: 0; flex: 0 0 auto; border: 0; }
+.sw::after { content: ''; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .12s; }
+.sw:checked { background: #0F3D33; }
+.sw:checked::after { left: 22px; }
