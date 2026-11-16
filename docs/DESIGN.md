@@ -1,3 +1,18 @@
+# Diseño: «Panel claro» (rediseño vigente)
+
+Desde noviembre de 2026 el sitio usa el rediseño **Panel claro** (guía y pantallas en el archivo de diseño entregado):
+
+- **Color:** verde bosque `#0F3D33` (botones principales, menú activo), lima `#D4F76B` (acentos, avatar, cifras sobre verde), fondo `#F6F7F2`, superficies blancas, tinta `#10241E`, gris verdoso `#5B6B63`. Estados: verde `#0B6B3A` sobre `#E3F4E8`, ámbar `#8A4B00` sobre `#FFF0D1`, rojo `#A3261B` sobre `#FDE7E4`.
+- **Tipografía** (autoalojada en `public/fonts`): Bricolage Grotesque para títulos, Figtree para texto, JetBrains Mono para códigos y etiquetas (`.eyebrow`).
+- **Forma:** botones y etiquetas en píldora, tarjetas de 20 px, campos de 46 px con radio 14 px.
+- **Motivo:** el cupón perforado — líneas punteadas y muescas (`.perf`, `.perfv`, `.ticket`) — en el saldo de Inicio, el reporte de lotes, el login y el logo.
+- **Navegación:** barra horizontal con píldoras y desplegables al pasar el cursor; el grupo actual va en verde bosque con un punto lima.
+- Los tokens viven en `resources/css/app.css` (variables `:root`) y `tailwind.config.js` (escalas `primary`, `slate`, `green`, `red`, `amber`, `lime`); las vistas siguen usando las mismas clases (`snow-*`), ya restyladas.
+
+*A continuación, el documento del diseño anterior (Tabler/UI), conservado como referencia histórica.*
+
+---
+
 # Diseño del panel
 
 El panel sigue el sistema de diseño **Tabler/UI** del proyecto (artefacto «Tabler/UI»): paneles densos, tipografía del sistema, neutros sin tinte y **un único acento azul**. No se carga ninguna fuente web.

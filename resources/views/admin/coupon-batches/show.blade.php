@@ -16,7 +16,7 @@
     <div class="snow-card">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
             <div>
-                <h2 class="text-base font-medium text-slate-800">{{ $batch->name }}</h2>
+                <h2 class="font-display text-2xl font-bold text-slate-900">{{ $batch->name }}</h2>
                 <p class="text-sm text-slate-500">
                     {{ $batch->code }} · {{ $batch->coupon_type === 'QRCODE' ? 'QR' : 'Código de barras' }} · {{ number_format($batch->quantity) }} cupones de {{ \App\Support\Format::money($batch->amount) }}
                     @if($batch->expire_date) · vence {{ $batch->expire_date->format('d/m/Y') }} @endif
