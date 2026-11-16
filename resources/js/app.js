@@ -229,6 +229,46 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    Alpine.data('couponAuditDetail', (detailBaseUrl = '') => ({
+        detailBaseUrl: typeof detailBaseUrl === 'string' ? detailBaseUrl : '',
+        open: false,
+        loading: false,
+        error: '',
+        row: null,
+
+        async openDetail(id) {
+            this.open = true;
+            this.loading = true;
+            this.error = '';
+            this.row = null;
+            try {
+                const res = await fetch(`${this.detailBaseUrl.replace(/\/$/, '')}/${encodeURIComponent(id)}`, {
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) {
+                    this.error = 'No se pudo cargar el detalle.';
+                    return;
+                }
+                this.row = await res.json();
+            } catch {
+                this.error = 'Error de red.';
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        closeDetail() {
+            this.open = false;
+            this.row = null;
+            this.error = '';
+        },
+
+        pretty(v) {
+            return v == null ? '—' : (typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v));
+        },
+    }));
+
     Alpine.data('apiRequestLogDetail', (detailBaseUrl = '') => ({
         detailBaseUrl: typeof detailBaseUrl === 'string' ? detailBaseUrl : '',
         open: false,

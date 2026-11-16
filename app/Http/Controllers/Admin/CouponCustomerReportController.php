@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Location;
 use App\Support\AdminRbac;
 use App\Support\CouponStats;
 use Carbon\Carbon;
@@ -48,10 +49,20 @@ class CouponCustomerReportController extends Controller
 
         $net = $ids->isEmpty() ? collect() : CouponStats::transactions($admin)->whereIn('customer_id', $ids)->whereIn('kind', ['REDEEM', 'REVERSAL'])
             ->selectRaw('customer_id, SUM(transaction_amount) as v')->groupBy('customer_id')->pluck('v', 'customer_id');
+        // Dónde canjeó cada cliente (localidad de la transacción)
+        $perLocation = [];
+        if ($ids->isNotEmpty()) {
+            CouponStats::transactions($admin)->whereIn('customer_id', $ids)->whereIn('kind', ['REDEEM', 'REVERSAL'])
+                ->selectRaw('customer_id, location_id, SUM(transaction_amount) as v')->groupBy('customer_id', 'location_id')->get()
+                ->each(function ($r) use (&$perLocation) {
+                    $perLocation[$r->customer_id][$r->location_id ?? ''] = round((float) $r->v, 2);
+                });
+        }
+        $locationNames = Location::query()->whereIn('id', collect($perLocation)->flatMap(fn ($l) => array_keys($l))->filter()->unique())->pluck('name', 'id')->all();
         $pending = $ids->isEmpty() ? collect() : DB::table('activation_orders')->where('status', 'pending')->whereIn('customer_id', $ids)
             ->selectRaw('customer_id, SUM(coupons_count) as n')->groupBy('customer_id')->pluck('n', 'customer_id');
 
-        $rows = $customers->map(function (Customer $c) use ($by, $last, $net, $pending) {
+        $rows = $customers->map(function (Customer $c) use ($by, $last, $net, $pending, $perLocation, $locationNames) {
             $s = $by[$c->id] ?? [];
 
             return (object) [
@@ -61,6 +72,7 @@ class CouponCustomerReportController extends Controller
                 'redeemed' => round((float) ($net[$c->id] ?? 0), 2),
                 'last' => isset($last[$c->id]) ? Carbon::parse($last[$c->id]) : null,
                 'scheduled' => (int) ($pending[$c->id] ?? 0),
+                'locations' => CouponStats::locationBreakdown($perLocation[$c->id] ?? [], $locationNames),
             ];
         });
 
@@ -68,10 +80,11 @@ class CouponCustomerReportController extends Controller
             abort_unless($admin->can(AdminRbac::actionPermissions('coupon-customer-report')['export']['permission']), 403);
 
             return $this->streamCsv('reporte-clientes-'.now()->format('Ymd').'.csv',
-                ['Cliente', 'Documento', 'Activo', 'Asignados', 'Activos', 'Inactivos', 'Programados', 'Saldo en circulación', 'Cobrado neto', 'Última activación'],
+                ['Cliente', 'Documento', 'Activo', 'Asignados', 'Activos', 'Inactivos', 'Programados', 'Saldo en circulación', 'Cobrado neto', 'Última activación', 'Dónde canjeó'],
                 $rows->map(fn ($r) => [
                     $r->customer->name, $r->customer->document, $r->customer->is_active ? 'Sí' : 'No', $r->assigned, $r->active, $r->inactive, $r->scheduled,
                     number_format($r->circulating, 2, '.', ''), number_format($r->redeemed, 2, '.', ''), $r->last?->format('Y-m-d H:i'),
+                    collect($r->locations)->map(fn ($l) => $l['name'].': '.number_format($l['amount'], 2, '.', ''))->implode(' | '),
                 ])->all());
         }
 

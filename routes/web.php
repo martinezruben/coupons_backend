@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CouponAdminController;
+use App\Http\Controllers\Admin\CouponAuditDetailController;
 use App\Http\Controllers\Admin\CouponBatchController;
 use App\Http\Controllers\Admin\CouponBatchReportController;
 use App\Http\Controllers\Admin\CouponCustomerReportController;
@@ -55,6 +56,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/api-request-logs/{id}', [ApiRequestLogDetailController::class, 'show'])->name('api-request-logs.show');
         Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
+        Route::get('/coupon-audit-logs/{id}', [CouponAuditDetailController::class, 'show'])->whereNumber('id')->name('coupon-audit-logs.show');
         Route::get('/audit-logs/{id}', [AuditLogDetailController::class, 'show'])->name('audit-logs.show');
 
         Route::post('/admin-users/{adminUser}/reset-2fa', [AdminUserSecurityController::class, 'resetTwoFactor'])->name('admin-users.reset-2fa');

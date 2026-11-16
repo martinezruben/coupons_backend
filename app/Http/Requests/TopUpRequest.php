@@ -18,6 +18,7 @@ class TopUpRequest extends FormRequest
             // El token solo es obligatorio para cupones QR (ruta /topup).
             'coupon_token' => [$this->routeIs('topup') ? 'required' : 'nullable', 'string', 'max:128'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:'.config('coupons.max_amount'), 'decimal:0,2'],
+            'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
         ];
     }
 }

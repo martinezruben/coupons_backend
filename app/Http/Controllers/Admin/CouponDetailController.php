@@ -117,7 +117,7 @@ class CouponDetailController extends Controller
                 'amount' => $kind === 'TOPUP' ? $amount : -$amount, // + suma al saldo, − lo descuenta
                 'delta' => $kind === 'TOPUP' ? $amount : -$amount,
                 'lines' => array_values(array_filter([
-                    $t->location_id ? 'Localidad: '.($locations[$t->location_id] ?? 'desconocida') : ($t->legacy_site_id ? "Localidad heredada n.º {$t->legacy_site_id}" : ($t->admin_user_id ? 'Desde el panel (sin localidad)' : null)),
+                    $t->location_id ? 'Localidad: '.($locations[$t->location_id] ?? 'desconocida').(['request' => ' (enviada por el dispositivo en el canje)', 'device' => ' (la del dispositivo registrado)'][$t->location_source] ?? '') : ($t->legacy_site_id ? "Localidad heredada n.º {$t->legacy_site_id}" : ($t->admin_user_id ? 'Desde el panel (sin localidad)' : null)),
                     $device ? 'Dispositivo: '.($device->name ?: $device->device_fingerprint) : ($t->legacy_device_id ? "Dispositivo heredado n.º {$t->legacy_device_id}" : null),
                     $t->reversed_of ? "Reversa del cobro n.º {$t->reversed_of}" : null,
                     $t->customer_id ? 'Cliente: '.($customerNames[$t->customer_id] ?? '—') : null,

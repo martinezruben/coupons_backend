@@ -46,4 +46,21 @@ final class CouponStats
             ->when($admin?->allowedCustomerIds() !== null, fn ($q) => $q->whereIn('customer_id', $admin->allowedCustomerIds()))
             ->when($customerId, fn ($q) => $q->where('customer_id', $customerId));
     }
+
+    /**
+     * Neto canjeado por localidad, de mayor a menor. La clave vacía son movimientos sin localidad.
+     *
+     * @param  array<string, float>  $byLocation  location_id (o '') => monto
+     * @param  array<string, string>  $names  location_id => nombre
+     * @return list<array{name: string, amount: float}>
+     */
+    public static function locationBreakdown(array $byLocation, array $names): array
+    {
+        arsort($byLocation);
+
+        return array_values(array_map(
+            fn (string $id, float $amount) => ['name' => $id === '' ? 'Sin localidad' : ($names[$id] ?? 'Localidad eliminada'), 'amount' => $amount],
+            array_map('strval', array_keys($byLocation)), array_values($byLocation)
+        ));
+    }
 }

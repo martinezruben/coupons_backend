@@ -38,7 +38,7 @@
                 <thead><tr>
                     <th class="text-left">Lote</th><th class="text-left">Creado</th><th class="text-left">Estado</th><th class="text-right">Cantidad</th>
                     <th class="text-right">Sin asignar</th><th class="text-right">Asignados</th><th class="text-right">Activos</th><th class="text-right">Anulados</th>
-                    <th class="text-right">Saldo circ.</th><th class="text-right">Cobrado neto</th>
+                    <th class="text-right">Saldo circ.</th><th class="text-right">Cobrado neto</th><th class="text-left">Dónde se canjeó</th>
                 </tr></thead>
                 <tbody>
                     @forelse($rows as $r)
@@ -56,9 +56,10 @@
                             <td class="text-right tabular-nums">{{ number_format($r->void) }}</td>
                             <td class="text-right tabular-nums">{{ \App\Support\Format::money($r->circulating) }}</td>
                             <td class="text-right font-semibold tabular-nums">{{ \App\Support\Format::money($r->redeemed) }}</td>
+                            <td class="text-xs text-slate-600">@forelse(array_slice($r->locations, 0, 3) as $l)<span class="block whitespace-nowrap">{{ $l['name'] }} · {{ \App\Support\Format::money($l['amount']) }}</span>@empty<span class="text-slate-400">—</span>@endforelse @if(count($r->locations) > 3)<span class="text-slate-400">+ {{ count($r->locations) - 3 }} más (en el CSV)</span>@endif</td>
                         </tr>
                     @empty
-                        <tr><td colspan="10" class="py-10 text-center text-slate-500">No hay lotes en este periodo.</td></tr>
+                        <tr><td colspan="11" class="py-10 text-center text-slate-500">No hay lotes en este periodo.</td></tr>
                     @endforelse
                 </tbody>
             </table>
