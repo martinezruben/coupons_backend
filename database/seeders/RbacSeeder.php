@@ -47,7 +47,7 @@ class RbacSeeder extends Seeder
         // cobros son acciones sensibles que solo recibe el super-admin (o un rol a medida).
         foreach (['coupons', 'coupon-barcodes'] as $screenKey) {
             $r = AdminRbac::resourceKey($screenKey);
-            array_push($manager, "$r.view", "$r.toggle");
+            array_push($manager, "$r.view", "$r.activate", "$r.deactivate");
             $viewer[] = "$r.view";
         }
         // Reportes y reglas de recarga: ver. Editar reglas (crea condiciones de dinero) es del super-admin.
@@ -97,7 +97,7 @@ class RbacSeeder extends Seeder
             // Activa selecciones pequeñas en el momento de la venta; no puede operar el lote completo ni programar
             'ventas' => ['permissions' => [...$views, 'coupon_batches.activate', 'customers.view'], 'limits' => ['max_activation_size' => 500]],
             // Corrige: libera, cancela, anula, activa/desactiva y revierte; no genera ni ajusta saldos
-            'supervisor' => ['permissions' => [...$views, 'coupon_batches.assign', 'coupon_batches.cancel', 'coupon_batches.void', 'coupons.toggle', 'coupon_barcodes.toggle', 'coupon_transactions.view', 'coupon_transactions.reverse', 'customers.view', 'coupon_reports.view', 'coupon_batch_report.view', 'coupon_customer_report.view', 'coupon_audit_logs.view'], 'limits' => null],
+            'supervisor' => ['permissions' => [...$views, 'coupon_batches.assign', 'coupon_batches.cancel', 'coupon_batches.void', 'coupons.activate', 'coupons.deactivate', 'coupon_barcodes.activate', 'coupon_barcodes.deactivate', 'coupon_transactions.view', 'coupon_transactions.reverse', 'customers.view', 'coupon_reports.view', 'coupon_batch_report.view', 'coupon_customer_report.view', 'coupon_audit_logs.view'], 'limits' => null],
             // Solo lectura de todo, incluida la auditoría
             'auditor' => ['permissions' => [...$views, 'coupon_transactions.view', 'coupon_audit_logs.view', 'coupon_reports.view', 'coupon_batch_report.view', 'coupon_customer_report.view', 'customers.view', 'topup_rules.view', 'audit_log.view'], 'limits' => null],
         ];

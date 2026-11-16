@@ -49,15 +49,22 @@ class UserPermissionController extends Controller
 
         // Permisos independientes: cada acción sensible se concede sola, sin depender de editar la pantalla
         $independent = [];
+        $couponLabels = ['coupons' => 'cupón QR', 'coupon-barcodes' => 'cupón de barras'];
         foreach (app(RoleRbacMatrixController::class)->screensGroupedByNavSection() as $group) {
             foreach ($group['screens'] as $screen) {
                 foreach (AdminRbac::actionPermissions($screen['key']) as $action => $info) {
-                    $independent[$group['label']][] = [
-                        'permission' => $info['permission'], 'label' => $info['label'], 'screen' => $screen['label'],
-                        'sensitive' => in_array($action, ['adjust', 'topup', 'reverse', 'void', 'activate_all', 'generate', 'download', 'export'], true),
+                    $isCoupon = isset($couponLabels[$screen['key']]);
+                    // Los botones del detalle de un cupón van juntos, uno por tipo de cupón
+                    $independent[$isCoupon ? 'Botones del detalle de un cupón' : $group['label']][] = [
+                        'permission' => $info['permission'], 'label' => $info['label'], 'screen' => $isCoupon ? ucfirst($couponLabels[$screen['key']]) : $screen['label'],
+                        'sensitive' => in_array($action, ['adjust', 'topup', 'deactivate', 'reverse', 'void', 'activate_all', 'generate', 'download', 'export'], true),
                     ];
                 }
             }
+        }
+        // Primero lo que se hace sobre un cupón
+        if (isset($independent['Botones del detalle de un cupón'])) {
+            $independent = ['Botones del detalle de un cupón' => $independent['Botones del detalle de un cupón']] + $independent;
         }
 
         return view('admin.rbac.user-permissions', [

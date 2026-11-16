@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 
 /**
  * Acciones del panel sobre cupones: emitir, activar/desactivar, ajustar saldo y revertir cobros.
- * Cada acción tiene su permiso (`coupons.toggle`, `coupons.adjust`,
+ * Cada acción tiene su permiso (`coupons.activate`, `coupons.deactivate`, `coupons.adjust`,
  * `coupon_barcodes.*`, `coupon_transactions.reverse`) y deja auditoría con el administrador.
  */
 class CouponAdminController extends Controller
@@ -24,8 +24,9 @@ class CouponAdminController extends Controller
     public function toggle(Request $request, string $type, int $id): RedirectResponse
     {
         $screen = $this->screenFor($type);
-        $this->authorizeAction($screen, 'toggle');
         $data = $request->validate(['active' => ['required', 'boolean'], 'reason' => ['required', 'string', 'min:3', 'max:255']]);
+        // Activar y desactivar son permisos distintos
+        $this->authorizeAction($screen, $data['active'] ? 'activate' : 'deactivate');
         $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
         abort_unless($model::query()->visibleTo($request->user('admin'))->where('coupon_id', $id)->exists(), 404);
 
