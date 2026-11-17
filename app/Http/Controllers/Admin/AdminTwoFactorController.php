@@ -97,6 +97,9 @@ class AdminTwoFactorController extends Controller
     public function disable(Request $request)
     {
         $admin = auth('admin')->user();
+        if (config('admin.mfa_required')) {
+            return back()->withErrors(['code' => 'La verificación en dos pasos es obligatoria y no se puede desactivar.']);
+        }
         $request->validate(['code' => ['required', 'string']]);
 
         if (! $this->verifyCodeOrRecovery($admin, $request->input('code'))) {

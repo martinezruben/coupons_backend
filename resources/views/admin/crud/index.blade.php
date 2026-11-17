@@ -34,6 +34,9 @@
                     @if($screen === 'coupon-batches' && auth('admin')->user()->can(\App\Support\AdminRbac::actionPermissions('coupon-batches')['generate']['permission']))
                         <a href="{{ route('admin.coupon-batches.create') }}" class="snow-btn-primary">Generar lote</a>
                     @endif
+                    @if($screen === 'devices' && auth('admin')->user()->can(\App\Support\AdminRbac::actionPermissions('devices')['register']['permission']))
+                        <a href="{{ route('admin.devices.register.form') }}" class="snow-btn-primary">+ Registrar dispositivo</a>
+                    @endif
                     @if(($canEdit ?? false) && empty($cfg['disable_create'] ?? false))
                         <a
                             href="{{ route('admin.screens.create', $screen) }}"

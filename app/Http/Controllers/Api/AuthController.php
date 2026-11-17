@@ -32,6 +32,14 @@ class AuthController extends Controller
         $fingerprint = $data['device_fingerprint'];
         $pairingInput = $data['pairing_token'];
 
+        // Un dispositivo desconocido ya no se da de alta solo: lo registran dos administradores en el panel
+        if (! config('pos.allow_device_self_registration') && ! Device::query()->where('device_fingerprint', $fingerprint)->exists()) {
+            return response()->json([
+                'message' => 'Dispositivo no registrado. Pide que lo registren en el panel (Dispositivos → Registrar dispositivo).',
+                'code' => 'DEVICE_NOT_REGISTERED',
+            ], 403);
+        }
+
         $locationIdFromCode = DevicePairingToken::validateAndConsume($pairingInput);
         if ($locationIdFromCode === null) {
             return response()->json([
@@ -44,6 +52,10 @@ class AuthController extends Controller
             ->first();
 
         if ($existing !== null) {
+            // El código debe ser de la localidad en la que se registró el dispositivo
+            if (! config('pos.allow_device_self_registration') && (string) $existing->location_id !== (string) $locationIdFromCode) {
+                return response()->json(['message' => 'El código de vinculación pertenece a otra localidad.'], 403);
+            }
             AppVersion::record($existing, $request);
 
             return $this->jsonTokenForExistingDeviceAfterPairing($existing);
