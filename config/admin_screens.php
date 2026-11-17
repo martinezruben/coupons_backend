@@ -23,6 +23,7 @@ return [
     // Sin modelo: solo expone el permiso pulse.view en la matriz RBAC
     'pulse' => ['label' => 'Pulse (métricas)', 'icon' => 'bolt', 'readonly' => true, 'rbac' => true, 'exclude_from_nav' => true],
     'locations' => [
+        'create_label' => 'Nueva localidad',
         'model' => Location::class,
         'label' => 'Localidades',
         'icon' => 'map-pin',
@@ -70,6 +71,7 @@ return [
         ],
     ],
     'licenses' => [
+        'create_label' => 'Nueva licencia',
         'model' => License::class,
         'label' => 'Licencias',
         'icon' => 'key',
@@ -128,6 +130,7 @@ return [
         ],
     ],
     'android-users' => [
+        'create_label' => 'Nuevo usuario de la app',
         'model' => User::class,
         'label' => 'Usuarios de la app',
         'icon' => 'users',
@@ -214,7 +217,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -276,7 +279,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -314,6 +317,7 @@ return [
         ],
     ],
     'customers' => [
+        'create_label' => 'Nuevo cliente',
         'model' => Customer::class,
         'label' => 'Clientes',
         'description' => 'A quién se asignan y activan los cupones',
@@ -561,6 +565,7 @@ return [
         ],
     ],
     'coupon-prefixes' => [
+        'create_label' => 'Nuevo prefijo',
         'model' => CouponPrefix::class,
         'label' => 'Prefijos de cupones',
         'description' => 'Catálogo de prefijos para generar lotes',
@@ -587,6 +592,7 @@ return [
     ],
 
     'topup-rules' => [
+        'create_label' => 'Nueva regla de recarga',
         'model' => TopUpRule::class,
         'label' => 'Reglas de uso',
         'description' => 'Condiciones de recarga asignadas a cupones, lotes o fechas',
@@ -764,6 +770,7 @@ return [
     ],
     // Usuarios administradores del panel: solo super-admin (no aparece en la matriz de permisos)
     'admin-users' => [
+        'create_label' => 'Nuevo usuario administrador',
         'model' => AdminUser::class,
         'label' => 'Usuarios administradores',
         'icon' => 'user-circle',

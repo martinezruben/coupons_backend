@@ -10,6 +10,7 @@
         $th = fn (string $key, string $label, string $class = 'text-left') => '<th class="'.$class.'"><a href="'.e($sortLink($key)).'" class="inline-flex items-center gap-1 hover:text-slate-900">'.$label.($sort === $key ? '<span aria-hidden="true">'.($dir === 'asc' ? '↑' : '↓').'</span>' : '').'</a></th>';
     @endphp
     @php $canDetail = ['QRCODE' => auth('admin')->user()->can('coupons.detail'), 'CODBAR' => auth('admin')->user()->can('coupon_barcodes.detail')]; @endphp
+    @php $canExport = auth('admin')->user()->can('coupons.export') || auth('admin')->user()->can('coupon_barcodes.export'); @endphp
     <div class="snow-card">
         <div class="border-b border-slate-200 bg-slate-100 px-5 py-3">
             <p class="text-sm text-slate-500">
@@ -59,6 +60,7 @@
             <div class="col-span-2 flex gap-2 sm:col-span-4 lg:col-span-8">
                 <button type="submit" class="snow-btn-primary">Filtrar</button>
                 <a href="{{ route('admin.coupons.index') }}" class="snow-btn-secondary">Limpiar</a>
+                @if($canExport)<a href="{{ request()->fullUrlWithQuery(['export' => 'csv', 'page' => null]) }}" class="snow-btn-secondary" title="Descarga todos los cupones que cumplen los filtros (se abre en Excel)">Exportar CSV</a>@endif
                 <span class="ml-auto self-center text-xs text-slate-500">{{ number_format($coupons->total()) }} cupones</span>
             </div>
             @if($errors->any())<p class="col-span-full text-xs text-red-600">{{ $errors->first() }}</p>@endif

@@ -49,6 +49,22 @@ class AdminCouponsPanelTest extends TestCase
         return number_format((float) DB::table($table)->where('coupon_id', $id)->value('coupon_balance'), 2, '.', '');
     }
 
+    public function test_coupon_list_exports_csv_only_with_export_permission(): void
+    {
+        $this->qr('Q1', '50.00');
+        DB::table('coupons_codbar')->insert(['coupon_number' => 'B1', 'coupon_active' => 1, 'coupon_amount' => '30.00', 'coupon_balance' => '30.00']);
+
+        $this->actingAs($this->admin('coupons.view', 'coupon_barcodes.view'), 'admin');
+        $this->get(route('admin.coupons.index', ['export' => 'csv']))->assertForbidden();
+
+        $this->actingAs($this->admin('coupons.view', 'coupons.export', 'coupon_barcodes.view', 'coupon_barcodes.export'), 'admin');
+        $csv = $this->get(route('admin.coupons.index', ['export' => 'csv']))->assertOk()->streamedContent();
+        $this->assertStringContainsString('Número,Tipo,Estado', $csv);
+        $this->assertStringContainsString('Q1,QR', $csv);
+        $this->assertStringContainsString('B1,Barras', $csv);
+        $this->assertStringNotContainsString('secret-token', $csv);
+    }
+
     public function test_grids_render_and_never_show_qr_tokens(): void
     {
         $this->qr('Q1');

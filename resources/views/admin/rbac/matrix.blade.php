@@ -8,7 +8,7 @@
     <div class="flex flex-col gap-6">
         <div class="flex flex-wrap items-end justify-between gap-5">
             <p class="max-w-[560px] text-[15px] text-slate-600">Marca qué puede hacer cada rol en cada pantalla del panel.</p>
-            <a href="{{ route('admin.roles.create') }}" class="snow-btn-secondary">+ Nuevo rol</a>
+            <a href="{{ route('admin.roles.create') }}" class="snow-btn-secondary">Nuevo rol</a>
         </div>
 
         <form method="POST" action="{{ route('admin.rbac.matrix.update', $role) }}" class="flex flex-col gap-6">
