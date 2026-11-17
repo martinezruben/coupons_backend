@@ -67,7 +67,7 @@
                 <span class="eyebrow">Cómo funciona</span>
                 <ol class="flex flex-col gap-4 text-sm">
                     <li class="flex items-start gap-3"><span class="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary-600 font-mono text-sm font-bold text-lime-300">1</span><span><strong>Registro aprobado</strong><br><span class="text-slate-600">Dos administradores confirman con su autenticador.</span></span></li>
-                    <li class="flex items-start gap-3"><span class="flex h-8 w-8 flex-none items-center justify-center rounded-full border-2 border-slate-300 font-mono text-sm font-bold text-slate-600">2</span><span><strong>Vinculación</strong><br><span class="text-slate-600">En el terminal, introduce el código de la localidad (Localidades → Clave de acceso).</span></span></li>
+                    <li class="flex items-start gap-3"><span class="flex h-8 w-8 flex-none items-center justify-center rounded-full border-2 border-slate-300 font-mono text-sm font-bold text-slate-600">2</span><span><strong>Vinculación</strong><br><span class="text-slate-600">En el terminal, introduce el código de vinculación (Dispositivos → icono de llave en la fila del dispositivo).</span></span></li>
                 </ol>
                 <div class="perf" style="margin: 0"></div>
                 <p class="text-sm text-slate-600">Un terminal que no esté registrado aquí no puede darse de alta por su cuenta. Quedan en la auditoría quién registró el dispositivo y quién lo aprobó.</p>

@@ -9,7 +9,7 @@
     $locLabels = \App\Support\LocationMapSyncPins::STATUS_LABELS;
 @endphp
 <x-admin.layouts.app title="Localidades">
-<div x-data="locationPairingToken()" @open-location-pairing.window="openFor($event.detail)" class="flex flex-col gap-6">
+<div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-end justify-between gap-5">
         <p class="max-w-[560px] text-[15px] text-slate-600">Los puntos donde operan tus dispositivos. El estado se calcula con la última sincronización de cada dispositivo.</p>
         @if($canEdit)<a href="{{ route('admin.screens.create', 'locations') }}" class="snow-btn-primary">+ Nueva localidad</a>@endif
@@ -78,7 +78,6 @@
                         <div class="flex flex-wrap items-center gap-2 border-t-[1.5px] border-slate-100 pt-3.5">
                             @if($canEdit)
                                 <a href="{{ route('admin.screens.edit', ['locations', $loc->getKey()]) }}" class="snow-btn-secondary">Editar</a>
-                                <button type="button" class="snow-btn-ghost" @click="$dispatch('open-location-pairing', { locationId: '{{ $loc->getKey() }}', locationName: @js($loc->name) })">Clave de acceso</button>
                             @endif
                             @if($canDelete)
                                 <form method="POST" action="{{ route('admin.screens.destroy', ['locations', $loc->getKey()]) }}" class="ml-auto" onsubmit="return confirm('¿Eliminar la localidad «{{ addslashes($loc->name) }}»?');">
@@ -101,6 +100,5 @@
         <div>{{ $items->links() }}</div>
     </section>
 
-    @include('admin.crud.partials.location-pairing-modal')
 </div>
 </x-admin.layouts.app>

@@ -223,4 +223,21 @@ class DeviceRegistrationApprovalTest extends TestCase
         $this->postJson('/api/auth/register-device', ['device_fingerprint' => 'registrado', 'pairing_token' => $code])
             ->assertOk()->assertJsonPath('location_id', $location->id)->assertJsonStructure(['token', 'license_key']);
     }
+
+    public function test_the_access_code_lives_in_devices_not_in_locations(): void
+    {
+        $location = Location::factory()->create(['name' => 'Sede Centro', 'is_active' => true]);
+        Device::factory()->create(['location_id' => $location->id, 'device_fingerprint' => 'fp-llave']);
+        $admin = $this->admin('Ana', ['devices.view', 'devices.register', 'locations.view', 'locations.edit']);
+        $this->actingAs($admin, 'admin');
+
+        $this->get(route('admin.screens.index', 'locations'))->assertOk()->assertSee('Sede Centro')->assertDontSee('Clave de acceso')->assertDontSee('location-pairing');
+        $devices = $this->get(route('admin.screens.index', 'devices'))->assertOk()->assertSee('Registrar dispositivo')->assertSee('open-location-pairing', false)->getContent();
+        $this->assertStringContainsString($location->id, $devices);
+
+        // Quien solo registra dispositivos (sin editar localidades) también puede pedir el código desde Dispositivos
+        $registrar = $this->admin('Registradora', ['devices.view', 'devices.register']);
+        $this->actingAs($registrar, 'admin')->postJson(route('admin.locations.pairing-token.store', $location), ['action' => 'ensure'])->assertOk()->assertJsonStructure(['code', 'expires_at']);
+        $this->actingAs($this->admin('Sin', ['devices.view']), 'admin')->postJson(route('admin.locations.pairing-token.store', $location), ['action' => 'ensure'])->assertForbidden();
+    }
 }
