@@ -27,7 +27,7 @@ class AuditLabels
         'Panel' => 'Navegación del panel',
         'Location' => 'Localidad', 'Device' => 'Dispositivo', 'License' => 'Licencia', 'User' => 'Usuario de la app',
         'AdminUser' => 'Administrador', 'Role' => 'Rol', 'SystemParameter' => 'Parámetro del sistema', 'PairingToken' => 'Token de emparejamiento',
-        'CouponBatch' => 'Lote de cupones', 'Customer' => 'Cliente', 'TopUpRule' => 'Regla de uso', 'CouponPrefix' => 'Prefijo de cupones',
+        'Menu' => 'Menú del panel', 'CouponBatch' => 'Lote de cupones', 'Customer' => 'Cliente', 'TopUpRule' => 'Regla de uso', 'CouponPrefix' => 'Prefijo de cupones',
         'ActivationOrder' => 'Activación', 'Coupon' => 'Cupón QR', 'BarcodeCoupon' => 'Cupón de barras', 'RoleLimit' => 'Límites del rol',
     ];
 
@@ -57,6 +57,9 @@ class AuditLabels
         'admin.rbac.matrix.index' => 'Abrió la matriz de permisos',
         'admin.rbac.matrix.edit' => 'Abrió los permisos de un rol',
         'admin.rbac.matrix.update' => 'Guardó permisos y límites de un rol',
+        'admin.menu.index' => 'Abrió el editor del menú',
+        'admin.menu.update' => 'Guardó el menú del panel',
+        'admin.menu.reset' => 'Restableció el menú del panel',
         'admin.rbac.users.index' => 'Abrió la lista de permisos por usuario',
         'admin.rbac.users.edit' => 'Abrió los permisos específicos de un usuario',
         'admin.rbac.users.update' => 'Guardó los permisos específicos de un usuario',
