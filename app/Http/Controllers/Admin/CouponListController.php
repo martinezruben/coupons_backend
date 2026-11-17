@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Models\ActivationOrder;
 use App\Models\AdminUser;
@@ -9,19 +10,23 @@ use App\Models\CouponBatch;
 use App\Models\Customer;
 use App\Support\AdminRbac;
 use App\Support\Format;
+use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Lista única de cupones (QR y de barras) con el tipo como icono y filtro por tipo. Cada fila abre su detalle completo. */
 class CouponListController extends Controller
 {
+    use StreamsCsv;
+
     public const TYPES = ['QRCODE' => ['table' => 'coupons', 'screen' => 'coupons', 'slug' => 'qr', 'label' => 'QR'], 'CODBAR' => ['table' => 'coupons_codbar', 'screen' => 'coupon-barcodes', 'slug' => 'barcode', 'label' => 'Barras']];
 
     private const SORTS = ['number' => 'coupon_number', 'status' => 'status', 'expire' => 'coupon_expire_date', 'activated' => 'activated_at', 'amount' => 'coupon_amount', 'balance' => 'coupon_balance', 'created' => 'coupon_date'];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|StreamedResponse
     {
         /** @var AdminUser $admin */
         $admin = $request->user('admin');
@@ -42,24 +47,14 @@ class CouponListController extends Controller
             'dir' => ['nullable', 'in:asc,desc'],
         ]);
 
-        $types = $allowed->when($f['type'] ?? null, fn ($c, $t) => $c->intersect([$t]))->values();
-        $scope = $admin->allowedCustomerIds();
-
-        $union = null;
-        foreach ($types as $type) {
-            $q = DB::table(self::TYPES[$type]['table'])->selectRaw("'{$type}' as ctype, coupon_id, coupon_number, status, batch_id, customer_id, coupon_date, coupon_expire_date, activated_at, coupon_amount, coupon_balance")
-                ->when($f['status'] ?? null, fn (Builder $b, $v) => $b->where('status', $v))
-                ->when($f['customer'] ?? null, fn (Builder $b, $v) => $b->where('customer_id', $v))
-                ->when($f['batch'] ?? null, fn (Builder $b, $v) => $b->where('batch_id', $v))
-                ->when($f['order'] ?? null, fn (Builder $b, $v) => $b->where('activation_order_id', $v))
-                ->when($f['q'] ?? null, fn (Builder $b, $v) => $b->where('coupon_number', 'like', '%'.addcslashes($v, '%_\\').'%'))
-                ->when($f['expire_to'] ?? null, fn (Builder $b, $v) => $b->whereDate('coupon_expire_date', '<=', $v))
-                ->when($scope !== null, fn (Builder $b) => $b->whereIn('customer_id', $scope));
-            $union = $union ? $union->unionAll($q) : $q;
-        }
+        $union = $this->unionQuery($f, $allowed, $admin);
 
         $sort = self::SORTS[$f['sort'] ?? 'created'];
         $dir = ($f['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        if ($request->query('export') === 'csv') {
+            return $this->export($admin, $allowed, $f, $union);
+        }
+
         $coupons = DB::query()->fromSub($union, 'c')->orderBy($sort, $dir)->orderByDesc('coupon_id')->paginate(25)->withQueryString();
 
         $batches = CouponBatch::query()->whereIn('id', $coupons->pluck('batch_id')->filter())->pluck('code', 'id');
@@ -78,5 +73,60 @@ class CouponListController extends Controller
             'dir' => $dir,
             'money' => fn ($v) => Format::money($v),
         ]);
+    }
+
+    /** Consulta unida (QR + barras) con los filtros aplicados; la usan el listado y la exportación. */
+    private function unionQuery(array $f, $allowed, AdminUser $admin): Builder
+    {
+        $types = $allowed->when($f['type'] ?? null, fn ($c, $t) => $c->intersect([$t]))->values();
+        $scope = $admin->allowedCustomerIds();
+
+        $union = null;
+        foreach ($types as $type) {
+            $q = DB::table(self::TYPES[$type]['table'])->selectRaw("'{$type}' as ctype, coupon_id, coupon_number, status, batch_id, customer_id, coupon_date, coupon_expire_date, activated_at, coupon_amount, coupon_balance")
+                ->when($f['status'] ?? null, fn (Builder $b, $v) => $b->where('status', $v))
+                ->when($f['customer'] ?? null, fn (Builder $b, $v) => $b->where('customer_id', $v))
+                ->when($f['batch'] ?? null, fn (Builder $b, $v) => $b->where('batch_id', $v))
+                ->when($f['order'] ?? null, fn (Builder $b, $v) => $b->where('activation_order_id', $v))
+                ->when($f['q'] ?? null, fn (Builder $b, $v) => $b->where('coupon_number', 'like', '%'.addcslashes($v, '%_\\').'%'))
+                ->when($f['expire_to'] ?? null, fn (Builder $b, $v) => $b->whereDate('coupon_expire_date', '<=', $v))
+                ->when($scope !== null, fn (Builder $b) => $b->whereIn('customer_id', $scope));
+            $union = $union ? $union->unionAll($q) : $q;
+        }
+
+        return $union;
+    }
+
+    /** Exporta a CSV (Excel lo abre directo) todos los cupones que cumplen los filtros, sin paginar. */
+    private function export(AdminUser $admin, $allowed, array $f, Builder $union)
+    {
+        // Solo los tipos exportables: cada tipo exige su propio permiso de exportación
+        $exportable = $allowed->filter(fn ($t) => $admin->can(AdminRbac::actionPermissions(self::TYPES[$t]['screen'])['export']['permission'] ?? '__none__'));
+        abort_if($exportable->isEmpty(), 403);
+        if ($exportable->count() !== $allowed->count()) {
+            $union = $this->unionQuery(array_merge($f, ['type' => $f['type'] ?? null]), $exportable, $admin);
+        }
+
+        $sort = self::SORTS[$f['sort'] ?? 'created'];
+        $dir = ($f['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $query = DB::query()->fromSub($union, 'c')->orderBy($sort, $dir)->orderByDesc('coupon_id');
+        $batches = CouponBatch::query()->pluck('code', 'id');
+        $customers = Customer::query()->pluck('name', 'id');
+        $status = ['GENERATED' => 'Generado', 'ASSIGNED' => 'Asignado', 'ACTIVE' => 'Activo', 'INACTIVE' => 'Inactivo', 'VOID' => 'Anulado'];
+        $date = fn ($v, $fmt) => $v ? Carbon::parse($v)->format($fmt) : '';
+
+        $rows = (function () use ($query, $batches, $customers, $status, $date) {
+            foreach ($query->cursor() as $c) {
+                yield [
+                    $c->coupon_number, self::TYPES[$c->ctype]['label'], $status[$c->status] ?? $c->status,
+                    $c->batch_id ? ($batches[$c->batch_id] ?? '') : '', $c->customer_id ? ($customers[$c->customer_id] ?? '') : '',
+                    $date($c->coupon_date, 'Y-m-d'), $date($c->coupon_expire_date, 'Y-m-d'), $date($c->activated_at, 'Y-m-d H:i'),
+                    number_format((float) $c->coupon_amount, 2, '.', ''), number_format((float) $c->coupon_balance, 2, '.', ''),
+                ];
+            }
+        })();
+
+        return $this->streamCsv('cupones-'.now()->format('Ymd-His').'.csv',
+            ['Número', 'Tipo', 'Estado', 'Lote', 'Cliente', 'Emisión', 'Vence', 'Activado', 'Monto inicial', 'Saldo'], $rows);
     }
 }

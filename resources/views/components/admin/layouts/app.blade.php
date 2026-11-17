@@ -2,6 +2,8 @@
 
 @php
     $admin = auth('admin')->user();
+    // Si la opción del menú se renombró, el título de la pantalla cambia igual
+    $title = \App\Support\AdminNavigation::renamedTitle($title);
     
 @endphp
 <!DOCTYPE html>

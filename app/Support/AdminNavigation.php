@@ -118,6 +118,34 @@ class AdminNavigation
         return $entries;
     }
 
+    /**
+     * Si la opción del menú se renombró, el título de su pantalla cambia igual: se sustituye el título
+     * original («Usuarios administradores») por el nombre que se le puso en el menú. Los títulos
+     * dinámicos («Lote LOT-…», «Editar regla…») no coinciden con ninguna opción y se quedan como están.
+     */
+    public static function renamedTitle(string $title): string
+    {
+        $request = request();
+        $map = $request->attributes->get('menu_renames');
+        if ($map === null) {
+            $map = [];
+            foreach (MenuStructure::load() as $group) {
+                foreach ($group['items'] as $item) {
+                    if ($item['kind'] === 'link' || empty($item['label'])) {
+                        continue;
+                    }
+                    $original = MenuStructure::meta($item['kind'], $item['ref'])['label'];
+                    if ($original !== $item['label']) {
+                        $map[$original] = $item['label'];
+                    }
+                }
+            }
+            $request->attributes->set('menu_renames', $map);
+        }
+
+        return $map[$title] ?? $title;
+    }
+
     private static function specialAllowed(string $key, Authenticatable $admin): bool
     {
         return match ($key) {

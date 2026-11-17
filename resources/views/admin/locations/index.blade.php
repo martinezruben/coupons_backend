@@ -12,7 +12,7 @@
 <div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-end justify-between gap-5">
         <p class="max-w-[560px] text-[15px] text-slate-600">Los puntos donde operan tus dispositivos. El estado se calcula con la última sincronización de cada dispositivo.</p>
-        @if($canEdit)<a href="{{ route('admin.screens.create', 'locations') }}" class="snow-btn-primary">+ Nueva localidad</a>@endif
+        @if($canEdit)<a href="{{ route('admin.screens.create', 'locations') }}" class="snow-btn-primary">Nueva localidad</a>@endif
     </div>
 
     <section class="flex flex-wrap items-stretch gap-6" aria-label="Estado de las localidades">
@@ -96,7 +96,7 @@
         @endforelse
 
         @if($canEdit)
-            <a href="{{ route('admin.screens.create', 'locations') }}" class="flex min-h-[76px] items-center justify-center rounded-[20px] border-2 border-dashed border-slate-300 text-[15px] font-semibold text-primary-600 hover:border-primary-600">+ Agregar otra localidad</a>
+            <a href="{{ route('admin.screens.create', 'locations') }}" class="flex min-h-[76px] items-center justify-center rounded-[20px] border-2 border-dashed border-slate-300 text-[15px] font-semibold text-primary-600 hover:border-primary-600">Agregar otra localidad</a>
         @endif
         <p class="text-center text-[13px] text-slate-500">Agrega latitud y longitud a cada localidad para ubicarla. Mostrando {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} de {{ $items->total() }} resultados.</p>
         <div>{{ $items->links() }}</div>

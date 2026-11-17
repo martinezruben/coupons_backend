@@ -7,7 +7,7 @@
                     @csrf
                     <button type="submit" class="snow-btn-secondary">Restablecer</button>
                 </form>
-                <button type="button" class="snow-btn-secondary" x-on:click="addGroup()">+ Nuevo grupo</button>
+                <button type="button" class="snow-btn-secondary" x-on:click="addGroup()">Nuevo grupo</button>
                 <form method="POST" action="{{ route('admin.menu.update') }}" x-on:submit="saving = true">
                     @csrf @method('PUT')
                     <input type="hidden" name="payload" :value="JSON.stringify({ groups })">
@@ -77,7 +77,7 @@
                             </template>
                             <li x-show="g.items.length === 0" class="px-5 py-4 text-sm text-slate-500">Este grupo está vacío.</li>
                         </ul>
-                        <footer class="border-t border-slate-200 px-5 py-3"><button type="button" class="snow-btn-ghost snow-btn-sm" x-on:click="addLink(gi)">+ Agregar enlace</button></footer>
+                        <footer class="border-t border-slate-200 px-5 py-3"><button type="button" class="snow-btn-ghost snow-btn-sm" x-on:click="addLink(gi)">Nuevo enlace</button></footer>
                     </article>
                 </template>
             </div>

@@ -11,9 +11,9 @@ trait StreamsCsv
      * neutralizan para que una hoja de cálculo no las ejecute como fórmula.
      *
      * @param  list<string>  $header
-     * @param  list<list<scalar|null>>  $rows
+     * @param  iterable<list<scalar|null>>  $rows
      */
-    protected function streamCsv(string $name, array $header, array $rows): StreamedResponse
+    protected function streamCsv(string $name, array $header, iterable $rows): StreamedResponse
     {
         return response()->streamDownload(function () use ($header, $rows) {
             $out = fopen('php://output', 'w');
