@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureAdminActive;
 use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\Device;
+use App\Models\Location;
 use App\Models\TopUpRule;
 use App\Models\User;
 use App\Services\AdminUserGuard;
@@ -69,6 +70,12 @@ class ScreenCrudController extends Controller
         if (! empty($cfg['route'])) {
             return redirect()->route($cfg['route'], $request->query() + ($cfg['route_query'] ?? []));
         }
+        if ($screen === 'locations') {
+            $perms = AdminRbac::permissionsForScreen($screen);
+            $me = auth('admin')->user();
+
+            return $this->locationsView($request, $me->can($perms['edit']), $me->can($perms['delete']));
+        }
         $model = $cfg['model'];
         $query = $this->scoped($model::query(), $model);
 
@@ -95,8 +102,6 @@ class ScreenCrudController extends Controller
         $locationsMapPins = [];
         if ($screen === 'locations') {
             $locationsMapPins = LocationMapSyncPins::forRequest($request, $user->can($p['edit']));
-
-            return $this->locationsView($request, $items, $locationsMapPins, $user->can($p['edit']), $user->can($p['delete']));
         }
 
         return view('admin.crud.index', [
@@ -110,24 +115,29 @@ class ScreenCrudController extends Controller
         ]);
     }
 
-    /** Localidades con el diseño de tarjetas perforadas: contadores por estado, filtros y una tarjeta por localidad. */
-    private function locationsView(Request $request, $items, array $pins, bool $canEdit, bool $canDelete)
+    /** Localidades con el diseño de tarjetas perforadas: contadores, filtros, búsqueda (3+ letras) y paginación. */
+    private function locationsView(Request $request, bool $canEdit, bool $canDelete)
     {
-        $byId = collect($pins)->keyBy('id');
         $period = in_array($request->query('sync'), ['today', 'yesterday', 'last_week', 'last_month'], true) ? $request->query('sync') : null;
         $q = trim((string) $request->query('q', ''));
+        $active = data_get($request->query('filter'), 'is_active', '');
 
-        $rows = collect($items->items())->map(fn ($loc) => ['loc' => $loc, 'pin' => $byId->get((string) $loc->getKey())])
-            ->filter(fn ($r) => $r['pin'] !== null)
-            ->when($period, fn ($c) => $c->filter(fn ($r) => $r['pin']['syncInPeriod'][$period] ?? false))
-            ->when($q !== '', fn ($c) => $c->filter(fn ($r) => mb_stripos($r['loc']->name.' '.$r['loc']->address, $q) !== false))
-            ->values();
+        // Estado de todas las localidades (para los contadores y el filtro por sincronización)
+        $pins = collect(LocationMapSyncPins::build(Location::query()->withCount(['devices as active_devices_count' => fn ($d) => $d->where('is_enabled', true)])
+            ->get(['id', 'name', 'latitude', 'longitude', 'is_active', 'last_sync_at', 'contingency_started_at']), $canEdit))->keyBy('id');
+
+        $query = Location::query()
+            ->when(in_array((string) $active, ['0', '1'], true), fn ($w) => $w->where('is_active', (bool) $active))
+            ->when(mb_strlen($q) >= 3, fn ($w) => $w->where(fn ($x) => $x->where('name', 'like', '%'.addcslashes($q, '%_\\').'%')->orWhere('address', 'like', '%'.addcslashes($q, '%_\\').'%')))
+            ->when($period, fn ($w) => $w->whereIn('id', $pins->filter(fn ($p) => $p['syncInPeriod'][$period] ?? false)->keys()))
+            ->orderBy('name');
+        $items = $query->paginate(10)->withQueryString();
 
         return view('admin.locations.index', [
-            'rows' => $rows,
+            'rows' => collect($items->items())->map(fn ($loc) => ['loc' => $loc, 'pin' => $pins->get((string) $loc->getKey())])->filter(fn ($r) => $r['pin'] !== null)->values(),
             'items' => $items,
-            'counts' => collect(['online', 'stale', 'contingency', 'inactive'])->mapWithKeys(fn ($k) => [$k => collect($pins)->where('status', $k)->count()]),
-            'active' => $request->query('filter.is_active', data_get($request->query('filter'), 'is_active', '')),
+            'counts' => collect(['online', 'stale', 'contingency', 'inactive'])->mapWithKeys(fn ($k) => [$k => $pins->where('status', $k)->count()]),
+            'active' => $active,
             'sync' => $period,
             'q' => $q,
             'canEdit' => $canEdit,

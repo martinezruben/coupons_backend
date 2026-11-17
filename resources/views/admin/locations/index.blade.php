@@ -45,10 +45,12 @@
 
     <section aria-label="Listado" class="flex flex-col gap-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <span class="eyebrow">{{ $rows->count() }} {{ $rows->count() === 1 ? 'localidad' : 'localidades' }}</span>
-            <form method="GET" action="{{ route('admin.screens.index', 'locations') }}" class="relative flex items-center">
+            <span class="eyebrow">{{ number_format($items->total()) }} {{ $items->total() === 1 ? 'localidad' : 'localidades' }}@if(mb_strlen($q) > 0 && mb_strlen($q) < 3) · escribe al menos 3 letras para buscar @endif</span>
+            <form method="GET" action="{{ route('admin.screens.index', 'locations') }}" class="relative flex items-center" x-data>
                 <x-admin.snow.icon name="magnifying-glass" class="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-500" />
-                <input class="snow-input !w-72 !rounded-full !pl-10" type="search" name="q" value="{{ $q }}" aria-label="Buscar localidad" placeholder="Buscar localidad">
+                <input class="snow-input !w-72 !rounded-full !pl-10" type="search" name="q" value="{{ $q }}" aria-label="Buscar localidad" placeholder="Buscar (mínimo 3 letras)" autocomplete="off"
+                       @if($q !== '') autofocus onfocus="this.setSelectionRange(this.value.length, this.value.length)" @endif
+                       x-on:input.debounce.400ms="if ($el.value.length === 0 || $el.value.length >= 3) $el.form.requestSubmit()">
                 @if($sync)<input type="hidden" name="sync" value="{{ $sync }}">@endif
                 @if($active !== '' && $active !== null)<input type="hidden" name="filter[is_active]" value="{{ $active }}">@endif
             </form>
@@ -57,32 +59,32 @@
         @forelse($rows as $r)
             @php $loc = $r['loc']; $pin = $r['pin']; [$badge, $bg] = $tone[$pin['status']]; @endphp
             <article class="ticket">
-                <div class="flex basis-[190px] flex-col justify-center gap-2.5 rounded-l-[20px] px-5 py-5" style="background: {{ $bg }}">
+                <div class="flex basis-[170px] flex-col justify-center gap-1.5 rounded-l-[20px] px-4 py-3" style="background: {{ $bg }}">
                     <span class="b {{ $badge }} self-start">{{ $locLabels[$pin['status']] }}</span>
                     <span class="font-mono text-xs text-slate-500">{{ $pin['lastSyncHuman'] ? 'Sincronizó '.$pin['lastSyncHuman'] : 'Nunca sincronizó' }}</span>
                     @if($pin['contingencySinceHuman'])<span class="font-mono text-xs text-red-700">En contingencia {{ $pin['contingencySinceHuman'] }}</span>@endif
                 </div>
-                <div class="perfv"></div>
-                <div class="flex min-w-[260px] flex-[1_1_420px] flex-col gap-4 px-6 py-5">
+                <div class="perfv" style="margin: 12px 0"></div>
+                <div class="flex min-w-[260px] flex-[1_1_420px] flex-col gap-2.5 px-5 py-3">
                     <div class="flex flex-wrap items-center justify-between gap-2.5">
-                        <h2 class="!text-[1.75rem] !font-bold">{{ $loc->name }}</h2>
+                        <h2 class="!text-xl !font-bold">{{ $loc->name }}</h2>
                         <span class="b {{ $loc->is_active ? 'b-ok' : 'b-mute' }}">{{ $loc->is_active ? 'Activa' : 'Inactiva' }}</span>
                     </div>
-                    <div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-                        <div><span class="eyebrow">Dirección</span><div class="mt-1 {{ $loc->address ? '' : 'text-slate-500' }}">{{ $loc->address ?: 'Sin dirección registrada' }}</div></div>
-                        <div><span class="eyebrow">Latitud · Longitud</span><div class="mt-1 font-mono text-sm {{ $loc->latitude !== null ? '' : 'text-slate-500 !font-sans !text-base' }}">{{ $loc->latitude !== null ? $loc->latitude.' · '.$loc->longitude : 'Sin coordenadas' }}</div></div>
+                    <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4 gap-y-2 text-sm">
+                        <div><span class="eyebrow">Dirección</span><div class="mt-0.5 {{ $loc->address ? '' : 'text-slate-500' }}">{{ $loc->address ?: 'Sin dirección registrada' }}</div></div>
+                        <div><span class="eyebrow">Latitud · Longitud</span><div class="mt-0.5 font-mono text-sm {{ $loc->latitude !== null ? '' : 'text-slate-500 !font-sans !text-base' }}">{{ $loc->latitude !== null ? $loc->latitude.' · '.$loc->longitude : 'Sin coordenadas' }}</div></div>
                         <div><span class="eyebrow">Dispositivos</span><div class="mt-1">{{ $pin['enabledDevices'] }} activos @if($pin['staleDevices'] > 0)<span class="text-amber-800">· {{ $pin['staleDevices'] }} sin sincronizar</span>@endif</div></div>
-                        <div><span class="eyebrow">Última sincronización</span><div class="mt-1 font-semibold {{ $pin['lastSyncHuman'] ? '' : 'text-amber-800' }}">{{ $pin['lastSyncHuman'] ?? 'Nunca' }}</div></div>
+                        <div><span class="eyebrow">Última sincronización</span><div class="mt-0.5 font-semibold {{ $pin['lastSyncHuman'] ? '' : 'text-amber-800' }}">{{ $pin['lastSyncHuman'] ?? 'Nunca' }}</div></div>
                     </div>
                     @if($canEdit || $canDelete)
-                        <div class="flex flex-wrap items-center gap-2 border-t-[1.5px] border-slate-100 pt-3.5">
+                        <div class="flex flex-wrap items-center gap-1.5 border-t-[1.5px] border-slate-100 pt-2.5">
                             @if($canEdit)
-                                <a href="{{ route('admin.screens.edit', ['locations', $loc->getKey()]) }}" class="snow-btn-secondary">Editar</a>
+                                <a href="{{ route('admin.screens.edit', ['locations', $loc->getKey()]) }}" class="snow-btn-secondary snow-btn-sm">Editar</a>
                             @endif
                             @if($canDelete)
                                 <form method="POST" action="{{ route('admin.screens.destroy', ['locations', $loc->getKey()]) }}" class="ml-auto" onsubmit="return confirm('¿Eliminar la localidad «{{ addslashes($loc->name) }}»?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="snow-btn-ghost !text-red-700">Eliminar</button>
+                                    <button type="submit" class="snow-btn-ghost snow-btn-sm !text-red-700">Eliminar</button>
                                 </form>
                             @endif
                         </div>
@@ -96,7 +98,7 @@
         @if($canEdit)
             <a href="{{ route('admin.screens.create', 'locations') }}" class="flex min-h-[76px] items-center justify-center rounded-[20px] border-2 border-dashed border-slate-300 text-[15px] font-semibold text-primary-600 hover:border-primary-600">+ Agregar otra localidad</a>
         @endif
-        <p class="text-center text-[13px] text-slate-500">Agrega latitud y longitud a cada localidad para ubicarla. Mostrando {{ $rows->count() }} de {{ $items->total() }} resultados.</p>
+        <p class="text-center text-[13px] text-slate-500">Agrega latitud y longitud a cada localidad para ubicarla. Mostrando {{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} de {{ $items->total() }} resultados.</p>
         <div>{{ $items->links() }}</div>
     </section>
 
