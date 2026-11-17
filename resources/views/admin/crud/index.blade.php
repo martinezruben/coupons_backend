@@ -11,7 +11,8 @@
     $gridFilterOptions = $gridFilterOptions ?? [];
     $gridFilters = $cfg['grid']['filters'] ?? [];
     $sortable = $cfg['grid']['sortable'] ?? [];
-    $locationPairing = $screen === 'locations' && ($canEdit ?? false);
+    // El código de vinculación se pide desde Dispositivos (no desde Localidades)
+    $locationPairing = $screen === 'devices' && auth('admin')->user()->can(\App\Support\AdminRbac::actionPermissions('devices')['register']['permission']);
     $apiLogDetail = $screen === 'api-request-logs';
     $auditLogDetail = $screen === 'audit-log';
     $couponAuditDetail = $screen === 'coupon-audit-logs';
@@ -245,8 +246,8 @@
                                     <button
                                         type="button"
                                         class="snow-icon-btn h-6 w-6"
-                                        title="Código temporal de vinculación"
-                                        @click="$dispatch('open-location-pairing', { locationId: '{{ $item->getKey() }}', locationName: @js($item->name) })"
+                                        title="Código de vinculación del dispositivo (de su localidad)"
+                                        @click="$dispatch('open-location-pairing', { locationId: '{{ $item->location_id }}', locationName: @js($item->location?->name ?? 'Localidad') })"
                                     >
                                         <x-admin.snow.icon name="key" class="h-3.5 w-3.5" />
                                     </button>

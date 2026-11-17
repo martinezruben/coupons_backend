@@ -107,7 +107,7 @@ class DeviceRegistrationController extends Controller
         ], extra: ['summary' => 'Registró el dispositivo «'.($device->name ?: $device->device_fingerprint)."» en {$location->name}, aprobado por {$names}"]);
 
         return redirect()->route('admin.screens.index', 'devices')
-            ->with('status', "Dispositivo registrado en {$location->name}. Ahora vincúlalo en el terminal con el código de la localidad (Localidades → Clave de acceso).");
+            ->with('status', "Dispositivo registrado en {$location->name}. Ahora vincúlalo en el terminal con el código de vinculación (icono de llave en su fila).");
     }
 
     /** Administradores que pueden aprobar un registro: activos, con autenticador y permiso de registro. */

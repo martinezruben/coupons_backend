@@ -63,6 +63,7 @@ class LocationPairingTokenController extends Controller
         $user = $request->user('admin');
         abort_unless($user, 403);
         $p = AdminRbac::permissionsForScreen('locations');
-        abort_unless($user->can($p['edit']), 403);
+        // Quien registra dispositivos pide el código desde Dispositivos; también sigue valiendo editar localidades
+        abort_unless($user->can($p['edit']) || $user->can(AdminRbac::actionPermissions('devices')['register']['permission']), 403);
     }
 }
