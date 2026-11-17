@@ -18,6 +18,7 @@ class ApiDeviceRegisterTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        config(['pos.allow_device_self_registration' => true]); // el cierre del auto-registro se prueba en DeviceRegistrationApprovalTest
     }
 
     public function test_register_device_creates_device_and_license_with_valid_pairing_code(): void

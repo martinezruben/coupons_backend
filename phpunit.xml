@@ -20,6 +20,7 @@
     <php>
         <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="ADMIN_MFA_REQUIRED" value="false"/>
         <env name="APP_KEY" value="base64:eGC0x4aHvNfhb9w4KdZPxKHDRfvJ2yfM7kGUz7DXZM8="/>
         <env name="APP_TIMEZONE" value="America/Santo_Domingo"/>
         <env name="APP_LOCALE" value="es"/>

@@ -44,7 +44,8 @@ return [
         'model' => Device::class,
         'label' => 'Dispositivos',
         'icon' => 'device-phone-mobile',
-        'disable_create' => true,
+        'disable_create' => true, // el alta pasa por el registro con aprobación de dos administradores
+        'actions' => ['register' => 'Registrar dispositivos nuevos'],
         'labels' => [
             'registered_at' => 'Fecha de registro',
             'app_version' => 'Versión de la app',

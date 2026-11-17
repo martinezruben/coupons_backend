@@ -107,6 +107,14 @@ Una regla suma las condiciones que se activen y **todas deben cumplirse**: local
 
 **Auditoría de cupones:** cada fila tiene **Ver detalle**, un modal con la acción explicada, quién la hizo, el cupón, el antes y después, el comentario completo (hasta ahora se recortaba a 255), el lote, la activación (modo, cliente, selección, fechas) y lo que se envió en el panel.
 
+## MFA obligatorio y registro de dispositivos con doble aprobación
+
+**MFA:** todos los administradores deben tener la verificación en dos pasos (TOTP) activa. Tras iniciar sesión, quien aún no la tiene solo puede abrir la pantalla para activarla (QR + código + códigos de recuperación); no se puede desactivar. Si un super-admin reinicia el 2FA de alguien, esa persona debe activarlo de nuevo al entrar. Se controla con `ADMIN_MFA_REQUIRED` (por defecto `true`; en pruebas `false`). Al activarlo en producción, todas las cuentas sin 2FA serán obligadas a configurarlo en su próximo acceso.
+
+**Registrar un dispositivo (Dispositivos → «+ Registrar dispositivo»):** requiere el permiso `devices.register` (acción independiente en la matriz y en permisos por usuario). El formulario pide el identificador del dispositivo, un nombre opcional y la **localidad** a la que se asigna, y además el **autenticador de dos administradores distintos** con ese permiso y su 2FA activo (se elige a cada persona y se escribe su código de 6 dígitos). Un código no se puede reutilizar y los intentos fallidos se limitan por persona. El alta crea el dispositivo y su licencia y queda en la auditoría (quién registró y quién aprobó).
+
+**Vinculación:** un dispositivo desconocido ya **no** puede darse de alta solo con el código de la localidad (`/api/auth/register-device` responde `DEVICE_NOT_REGISTERED`); el terminal registrado en el panel se vincula con el código de *su* localidad. `POS_ALLOW_DEVICE_SELF_REGISTRATION=true` restaura el comportamiento anterior.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

@@ -4,6 +4,10 @@
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">{{ session('status') }}</div>
         @endif
 
+        @if(config('admin.mfa_required') && ! auth('admin')->user()->totp_enabled)
+            <div class="rounded-[14px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900" role="alert">La verificación en dos pasos es obligatoria: actívala para seguir usando el panel.</div>
+        @endif
+
         <div class="snow-card rounded-xl border border-slate-200/90 bg-white p-4 shadow-hope-card">
             <h2 class="text-sm font-semibold text-slate-900">Verificación en dos pasos (TOTP)</h2>
             <p class="mt-1 text-xs text-slate-500">
@@ -59,6 +63,7 @@
                 </div>
             @endif
 
+            @unless(config('admin.mfa_required'))
             <div class="snow-card rounded-xl border border-slate-200/90 bg-white p-4 shadow-hope-card">
                 <h3 class="text-xs font-semibold text-slate-900">Desactivar 2FA</h3>
                 <form method="POST" action="{{ route('admin.2fa.disable') }}" class="mt-2 flex flex-wrap items-start gap-2">
@@ -73,6 +78,7 @@
                     <button type="submit" class="inline-flex items-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100">Desactivar</button>
                 </form>
             </div>
+            @endunless
         @endif
     </div>
 </x-admin.layouts.app>

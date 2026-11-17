@@ -21,6 +21,8 @@ return [
     | Vigencia de licencia creada en el registro inicial (pareja)
     |--------------------------------------------------------------------------
     */
+    // Un dispositivo desconocido ya no puede darse de alta solo con el código de la localidad: lo registran dos administradores en el panel
+    'allow_device_self_registration' => (bool) env('POS_ALLOW_DEVICE_SELF_REGISTRATION', false),
     'new_license_validity_days' => (int) env('POS_NEW_LICENSE_VALIDITY_DAYS', 365),
 
 ];

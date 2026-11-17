@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\CouponListController;
 use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
+use App\Http\Controllers\Admin\DeviceRegistrationController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
 use App\Http\Controllers\Admin\LocationPairingTokenController;
 use App\Http\Controllers\Admin\MailTestController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Admin\ScreenCrudController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\UserPermissionController;
 use App\Http\Middleware\AuditAdminActivity;
+use App\Http\Middleware\EnsureMfaEnabled;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin');
@@ -39,7 +41,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/2fa', [AdminTwoFactorController::class, 'verify'])->name('2fa.verify');
     });
 
-    Route::middleware(['auth:admin', 'admin.active', AuditAdminActivity::class])->group(function (): void {
+    Route::middleware(['auth:admin', 'admin.active', EnsureMfaEnabled::class, AuditAdminActivity::class])->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 
@@ -51,6 +53,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/locations/{location}/pairing-token', [LocationPairingTokenController::class, 'show'])->name('locations.pairing-token.show');
         Route::post('/locations/{location}/pairing-token', [LocationPairingTokenController::class, 'store'])->name('locations.pairing-token.store');
 
+        Route::get('/devices/register', [DeviceRegistrationController::class, 'create'])->name('devices.register.form');
+        Route::post('/devices/register', [DeviceRegistrationController::class, 'store'])->name('devices.register');
         Route::post('/devices/{device}/block', [DeviceAccessController::class, 'block'])->name('devices.block');
         Route::post('/devices/{device}/unblock', [DeviceAccessController::class, 'unblock'])->name('devices.unblock');
 
