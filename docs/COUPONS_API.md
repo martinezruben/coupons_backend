@@ -115,6 +115,12 @@ Una regla suma las condiciones que se activen y **todas deben cumplirse**: local
 
 **Vinculación:** un dispositivo desconocido ya **no** puede darse de alta solo con el código de la localidad (`/api/auth/register-device` responde `DEVICE_NOT_REGISTERED`); el terminal registrado en el panel se vincula con el código de *su* localidad, que se obtiene desde **Dispositivos** (icono de llave en la fila del dispositivo); ya no se pide desde Localidades. `POS_ALLOW_DEVICE_SELF_REGISTRATION=true` restaura el comportamiento anterior.
 
+## Menú del panel administrable
+
+**Configuración → Menú del panel** (solo super-admin; `/admin/menu`): edita la barra de navegación sin tocar código. Los **grupos** (padres) se pueden crear, renombrar, cambiar de icono, ordenar, ocultar y eliminar (si no tienen pantallas). Las **opciones** (hijos: pantallas y accesos como Permisos por rol o Parámetros) se renombran, cambian de icono, se reordenan, se mueven a otro grupo o se ocultan; además se pueden agregar **enlaces propios** (una página del sitio con «/…» o una dirección «https://…», con permiso opcional y opción de abrir en otra pestaña). Una vista previa muestra el resultado antes de guardar.
+
+Reglas: el menú se guarda en `menu_groups` y `menu_items` (sembrados con el menú original); cada pantalla aparece una sola vez (se mueve, no se quita); el propio editor no se puede ocultar; pantallas nuevas del código que aún no estén en el menú guardado se añaden solas a su grupo; «Restablecer» vuelve al menú original. Ocultar una opción solo la saca de la barra: los permisos siguen mandando sobre quién entra a cada pantalla. Cada cambio queda en la auditoría.
+
 ## Seguridad aplicada
 Cobro con transacción de BD y `lockForUpdate`, decimales exactos, validación de monto/cupones/activo/vencimiento/token QR, errores genéricos, `Idempotency-Key`, rate limits (login 5/min, consulta 30/min, cobro 30/min, restricciones 10/min), tokens por dispositivo con vencimiento (`COUPONS_TOKEN_TTL_MINUTES`).
 

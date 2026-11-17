@@ -27,42 +27,63 @@ class AdminNavigation
         $currentScreen = request()->route('screen');
         $groups = [];
 
-        foreach (config('admin_nav_groups', []) as $group) {
+        foreach (MenuStructure::load() as $group) {
+            if (! $group['visible']) {
+                continue;
+            }
             $items = [];
 
-            foreach ($group['screens'] ?? [] as $key) {
-                $screen = config("admin_screens.$key");
-                if (! $screen || $key === 'dashboard' || ! empty($screen['exclude_from_nav']) || ! AdminRbac::canAccessScreen($admin, $key)) {
+            foreach ($group['items'] as $entry) {
+                if (! ($entry['visible'] ?? true) && ! in_array($entry['ref'], MenuStructure::LOCKED, true)) {
                     continue;
                 }
-                $route = $screen['route'] ?? null;
-                $items[] = [
-                    'label' => $screen['label'],
-                    'description' => $screen['description'] ?? null,
-                    'icon' => $screen['icon'] ?? 'squares-2x2',
-                    'url' => $route ? route($route) : route('admin.screens.index', $key),
-                    'active' => $currentScreen === $key || ($route && request()->routeIs($screen['active_pattern'] ?? $route.'*')),
-                    // Los grids CRUD aceptan ?q= para buscar registros
-                    'searchable' => ! $route && ! empty($screen['model']),
-                    'searchRank' => ($rank = array_search($key, self::SEARCH_FIRST, true)) === false ? 99 : $rank,
-                ];
+                $meta = MenuStructure::meta($entry['kind'], $entry['ref']);
+                $label = $entry['label'] ?: $meta['label'];
+                $icon = MenuIcons::valid($entry['icon']) ? $entry['icon'] : $meta['icon'];
+
+                if ($entry['kind'] === 'screen') {
+                    $key = $entry['ref'];
+                    $screen = config("admin_screens.$key");
+                    if (! $screen || ! empty($screen['exclude_from_nav']) || ! AdminRbac::canAccessScreen($admin, $key)) {
+                        continue;
+                    }
+                    $route = $screen['route'] ?? null;
+                    $items[] = [
+                        'label' => $label,
+                        'description' => $screen['description'] ?? null,
+                        'icon' => $icon,
+                        'url' => $route ? route($route) : route('admin.screens.index', $key),
+                        'active' => $currentScreen === $key || ($route && request()->routeIs($screen['active_pattern'] ?? $route.'*')),
+                        // Los grids CRUD aceptan ?q= para buscar registros
+                        'searchable' => ! $route && ! empty($screen['model']),
+                        'searchRank' => ($rank = array_search($key, self::SEARCH_FIRST, true)) === false ? 99 : $rank,
+                        'new_tab' => false,
+                    ];
+                } elseif ($entry['kind'] === 'special') {
+                    $special = MenuStructure::SPECIALS[$entry['ref']] ?? null;
+                    if ($special === null || ! self::specialAllowed($entry['ref'], $admin)) {
+                        continue;
+                    }
+                    $items[] = [
+                        'label' => $label, 'description' => null, 'icon' => $icon, 'url' => route($special['route']),
+                        'active' => request()->routeIs($special['pattern']), 'searchable' => false, 'searchRank' => 99, 'new_tab' => false,
+                    ];
+                } else { // enlace propio
+                    if (empty($entry['url']) || ($entry['permission'] && ! $admin->can($entry['permission']))) {
+                        continue;
+                    }
+                    $items[] = [
+                        'label' => $label, 'description' => null, 'icon' => $icon, 'url' => $entry['url'],
+                        'active' => rtrim((string) parse_url($entry['url'], PHP_URL_PATH), '/') === rtrim('/'.request()->path(), '/') && ! str_starts_with($entry['url'], 'http'),
+                        'searchable' => false, 'searchRank' => 99, 'new_tab' => (bool) $entry['new_tab'],
+                    ];
+                }
             }
 
-            $key = $group['key'] ?? '';
-            if ($key === 'system' && $admin->can('roles.edit')) {
-                $items[] = self::item('Permisos por rol', 'adjustments-horizontal', 'admin.rbac.matrix.index', 'admin.rbac.matrix.*');
-            }
-            if ($key === 'system' && AdminRbac::isSuperAdmin($admin)) {
-                $items[] = self::item('Permisos por usuario', 'finger-print', 'admin.rbac.users.index', 'admin.rbac.users.*');
-            }
-            if ($key === 'system' && $admin->can('system_settings.view')) {
-                $items[] = self::item('Parámetros del sistema', 'cog-6-tooth', 'admin.system-settings.edit', 'admin.system-settings.*');
-            }
-            if ($key === 'system' && Gate::forUser($admin)->allows('viewPulse')) {
-                $items[] = self::item('Pulse (métricas)', 'bolt', 'pulse', 'pulse');
-            }
-
-            $groups[] = ['key' => $key, 'label' => $group['label'], 'icon' => $group['icon'] ?? 'squares-2x2', 'items' => $items];
+            $groups[] = [
+                'key' => $group['key'], 'label' => $group['label'],
+                'icon' => MenuIcons::valid($group['icon']) ? $group['icon'] : 'squares-2x2', 'items' => $items,
+            ];
         }
 
         return $groups;
@@ -97,19 +118,14 @@ class AdminNavigation
         return $entries;
     }
 
-    /**
-     * @return array{label: string, icon: string, url: string, active: bool, searchable: bool, searchRank: int}
-     */
-    private static function item(string $label, string $icon, string $route, string $activePattern): array
+    private static function specialAllowed(string $key, Authenticatable $admin): bool
     {
-        return [
-            'label' => $label,
-            'description' => null,
-            'icon' => $icon,
-            'url' => route($route),
-            'active' => request()->routeIs($activePattern),
-            'searchable' => false,
-            'searchRank' => 99,
-        ];
+        return match ($key) {
+            'rbac-matrix' => $admin->can('roles.edit'),
+            'rbac-users', 'menu-editor' => AdminRbac::isSuperAdmin($admin),
+            'system-settings' => $admin->can('system_settings.view'),
+            'pulse' => Gate::forUser($admin)->allows('viewPulse'),
+            default => false,
+        };
     }
 }

@@ -794,3 +794,6 @@ input[type='checkbox'], input[type='radio'] { accent-color: #0F3D33; }
 .dropdown-item { gap: 0.625rem; }
 .dropdown-item.is-active .nav-ico, .dropdown-item:hover .nav-ico, .sidenav-link.is-active .nav-ico { color: #8E9B93; }
 .topnav-mobile .sidenav-link { gap: 0.625rem; }
+
+.nav-ico-box { display: inline-flex; width: 1.125rem; height: 1.125rem; color: #8E9B93; }
+.nav-ico-box svg { width: 100%; height: 100%; stroke-width: 1.6; }

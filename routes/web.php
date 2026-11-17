@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\DeviceRegistrationController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
 use App\Http\Controllers\Admin\LocationPairingTokenController;
 use App\Http\Controllers\Admin\MailTestController;
+use App\Http\Controllers\Admin\MenuEditorController;
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\RoleRbacMatrixController;
 use App\Http\Controllers\Admin\ScreenCrudController;
@@ -73,6 +74,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::put('/roles/{role}', [RoleManagementController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{role}', [RoleManagementController::class, 'destroy'])->name('roles.destroy');
 
+        Route::get('/menu', [MenuEditorController::class, 'index'])->name('menu.index');
+        Route::put('/menu', [MenuEditorController::class, 'update'])->name('menu.update');
+        Route::post('/menu/reset', [MenuEditorController::class, 'reset'])->name('menu.reset');
         Route::get('/rbac', [RoleRbacMatrixController::class, 'index'])->name('rbac.matrix.index');
         Route::get('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'edit'])->name('rbac.matrix.edit');
         Route::post('/rbac/roles/{role}', [RoleRbacMatrixController::class, 'update'])->name('rbac.matrix.update');

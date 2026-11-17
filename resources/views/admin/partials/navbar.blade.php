@@ -38,7 +38,7 @@
                     </button>
                     <div x-show="open === '{{ $group['key'] }}'" x-cloak class="dropdown-menu" style="margin-top: .125rem; min-width: 15rem">
                         @foreach($group['items'] as $item)
-                            <a href="{{ $item['url'] }}" class="dropdown-item {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
+                            <a href="{{ $item['url'] }}" @if(!empty($item['new_tab'])) target="_blank" rel="noopener" @endif class="dropdown-item {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
                                 <x-admin.snow.icon :name="$item['icon']" class="nav-ico" />
                                 <span class="min-w-0 flex-1">{{ $item['label'] }}</span>
                             </a>
@@ -92,7 +92,7 @@
             <div class="mt-3">
                 <span class="sidenav-group-btn">{{ $group['label'] }}</span>
                 @foreach($group['items'] as $item)
-                    <a href="{{ $item['url'] }}" class="sidenav-link {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
+                    <a href="{{ $item['url'] }}" @if(!empty($item['new_tab'])) target="_blank" rel="noopener" @endif class="sidenav-link {{ $item['active'] ? 'is-active' : '' }}" @if($item['active']) aria-current="page" @endif>
                         <x-admin.snow.icon :name="$item['icon']" class="nav-ico" />
                         <span class="min-w-0 flex-1 truncate">{{ $item['label'] }}</span>
                     </a>
