@@ -20,14 +20,14 @@ class EnsureIdempotency
 
         if ($key === null || $key === '') {
             if (config('coupons.require_idempotency_key')) {
-                return response()->json(['error' => 'Idempotency-Key header is required'], 400);
+                return response()->json(['error' => 'Idempotency-Key header is required', 'code' => 'idempotency_key_required'], 400);
             }
 
             return $next($request);
         }
 
         if (! preg_match('/^[A-Za-z0-9._:-]{8,100}$/', $key)) {
-            return response()->json(['error' => 'Invalid Idempotency-Key'], 422);
+            return response()->json(['error' => 'Invalid Idempotency-Key', 'code' => 'idempotency_key_invalid'], 422);
         }
 
         $userId = $request->user()->id;
@@ -50,10 +50,10 @@ class EnsureIdempotency
             $row = DB::table('idempotency_keys')->where('user_id', $userId)->where('key', $key)->first();
 
             if (! $row || $row->request_hash !== $hash) {
-                return response()->json(['error' => 'Idempotency-Key reused with a different request'], 422);
+                return response()->json(['error' => 'Idempotency-Key reused with a different request', 'code' => 'idempotency_key_reused'], 422);
             }
             if ($row->response_status === null) {
-                return response()->json(['error' => 'A request with this Idempotency-Key is in progress'], 409);
+                return response()->json(['error' => 'A request with this Idempotency-Key is in progress', 'code' => 'request_in_progress'], 409);
             }
 
             return response($row->response_body, $row->response_status, ['Content-Type' => 'application/json'])

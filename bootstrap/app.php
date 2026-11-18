@@ -5,14 +5,21 @@ use App\Http\Middleware\EnsureCouponUser;
 use App\Http\Middleware\EnsureDeviceOperational;
 use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\LogApiRequest;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Exceptions\MissingAbilityException;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -68,6 +75,51 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'message' => 'Autenticación requerida: falta el token del dispositivo o no es válido. Incluye la cabecera Authorization: Bearer <token> (token obtenido con POST /api/auth/login).',
                 'error' => 'unauthenticated',
+                'code' => 'unauthenticated',
             ], 401);
+        });
+
+        // Errores de la API con la misma forma que los de negocio: `error` (texto) y `code` (estable)
+        $exceptions->renderable(function (ValidationException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'error' => (string) collect($e->errors())->flatten()->first(),
+                'code' => 'validation_failed',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        });
+
+        $exceptions->renderable(function (ThrottleRequestsException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+            $retry = (int) ($e->getHeaders()['Retry-After'] ?? 0);
+
+            return response()->json([
+                'error' => 'Too many requests',
+                'code' => 'rate_limited',
+                'message' => 'Too Many Attempts.',
+                'retry_after' => $retry,
+            ], 429, $e->getHeaders());
+        });
+
+        $exceptions->renderable(function (AuthorizationException|AccessDeniedHttpException|MissingAbilityException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json(['error' => 'Forbidden', 'code' => 'forbidden', 'message' => 'This action is not allowed for your account.'], 403);
+        });
+
+        $exceptions->renderable(function (ModelNotFoundException|NotFoundHttpException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json(['error' => 'Not found', 'code' => 'not_found', 'message' => 'Resource not found.'], 404);
         });
     })->create();

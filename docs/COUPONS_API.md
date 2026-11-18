@@ -174,3 +174,27 @@ Importa cupones QR y de barras (conserva `coupon_id`), `transactions` → `coupo
 - **Bloqueo de cuenta (usuarios de la app):** tras `login_max_attempts` (5) intentos fallidos la cuenta se bloquea `login_lockout_minutes` (15) y se cierran sus sesiones; la respuesta sigue siendo un 401 genérico. Un login correcto reinicia el contador; el administrador desbloquea desde Usuarios de la app. Genera la alerta `user_locked`.
 - **Sesiones:** cambiar la contraseña o desactivar a un usuario de la app revoca sus tokens; también hay un botón *Cerrar sus sesiones*.
 - **Logs de peticiones:** los números de cupón (`coupon_number`, `coupons`) se guardan enmascarados (`********9012`).
+
+## Errores de la API
+
+Todos los errores de `/api/*` son JSON con `error` (texto en inglés, para personas) y `code` (estable: la app lo traduce). Los 422 de validación añaden `message` y `errors`; los 429, `retry_after` (segundos).
+
+| `code` | HTTP | Cuándo |
+|---|---|---|
+| `invalid_credentials` | 401 | Login fallido, usuario inactivo o cuenta bloqueada (misma respuesta) |
+| `unauthenticated` | 401 | Falta el token, venció o se revocaron las sesiones |
+| `forbidden` | 403 | El rol no tiene la habilidad |
+| `device_not_authorized` | 403 | Falta `Device-Fingerprint` o el dispositivo no está habilitado/licenciado |
+| `user_wrong_location` | 403 | El usuario no pertenece a la localidad del dispositivo |
+| `supervisor_approval_required` | 403 | Monto por encima del umbral de supervisor |
+| `cannot_reverse_own_transaction` | 403 | Quien cobró no puede revertir |
+| `coupon_not_found` | 404 | No existe (o el token QR no coincide) |
+| `coupon_inactive_or_expired` | 422 | Cupón inactivo, vencido o sin activar |
+| `insufficient_balance` | 400 | Saldo menor al cobro (`balance`, `amount_required`) |
+| `coupon_daily_limit_reached`, `user_daily_limit_reached`, `location_daily_limit_reached` | 429 | Límites de velocidad |
+| `balance_limit_exceeded`, `topup_*` | 422 | Reglas de recarga |
+| `reversal_window_expired`, `transaction_not_reversible`, `transaction_already_reversed` | 422/409 | Reversas |
+| `idempotency_key_required`, `idempotency_key_invalid`, `idempotency_key_reused`, `request_in_progress` | 400/422/409 | `Idempotency-Key` |
+| `validation_failed` | 422 | Datos inválidos |
+| `rate_limited` | 429 | Demasiadas peticiones |
+| `not_found` | 404 | Ruta o recurso inexistente |

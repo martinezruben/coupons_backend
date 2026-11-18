@@ -30,7 +30,7 @@ class CouponAuthController extends Controller
 
         // Cuenta bloqueada por intentos fallidos: misma respuesta que una clave incorrecta (no se revela el bloqueo)
         if ($user && $user->locked_until && $user->locked_until->isFuture()) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Unauthorized', 'code' => 'invalid_credentials'], 401);
         }
 
         if (! $user || ! $valid || ! $user->is_active) {
@@ -38,7 +38,7 @@ class CouponAuthController extends Controller
                 $this->registerFailure($user);
             }
 
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Unauthorized', 'code' => 'invalid_credentials'], 401);
         }
 
         if ($user->failed_login_attempts > 0 || $user->locked_until) {
