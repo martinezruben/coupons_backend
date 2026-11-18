@@ -57,7 +57,7 @@ class CouponLocationAndAuditDetailTest extends TestCase
 
     // ---- Localidad que llega con el canje del dispositivo Android
 
-    public function test_the_redeem_location_comes_from_the_android_request_and_falls_back_to_the_device(): void
+    public function test_the_redeem_location_comes_from_the_device_and_the_request_one_is_ignored_when_there_is_a_device(): void
     {
         $user = User::factory()->create(['role' => 'MANAGER']);
         Sanctum::actingAs($user, $user->couponAbilities());
@@ -67,11 +67,11 @@ class CouponLocationAndAuditDetailTest extends TestCase
         $this->bar('B1');
         $headers = ['Device-Fingerprint' => $device->device_fingerprint];
 
-        // La localidad enviada en la transacción manda
+        // Con dispositivo registrado, la localidad que envíe el cliente se ignora
         $this->postJson('/api/transactioncb', ['amount' => 10, 'coupons' => ['B1'], 'location_id' => $other->id], $headers)->assertOk();
         $tx = DB::table('coupon_transactions')->orderByDesc('transaction_id')->first();
-        $this->assertSame($other->id, $tx->location_id);
-        $this->assertSame('request', $tx->location_source);
+        $this->assertSame($home->id, $tx->location_id);
+        $this->assertSame('device', $tx->location_source);
         $this->assertSame($device->id, $tx->device_id);
 
         // Sin localidad en la petición, la del dispositivo registrado
@@ -79,6 +79,12 @@ class CouponLocationAndAuditDetailTest extends TestCase
         $tx = DB::table('coupon_transactions')->orderByDesc('transaction_id')->first();
         $this->assertSame($home->id, $tx->location_id);
         $this->assertSame('device', $tx->location_source);
+
+        // Sin dispositivo, la localidad de la petición se usa tal cual
+        $this->postJson('/api/transactioncb', ['amount' => 10, 'coupons' => ['B1'], 'location_id' => $other->id])->assertOk();
+        $tx = DB::table('coupon_transactions')->orderByDesc('transaction_id')->first();
+        $this->assertSame($other->id, $tx->location_id);
+        $this->assertSame('request', $tx->location_source);
 
         // Sin dispositivo ni localidad: queda vacía
         $this->postJson('/api/transactioncb', ['amount' => 10, 'coupons' => ['B1']])->assertOk();

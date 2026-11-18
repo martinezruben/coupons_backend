@@ -1,16 +1,17 @@
 <?php
 
+// Estos valores son los de partida: los de cupones también se editan en el panel (Parámetros del sistema → Cupones)
+// y lo guardado allí tiene prioridad sobre .env.
 return [
-    // Si es true, POST /transaction y /transactioncb exigen el header Idempotency-Key.
-    // Dejar en false hasta que la app Android lo envíe (si lo envía, se aplica igual).
-    'require_idempotency_key' => (bool) env('COUPONS_REQUIRE_IDEMPOTENCY_KEY', false),
+    // Si es true, POST /transaction, /transactioncb y las recargas exigen el header Idempotency-Key (la app ya lo envía).
+    'require_idempotency_key' => (bool) env('COUPONS_REQUIRE_IDEMPOTENCY_KEY', true),
 
     // Los cupones QR exigen su token en cada cobro (la app ya envía "tokens").
     'require_qr_token' => (bool) env('COUPONS_REQUIRE_QR_TOKEN', true),
 
     // Si es true, las operaciones de cupones exigen la cabecera Device-Fingerprint de un
-    // dispositivo registrado, habilitado y con licencia activa. false = compatible con la app actual.
-    'require_device_binding' => (bool) env('COUPONS_REQUIRE_DEVICE_BINDING', false),
+    // dispositivo registrado, habilitado y con licencia activa, y el usuario debe pertenecer a su localidad.
+    'require_device_binding' => (bool) env('COUPONS_REQUIRE_DEVICE_BINDING', true),
 
     'max_coupons_per_transaction' => (int) env('COUPONS_MAX_PER_TRANSACTION', 20),
 
@@ -33,7 +34,7 @@ return [
     'max_activation_size' => 20000,
 
     // Horas de vida de la clave de idempotencia.
-    'idempotency_ttl_hours' => 48,
+    'idempotency_ttl_hours' => (int) env('COUPONS_IDEMPOTENCY_TTL_HOURS', 48),
 
     // Límites de velocidad de cobros (0 = sin límite). Se cuentan por día natural del servidor.
     'limits' => [

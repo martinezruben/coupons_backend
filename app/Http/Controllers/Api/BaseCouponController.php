@@ -9,6 +9,7 @@ use App\Http\Requests\RedeemRequest;
 use App\Http\Requests\RestoreRequest;
 use App\Http\Requests\TopUpRequest;
 use App\Models\Device;
+use App\Models\User;
 use App\Services\CouponService;
 use App\Services\SecurityAlerts;
 use Illuminate\Http\JsonResponse;
@@ -94,6 +95,22 @@ abstract class BaseCouponController extends Controller
             return null;
         }
 
+        // El usuario solo opera en las localidades que tiene asignadas (la principal o las de su lista);
+        // un ADMIN puede operar en cualquiera.
+        $user = $request->user();
+        if ($user instanceof User && strtoupper((string) $user->role) !== 'ADMIN' && ! $this->userBelongsToLocation($user, (string) $device->location_id)) {
+            if (config('coupons.require_device_binding')) {
+                SecurityAlerts::raise('user_wrong_location', 'medium', "El usuario {$user->username} intentó operar en una localidad que no tiene asignada.", null, (string) $user->getKey(), (string) $device->location_id);
+                throw new CouponException('User is not assigned to the location of this device', 403);
+            }
+        }
+
         return $device;
+    }
+
+    private function userBelongsToLocation(User $user, string $locationId): bool
+    {
+        return (string) $user->location_id === $locationId
+            || $user->locations()->where('locations.id', $locationId)->exists();
     }
 }

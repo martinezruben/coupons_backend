@@ -67,8 +67,9 @@ class EnsureIdempotency
             throw $e;
         }
 
-        if ($response->getStatusCode() >= 500) {
-            // Fallo del servidor: permitir que el cliente reintente con la misma clave.
+        if ($response->getStatusCode() >= 500 || in_array($response->getStatusCode(), [401, 403, 429], true)) {
+            // Fallo del servidor, permiso o límite de velocidad: nada se cobró, así que el cliente puede
+            // reintentar con la misma clave cuando se corrija (dispositivo, localidad, espera).
             DB::table('idempotency_keys')->where('id', $id)->delete();
         } else {
             DB::table('idempotency_keys')->where('id', $id)->update([
