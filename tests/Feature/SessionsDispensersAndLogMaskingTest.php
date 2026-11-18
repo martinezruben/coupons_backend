@@ -32,14 +32,14 @@ class SessionsDispensersAndLogMaskingTest extends TestCase
     {
         $this->actingAs($this->admin('locations.view', 'locations.edit'), 'admin');
 
-        foreach ([0, 21, 'x', ''] as $bad) {
+        foreach ([-1, 21, 'x', ''] as $bad) {
             $this->post(route('admin.screens.store', 'locations'), ['name' => 'Sede Norte', 'dispensers' => $bad, 'is_active' => 1])->assertSessionHasErrors('dispensers');
         }
         $this->post(route('admin.screens.store', 'locations'), ['name' => 'Sede Norte', 'dispensers' => 12, 'is_active' => 1])->assertSessionHasNoErrors();
 
         $loc = Location::where('name', 'Sede Norte')->firstOrFail();
         $this->assertSame(12, $loc->dispensers);
-        $this->get(route('admin.screens.edit', ['locations', $loc->id]))->assertOk()->assertSee('Número de dispensadores');
+        $this->get(route('admin.screens.edit', ['locations', $loc->id]))->assertOk()->assertSee('Número de surtidores');
     }
 
     public function test_the_app_receives_the_dispensers_of_the_location_by_api(): void

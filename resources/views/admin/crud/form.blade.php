@@ -222,7 +222,7 @@
                         @endphp
                         <input id="f-{{ $field }}" type="datetime-local" name="{{ $field }}" value="{{ $dtVal }}" class="snow-input">
                     @elseif($field === 'dispensers')
-                        <input id="f-{{ $field }}" type="number" name="{{ $field }}" value="{{ old($field, $item?->dispensers ?? 1) }}" min="1" max="20" step="1" required class="snow-input max-w-[8rem]">
+                        <input id="f-{{ $field }}" type="number" name="{{ $field }}" value="{{ old($field, $item?->dispensers ?? 1) }}" min="0" max="20" step="1" required class="snow-input max-w-[8rem]">
                     @else
                         <input id="f-{{ $field }}" type="text" name="{{ $field }}" value="{{ old($field, $item?->{$field}) }}" class="snow-input">
                     @endif

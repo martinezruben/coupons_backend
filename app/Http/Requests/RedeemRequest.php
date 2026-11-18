@@ -20,6 +20,8 @@ class RedeemRequest extends FormRequest
             'tokens' => ['nullable', 'array'],
             'tokens.*' => ['nullable', 'string', 'max:128'],
             // Localidad donde se hace el cobro; si no viene, se usa la del dispositivo registrado
+            // Surtidor de la localidad (1 a 20; el máximo real es el de la localidad del dispositivo)
+            'dispenser' => ['nullable', 'integer', 'between:1,20'],
             'location_id' => ['nullable', 'uuid', 'exists:locations,id'],
         ];
     }

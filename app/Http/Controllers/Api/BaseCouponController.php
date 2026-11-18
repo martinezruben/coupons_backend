@@ -41,6 +41,7 @@ abstract class BaseCouponController extends Controller
             $request->user(),
             $request->ip(),
             $request->input('location_id'),
+            $request->filled('dispenser') ? (int) $request->input('dispenser') : null,
         ));
     }
 

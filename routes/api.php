@@ -16,9 +16,9 @@ Route::middleware(['auth:sanctum', 'device.operational'])->group(function (): vo
 });
 
 // --- App de cupones (usuarios de la app; mismas rutas que la API anterior) ---
-Route::post('/login', [CouponAuthController::class, 'login'])->middleware('throttle:coupon-login');
+Route::post('/login', [CouponAuthController::class, 'login'])->middleware(['app.version', 'throttle:coupon-login']);
 
-Route::middleware(['auth:sanctum', 'coupon.user', 'throttle:coupon-api'])->group(function (): void {
+Route::middleware(['app.version', 'auth:sanctum', 'coupon.user', 'throttle:coupon-api'])->group(function (): void {
     Route::get('/profile', [CouponAuthController::class, 'profile']);
     Route::post('/logout', [CouponAuthController::class, 'logout']);
 

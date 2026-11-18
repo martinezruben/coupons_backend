@@ -28,7 +28,7 @@ return [
         'label' => 'Localidades',
         'icon' => 'map-pin',
         'fields' => ['name', 'address', 'dispensers', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
-        'labels' => ['dispensers' => 'Número de dispensadores (1 a 20)'],
+        'labels' => ['dispensers' => 'Número de surtidores (0 a 20; 0 = la localidad no usa surtidores)'],
         'grid' => [
             'filters' => [
                 'is_active' => [
@@ -468,9 +468,10 @@ return [
             'user_id' => 'Usuario',
             'location_id' => 'Localidad',
             'device_id' => 'Dispositivo',
+            'dispenser' => 'Surtidor',
             'reversed_of' => 'Reversa de',
         ],
-        'fields' => ['transaction_id', 'created_at', 'kind', 'coupon_number', 'coupon_type', 'transaction_amount', 'user_id', 'location_id', 'device_id', 'reversed_of'],
+        'fields' => ['transaction_id', 'created_at', 'kind', 'coupon_number', 'coupon_type', 'transaction_amount', 'user_id', 'location_id', 'device_id', 'dispenser', 'reversed_of'],
         'actions' => ['reverse' => 'Revertir'],
         'foreign_labels' => [
             'user_id' => ['relation' => 'user', 'attribute' => 'username', 'header' => 'Usuario'],
