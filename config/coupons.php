@@ -35,11 +35,38 @@ return [
     // Horas de vida de la clave de idempotencia.
     'idempotency_ttl_hours' => 48,
 
+    // Límites de velocidad de cobros (0 = sin límite). Se cuentan por día natural del servidor.
+    'limits' => [
+        'per_coupon_daily_count' => (int) env('COUPONS_LIMIT_PER_COUPON_DAILY_COUNT', 10),
+        'per_user_daily_amount' => env('COUPONS_LIMIT_PER_USER_DAILY_AMOUNT', '0'),
+        'per_location_daily_amount' => env('COUPONS_LIMIT_PER_LOCATION_DAILY_AMOUNT', '0'),
+        // Un cobro por encima de este monto exige la habilidad coupon:redeem_large (supervisor).
+        'large_redeem_threshold' => env('COUPONS_LIMIT_LARGE_REDEEM', '0'),
+    ],
+
+    // Separación de funciones.
+    'self_reverse_allowed' => (bool) env('COUPONS_SELF_REVERSE_ALLOWED', false),
+    // Pasadas estas horas, solo un ADMIN puede revertir un cobro.
+    'reverse_window_hours' => (int) env('COUPONS_REVERSE_WINDOW_HOURS', 72),
+    // Fijar el saldo crea una solicitud que debe aprobar otro administrador.
+    'restore_requires_approval' => (bool) env('COUPONS_RESTORE_REQUIRES_APPROVAL', true),
+
+    // Alertas de seguridad.
+    'alerts' => [
+        'enabled' => (bool) env('COUPONS_ALERTS_ENABLED', true),
+        // Horario normal de cobros «HH-HH» (24 h); fuera de él se alerta. Vacío = no se evalúa.
+        'business_hours' => env('COUPONS_ALERT_BUSINESS_HOURS', ''),
+        'multi_location_minutes' => (int) env('COUPONS_ALERT_MULTI_LOCATION_MINUTES', 10),
+        'failed_lookups' => (int) env('COUPONS_ALERT_FAILED_LOOKUPS', 10),
+        'reversals_per_hour' => (int) env('COUPONS_ALERT_REVERSALS_PER_HOUR', 3),
+        'email_severities' => ['high'],
+    ],
+
     // Habilidades del token según el rol del usuario de la app.
     'role_abilities' => [
         'CASHIER' => ['coupon:read', 'coupon:redeem'],
         // Recargar (coupon:topup) crea saldo: solo MANAGER y ADMIN; ajustable por rol aquí.
-        'MANAGER' => ['coupon:read', 'coupon:redeem', 'coupon:topup', 'coupon:reverse'],
-        'ADMIN' => ['coupon:read', 'coupon:redeem', 'coupon:topup', 'coupon:reverse', 'coupon:restore'],
+        'MANAGER' => ['coupon:read', 'coupon:redeem', 'coupon:redeem_large', 'coupon:topup', 'coupon:reverse'],
+        'ADMIN' => ['coupon:read', 'coupon:redeem', 'coupon:redeem_large', 'coupon:topup', 'coupon:reverse', 'coupon:restore'],
     ],
 ];

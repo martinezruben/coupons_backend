@@ -38,6 +38,9 @@ abstract class TestCase extends BaseTestCase
         Artisan::call('config:clear');
         Artisan::call('optimize:clear');
 
+        // Los tests existentes asumen que fijar el saldo se aplica al instante; el flujo con aprobación tiene sus propios tests
+        config(['coupons.restore_requires_approval' => false]);
+
         // Excluye todas las rutas de CSRF
         PreventRequestForgery::except(['*']);
     }
