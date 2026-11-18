@@ -18,7 +18,7 @@ class EnsureCouponUser
         $user = $request->user();
 
         if (! $user instanceof User || ! $user->is_active) {
-            return response()->json(['message' => 'Unauthenticated.', 'error' => 'unauthenticated'], 401);
+            return response()->json(['message' => 'Unauthenticated.', 'error' => 'unauthenticated', 'code' => 'unauthenticated'], 401);
         }
 
         return $next($request);

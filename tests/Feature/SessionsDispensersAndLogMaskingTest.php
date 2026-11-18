@@ -76,7 +76,7 @@ class SessionsDispensersAndLogMaskingTest extends TestCase
         $this->assertDatabaseHas('coupon_security_alerts', ['type' => 'user_locked']);
 
         // Ni con la clave correcta entra, y la respuesta no delata el bloqueo
-        $login('Correct-Horse-9!')->assertStatus(401)->assertExactJson(['error' => 'Unauthorized']);
+        $login('Correct-Horse-9!')->assertStatus(401)->assertExactJson(['error' => 'Unauthorized', 'code' => 'invalid_credentials']);
 
         $this->actingAs($this->admin('android_users.view', 'android_users.edit'), 'admin')
             ->post(route('admin.android-users.unlock', $user))->assertSessionHas('status');
