@@ -97,8 +97,7 @@ class AuthController extends Controller
                 'device_id' => $device->id,
                 'token' => $plainToken,
                 'license_key' => $license->license_key,
-                'location_id' => $device->location_id,
-                'location_name' => $location->name,
+                ...$location->toApi(),
                 ...$this->licenseValidityForJson($license),
             ];
         });
@@ -171,8 +170,7 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'license_key' => $license->license_key,
-            'location_id' => $device->location_id,
-            'location_name' => $device->location->name,
+            ...$device->location->toApi(),
         ]);
     }
 
@@ -188,7 +186,7 @@ class AuthController extends Controller
             'id' => $device->id,
             'name' => $device->name,
             'device_fingerprint' => $device->device_fingerprint,
-            'location_id' => $device->location_id,
+            ...($device->location?->toApi() ?? ['location_id' => $device->location_id]),
             'is_enabled' => $device->is_enabled,
             'license_id' => $device->activeLicense?->id,
             'license_key' => $device->activeLicense?->license_key,
@@ -228,8 +226,7 @@ class AuthController extends Controller
         return response()->json([
             'token' => $plainToken,
             'license_key' => $license->license_key,
-            'location_id' => $device->location_id,
-            'location_name' => $device->location->name,
+            ...$device->location->toApi(),
             ...$this->licenseValidityForJson($license),
         ]);
     }

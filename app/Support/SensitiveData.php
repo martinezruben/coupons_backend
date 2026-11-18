@@ -34,6 +34,28 @@ class SensitiveData
         return str_starts_with($k, 'pin');
     }
 
+    /** Números de cupón: el de barras es un secreto al portador, así que en los logs solo quedan los 4 últimos dígitos. */
+    private static function isCouponNumberKey(string|int $key): bool
+    {
+        return in_array(strtolower((string) $key), ['coupon_number', 'couponnumber', 'coupons'], true);
+    }
+
+    private static function maskNumbers(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            return self::mask(array_map(fn ($v) => is_array($v) ? $v : (is_scalar($v) ? self::maskNumber((string) $v) : $v), $value));
+        }
+
+        return is_scalar($value) ? self::maskNumber((string) $value) : $value;
+    }
+
+    public static function maskNumber(string $number): string
+    {
+        $len = mb_strlen($number);
+
+        return $len <= 4 ? str_repeat('*', $len) : str_repeat('*', $len - 4).mb_substr($number, -4);
+    }
+
     /**
      * @param  array<mixed>  $data
      * @return array<mixed>
@@ -44,6 +66,8 @@ class SensitiveData
         foreach ($data as $key => $value) {
             if (self::isSensitiveKey($key)) {
                 $out[$key] = self::MASK;
+            } elseif (self::isCouponNumberKey($key)) {
+                $out[$key] = self::maskNumbers($value);
             } else {
                 $out[$key] = is_array($value) ? self::mask($value) : $value;
             }

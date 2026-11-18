@@ -258,6 +258,10 @@ class ScreenCrudController extends Controller
         }
         if ($screen === 'android-users' && $item instanceof User) {
             $this->syncAndroidUserLocationPivot($item, $data['location_id'] ?? null);
+            // Cambiar la contraseña o desactivar la cuenta cierra sus sesiones abiertas en las tablets
+            if (! empty($data['password']) || ($data['is_active'] ?? true) === false) {
+                $item->tokens()->delete();
+            }
         }
 
         return redirect()->route('admin.screens.index', $screen)->with('status', 'Actualizado correctamente.');
@@ -401,6 +405,8 @@ class ScreenCrudController extends Controller
                 $rules[$field] = ['nullable', 'date'];
             } elseif (str_starts_with($field, 'is_')) {
                 $rules[$field] = ['nullable', 'boolean'];
+            } elseif ($field === 'dispensers') {
+                $rules[$field] = ['required', 'integer', 'between:1,20'];
             } elseif ($field === 'latitude') {
                 $rules[$field] = ['nullable', 'numeric', 'between:-90,90'];
             } elseif ($field === 'longitude') {

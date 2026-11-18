@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponLoginRequest;
+use App\Models\Device;
 use App\Models\User;
+use App\Services\SecurityAlerts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,8 +28,21 @@ class CouponAuthController extends Controller
             $user?->password ?? Hash::make(Str::random(32))
         );
 
-        if (! $user || ! $valid || ! $user->is_active) {
+        // Cuenta bloqueada por intentos fallidos: misma respuesta que una clave incorrecta (no se revela el bloqueo)
+        if ($user && $user->locked_until && $user->locked_until->isFuture()) {
             return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if (! $user || ! $valid || ! $user->is_active) {
+            if ($user) {
+                $this->registerFailure($user);
+            }
+
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if ($user->failed_login_attempts > 0 || $user->locked_until) {
+            $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
         }
 
         // Un token por dispositivo: volver a iniciar sesión con el mismo nombre reemplaza el anterior.
@@ -45,12 +60,49 @@ class CouponAuthController extends Controller
             'message' => 'Login successful.',
             'token' => $token,
             'user' => $user->toApi(),
+            ...$this->locationPayload($request, $user),
         ]);
+    }
+
+    /** Cuenta los intentos fallidos y bloquea la cuenta al llegar al máximo (parámetros de cupones). */
+    private function registerFailure(User $user): void
+    {
+        $max = (int) config('coupons.login_max_attempts');
+        if ($max <= 0) {
+            return;
+        }
+        $attempts = $user->failed_login_attempts + 1;
+        if ($attempts < $max) {
+            $user->forceFill(['failed_login_attempts' => $attempts])->save();
+
+            return;
+        }
+
+        $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => now()->addMinutes((int) config('coupons.login_lockout_minutes'))])->save();
+        $user->tokens()->delete();
+        SecurityAlerts::raise('user_locked', 'high', "La cuenta {$user->username} se bloqueó por {$max} intentos de inicio de sesión fallidos.", null, (string) $user->getKey(), $user->location_id ? (string) $user->location_id : null);
+    }
+
+    /**
+     * Localidad con la que opera la app: la del dispositivo (Device-Fingerprint) y, si no hay, la del usuario.
+     * Incluye el número de dispensadores (1 a 20).
+     *
+     * @return array<string, mixed>
+     */
+    private function locationPayload(Request $request, User $user): array
+    {
+        $fingerprint = $request->header('Device-Fingerprint');
+        $location = is_string($fingerprint) && $fingerprint !== ''
+            ? Device::query()->where('device_fingerprint', $fingerprint)->first()?->location
+            : null;
+        $location ??= $user->location ?? $user->locations()->first();
+
+        return $location ? ['location' => $location->toApi(), 'dispensers' => (int) ($location->dispensers ?: 1)] : ['location' => null, 'dispensers' => null];
     }
 
     public function profile(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'user' => $request->user()->toApi()]);
+        return response()->json(['success' => true, 'user' => $request->user()->toApi()] + $this->locationPayload($request, $request->user()));
     }
 
     public function logout(Request $request): JsonResponse

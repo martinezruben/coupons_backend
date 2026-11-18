@@ -20,6 +20,10 @@ return [
     // Saldo máximo que puede tener un cupón tras una recarga.
     'max_balance' => env('COUPONS_MAX_BALANCE', '100000.00'),
 
+    // Intentos de inicio de sesión fallidos antes de bloquear la cuenta del usuario de la app, y minutos de bloqueo.
+    'login_max_attempts' => (int) env('COUPONS_LOGIN_MAX_ATTEMPTS', 5),
+    'login_lockout_minutes' => (int) env('COUPONS_LOGIN_LOCKOUT_MINUTES', 15),
+
     // Vida del token de la app (minutos). 720 = 12 h.
     'token_ttl_minutes' => (int) env('COUPONS_TOKEN_TTL_MINUTES', 720),
 
