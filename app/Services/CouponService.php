@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\CouponException;
+use App\Models\AdjustmentRequest;
 use App\Models\AdminUser;
 use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
@@ -10,6 +11,7 @@ use App\Models\CouponAuditLog;
 use App\Models\CouponTransaction;
 use App\Models\Device;
 use App\Models\User;
+use App\Support\AdminRbac;
 use App\Support\CouponToken;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -72,6 +74,24 @@ class CouponService
      */
     public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null): array
     {
+        try {
+            $result = $this->doRedeem($numbers, $tokens, $amount, $device, $user, $ip, $locationId);
+        } catch (CouponException $e) {
+            // Los bloqueos por límite quedan como alerta (fuera de la transacción revertida)
+            if (isset($e->extra()['limit'])) {
+                [$locId] = self::locationFor($locationId, $device);
+                SecurityAlerts::raise('limit_blocked', 'medium', "Cobro bloqueado por límite ({$e->extra()['limit']}) de {$amount}.", $e->extra()['coupon_number'] ?? null, $user?->getKey(), $locId, ['limit' => $e->extra()['limit']]);
+            }
+            throw $e;
+        }
+
+        SecurityAlerts::afterRedeem($numbers, self::locationFor($locationId, $device)[0], $user?->getKey(), $amount);
+
+        return $result;
+    }
+
+    private function doRedeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId): array
+    {
         $required = BigDecimal::of($amount)->toScale(2, self::rounding());
 
         [$locId, $locSource] = self::locationFor($locationId, $device);
@@ -100,6 +120,8 @@ class CouponService
                 }
                 $sum = $sum->plus($this->decimal($coupon->coupon_balance));
             }
+
+            CouponLimits::assertRedeemAllowed($numbers, $required, $user, $locId);
 
             if ($sum->isLessThan($required)) {
                 throw new CouponException('Insufficient balance', 400, [
@@ -152,8 +174,68 @@ class CouponService
         });
     }
 
-    /** Solo admin (ver ruta): fija el saldo, nunca por encima del monto original del cupon. */
+    /**
+     * Fijar el saldo. Con `coupons.restore_requires_approval` (por defecto) no se aplica: crea una solicitud
+     * que debe aprobar otro administrador del panel. Sin esa opción se aplica de inmediato.
+     *
+     * @return array{number: string, balance?: string, status?: string, request_id?: int}
+     */
     public function restore(string $number, string $amount, string $reason, Authenticatable $user, ?string $ip): array
+    {
+        if (! config('coupons.restore_requires_approval')) {
+            return $this->applyRestore($number, $amount, $reason, $user, $ip);
+        }
+
+        $newBalance = BigDecimal::of($amount)->toScale(2, self::rounding());
+        $coupon = $this->model::where('coupon_number', $number)->first();
+        if (! $coupon) {
+            throw new CouponException('Coupon not found', 404);
+        }
+        if ($newBalance->isGreaterThan($this->decimal($coupon->coupon_amount))) {
+            throw new CouponException('Balance cannot exceed the coupon amount', 422, ['coupon_amount' => $this->money($coupon->coupon_amount)]);
+        }
+
+        $request = AdjustmentRequest::create([
+            'coupon_type' => $this->type, 'coupon_number' => $number,
+            'current_balance' => $this->money($coupon->coupon_balance), 'new_balance' => $this->money($newBalance),
+            'reason' => $reason, 'requested_by_user_id' => $user instanceof User ? $user->getKey() : null,
+            'requested_by_admin_id' => $user instanceof AdminUser ? $user->getKey() : null, 'ip_address' => $ip, 'status' => AdjustmentRequest::PENDING,
+        ]);
+        $this->audit('restore_request', $this->type, $number, $this->money($coupon->coupon_balance), $this->money($newBalance), $reason, $user, $ip);
+        SecurityAlerts::raise('adjustment_requested', 'medium', "Solicitud de ajuste de saldo del cupón {$number} a {$this->money($newBalance)}: pendiente de aprobación.", $number, $user instanceof User ? (string) $user->getKey() : null);
+
+        return ['number' => $number, 'status' => 'pending_approval', 'request_id' => $request->id];
+    }
+
+    /** Aprueba una solicitud de ajuste: debe hacerlo un administrador distinto de quien la pidió. */
+    public static function approveAdjustment(AdjustmentRequest $request, AdminUser $approver, ?string $ip): void
+    {
+        DB::transaction(function () use ($request, $approver, $ip) {
+            $req = AdjustmentRequest::whereKey($request->id)->lockForUpdate()->first();
+            if (! $req || $req->status !== AdjustmentRequest::PENDING) {
+                throw new CouponException('This request was already decided', 409);
+            }
+            if ($req->requested_by_admin_id !== null && (int) $req->requested_by_admin_id === (int) $approver->getKey()) {
+                throw new CouponException('You cannot approve your own request', 403);
+            }
+
+            $requester = $req->requested_by_admin_id ? AdminUser::find($req->requested_by_admin_id) : ($req->requested_by_user_id ? User::find($req->requested_by_user_id) : null);
+            self::forType($req->coupon_type)->applyRestore($req->coupon_number, (string) $req->new_balance, $req->reason.' (aprobado por '.$approver->name.')', $requester ?? $approver, $ip);
+            $req->update(['status' => AdjustmentRequest::APPROVED, 'decided_by_admin_id' => $approver->getKey(), 'decided_at' => now()]);
+        });
+    }
+
+    public static function rejectAdjustment(AdjustmentRequest $request, AdminUser $approver, ?string $note): void
+    {
+        $updated = AdjustmentRequest::whereKey($request->id)->where('status', AdjustmentRequest::PENDING)
+            ->update(['status' => AdjustmentRequest::REJECTED, 'decided_by_admin_id' => $approver->getKey(), 'decided_at' => now(), 'decision_note' => $note]);
+        if (! $updated) {
+            throw new CouponException('This request was already decided', 409);
+        }
+    }
+
+    /** Fija el saldo (nunca por encima del monto original del cupón) y audita. */
+    private function applyRestore(string $number, string $amount, string $reason, Authenticatable $user, ?string $ip): array
     {
         $newBalance = BigDecimal::of($amount)->toScale(2, self::rounding());
 
@@ -181,6 +263,19 @@ class CouponService
     /** Reversa de una transaccion: devuelve el monto y deja una fila compensatoria. */
     public static function reverse(CouponTransaction $original, string $reason, Authenticatable $user, ?string $ip): array
     {
+        try {
+            return self::doReverse($original, $reason, $user, $ip);
+        } catch (CouponException $e) {
+            // La alerta se guarda fuera de la transacción revertida
+            if (($e->extra()['limit'] ?? null) === 'self_reverse') {
+                SecurityAlerts::raise('self_reverse_attempt', 'medium', "Intento de revertir un cobro propio (cupón {$original->coupon_number}).", $original->coupon_number, $user instanceof User ? (string) $user->getKey() : null);
+            }
+            throw $e;
+        }
+    }
+
+    private static function doReverse(CouponTransaction $original, string $reason, Authenticatable $user, ?string $ip): array
+    {
         $service = self::forType($original->coupon_type);
 
         return DB::transaction(function () use ($service, $original, $reason, $user, $ip) {
@@ -192,6 +287,20 @@ class CouponService
             }
             if (CouponTransaction::where('reversed_of', $tx->transaction_id)->exists()) {
                 throw new CouponException('Transaction already reversed', 409);
+            }
+
+            // Separación de funciones: quien hizo el cobro no lo revierte
+            $actorIds = self::actor($user);
+            $isOwn = ($actorIds['user_id'] !== null && (string) $tx->user_id === (string) $actorIds['user_id'])
+                || ($actorIds['admin_user_id'] !== null && $tx->admin_user_id !== null && (int) $tx->admin_user_id === (int) $actorIds['admin_user_id']);
+            if ($isOwn && ! config('coupons.self_reverse_allowed')) {
+                throw new CouponException('You cannot reverse your own transaction', 403, ['limit' => 'self_reverse']);
+            }
+            // Ventana de reversa: pasado el plazo solo un ADMIN
+            $window = (int) config('coupons.reverse_window_hours');
+            $privileged = $user instanceof AdminUser ? AdminRbac::isSuperAdmin($user) : ($user instanceof User && strtoupper((string) $user->role) === 'ADMIN');
+            if ($window > 0 && ! $privileged && $tx->created_at && $tx->created_at->lt(now()->subHours($window))) {
+                throw new CouponException("Reversal window of {$window} hours expired; an administrator must reverse it", 422);
             }
 
             $coupon = $service->model::where('coupon_id', $tx->coupon_id)->lockForUpdate()->first();
@@ -222,6 +331,8 @@ class CouponService
 
             $service->audit('reverse', $tx->coupon_type, $tx->coupon_number, $service->money($coupon->coupon_balance),
                 $service->money($new), $reason, $user, $ip);
+
+            DB::afterCommit(fn () => SecurityAlerts::afterReverse($user));
 
             return [
                 'reversal_transaction_id' => $compensation->transaction_id,

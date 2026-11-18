@@ -151,3 +151,10 @@ Importa cupones QR y de barras (conserva `coupon_id`), `transactions` → `coupo
 2. Ejecución en paralelo: mismas peticiones a ambas APIs y comparar respuestas.
 3. Apuntar `couponsapi.temdoapps.com` al backend; dejar `couponsapi` como plan de reversa unos días.
 4. Rotar las credenciales expuestas en el historial de `couponsapi`.
+
+## Controles de cobro y seguridad
+
+- **Límites de velocidad** (`config/coupons.php` → `limits`, variables `COUPONS_LIMIT_*`; `0` = sin límite): cobros por cupón al día (10 por defecto), monto diario por usuario y por localidad, y un monto desde el cual el cobro exige la habilidad `coupon:redeem_large` (MANAGER/ADMIN). Al superarlos la API responde 429 (o 403 para el monto grande) con `limit` en el cuerpo y se genera una alerta.
+- **Separación de funciones:** quien hizo un cobro no puede revertirlo (`COUPONS_SELF_REVERSE_ALLOWED`); pasadas `COUPONS_REVERSE_WINDOW_HOURS` (72) solo un ADMIN revierte. Fijar el saldo (`/restore` y «Ajustar saldo» del panel) crea una **solicitud** (API: 202 `pending_approval`) que aprueba otro administrador en Cupones → Ajustes de saldo (permiso `coupon_adjustments.approve`; nadie aprueba lo que pidió). `COUPONS_RESTORE_REQUIRES_APPROVAL=false` vuelve al ajuste inmediato.
+- **Alertas** (Cupones → Alertas de seguridad, `coupon_security_alerts.view/resolve`): cobro bloqueado por límite, cupón cobrado en dos localidades en pocos minutos, cobros fuera de horario (`COUPONS_ALERT_BUSINESS_HOURS="7-22"`), reversas repetidas, intentos de revertir lo propio, consultas fallidas seguidas (enumeración) y ajustes pendientes. Las de severidad alta se envían por correo a los super-administradores. Una misma alerta no se repite durante 10 minutos.
+- Permisos nuevos (sin asignar a ningún rol, solo super-admin): `coupon_adjustments.view/approve`, `coupon_security_alerts.view/resolve`.

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ApiRequestLogDetailController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CouponAdjustmentController;
 use App\Http\Controllers\Admin\CouponAdminController;
 use App\Http\Controllers\Admin\CouponAuditDetailController;
 use App\Http\Controllers\Admin\CouponBatchController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Admin\MenuEditorController;
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\RoleRbacMatrixController;
 use App\Http\Controllers\Admin\ScreenCrudController;
+use App\Http\Controllers\Admin\SecurityAlertController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\UserPermissionController;
 use App\Http\Middleware\AuditAdminActivity;
@@ -111,6 +113,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/coupons/{type}/{id}/topup', [CouponAdminController::class, 'topUp'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.topup');
         Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');
         Route::post('/coupon-transactions/{id}/reverse', [CouponAdminController::class, 'reverse'])->whereNumber('id')->name('coupon-transactions.reverse');
+
+        // Ajustes de saldo (doble aprobación) y alertas de seguridad
+        Route::get('/adjustments', [CouponAdjustmentController::class, 'index'])->name('adjustments.index');
+        Route::post('/adjustments/{id}/approve', [CouponAdjustmentController::class, 'approve'])->whereNumber('id')->name('adjustments.approve');
+        Route::post('/adjustments/{id}/reject', [CouponAdjustmentController::class, 'reject'])->whereNumber('id')->name('adjustments.reject');
+        Route::get('/security-alerts', [SecurityAlertController::class, 'index'])->name('security-alerts.index');
+        Route::post('/security-alerts/{id}/resolve', [SecurityAlertController::class, 'resolve'])->whereNumber('id')->name('security-alerts.resolve');
 
         // Reportes de canjes
         Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');

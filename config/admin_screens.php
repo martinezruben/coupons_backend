@@ -627,6 +627,8 @@ return [
         ],
     ],
 
+    'coupon-adjustments' => ['label' => 'Ajustes de saldo', 'description' => 'Solicitudes de fijar el saldo de un cupón: las aprueba otro administrador', 'icon' => 'scale', 'readonly' => true, 'rbac' => true, 'route' => 'admin.adjustments.index', 'active_pattern' => 'admin.adjustments.*', 'actions' => ['approve' => 'Aprobar o rechazar ajustes de saldo']],
+    'coupon-security-alerts' => ['label' => 'Alertas de seguridad', 'description' => 'Cobros bloqueados, usos sospechosos y reversas repetidas', 'icon' => 'bell', 'readonly' => true, 'rbac' => true, 'route' => 'admin.security-alerts.index', 'active_pattern' => 'admin.security-alerts.*', 'actions' => ['resolve' => 'Marcar alertas como revisadas']],
     'coupon-batch-report' => ['label' => 'Reporte de lotes', 'description' => 'Estado, saldo y cobrado por lote', 'icon' => 'rectangle-stack', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.batches', 'active_pattern' => 'admin.reports.batches', 'actions' => ['export' => 'Exportar CSV']],
     'coupon-customer-report' => ['label' => 'Reporte de clientes', 'description' => 'Cupones, saldo y cobrado por cliente', 'icon' => 'building-storefront', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.customers', 'active_pattern' => 'admin.reports.customers', 'actions' => ['export' => 'Exportar CSV']],
     'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.redemptions', 'actions' => ['export' => 'Exportar CSV']],

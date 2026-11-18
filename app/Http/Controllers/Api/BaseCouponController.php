@@ -10,6 +10,7 @@ use App\Http\Requests\RestoreRequest;
 use App\Http\Requests\TopUpRequest;
 use App\Models\Device;
 use App\Services\CouponService;
+use App\Services\SecurityAlerts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,9 +20,14 @@ abstract class BaseCouponController extends Controller
 
     public function balance(BalanceRequest $request): JsonResponse
     {
-        return response()->json(
-            $this->service()->balance($request->input('coupon_number'), $request->input('coupon_token'))
-        );
+        try {
+            return response()->json(
+                $this->service()->balance($request->input('coupon_number'), $request->input('coupon_token'))
+            );
+        } catch (CouponException $e) {
+            SecurityAlerts::failedLookup($request->user()?->getKey(), $request->ip());
+            throw $e;
+        }
     }
 
     public function transaction(RedeemRequest $request): JsonResponse
@@ -54,13 +60,16 @@ abstract class BaseCouponController extends Controller
 
     public function restore(RestoreRequest $request): JsonResponse
     {
-        return response()->json($this->service()->restore(
+        $result = $this->service()->restore(
             $request->input('coupon_number'),
             (string) $request->input('coupon_amount'),
             $request->input('reason'),
             $request->user(),
             $request->ip(),
-        ));
+        );
+
+        // 202: queda pendiente de que otro administrador la apruebe en el panel
+        return response()->json($result, ($result['status'] ?? null) === 'pending_approval' ? 202 : 200);
     }
 
     /**

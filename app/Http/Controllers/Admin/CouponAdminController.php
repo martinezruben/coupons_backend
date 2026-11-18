@@ -48,7 +48,7 @@ class CouponAdminController extends Controller
         abort_if($number === null, 404);
 
         return $this->run(fn () => $this->service($type)->restore($number, (string) $data['balance'], $data['reason'], $request->user('admin'), $request->ip()),
-            $screen, 'Saldo ajustado.');
+            $screen, config('coupons.restore_requires_approval') ? 'Solicitud de ajuste creada: otro administrador debe aprobarla en Cupones → Ajustes de saldo.' : 'Saldo ajustado.');
     }
 
     public function topUp(Request $request, string $type, int $id): RedirectResponse
