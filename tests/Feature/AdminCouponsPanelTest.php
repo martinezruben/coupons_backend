@@ -62,7 +62,21 @@ class AdminCouponsPanelTest extends TestCase
         $this->assertStringContainsString('Número,Tipo,Estado', $csv);
         $this->assertStringContainsString('Q1,QR', $csv);
         $this->assertStringContainsString('B1,Barras', $csv);
+        $this->assertDatabaseHas('admin_audit_logs', ['action' => 'export', 'entity_type' => 'coupons']);
         $this->assertStringNotContainsString('secret-token', $csv);
+    }
+
+    public function test_barcode_numbers_are_masked_in_export_unless_full_permission(): void
+    {
+        DB::table('coupons_codbar')->insert(['coupon_number' => '123456789012', 'coupon_active' => 1, 'coupon_amount' => '30.00', 'coupon_balance' => '30.00']);
+
+        $this->actingAs($this->admin('coupon_barcodes.view', 'coupon_barcodes.export'), 'admin');
+        $csv = $this->get(route('admin.coupons.index', ['export' => 'csv', 'full' => 1]))->assertOk()->streamedContent();
+        $this->assertStringContainsString('********9012', $csv);
+        $this->assertStringNotContainsString('123456789012', $csv);
+
+        $this->actingAs($this->admin('coupon_barcodes.view', 'coupon_barcodes.export', 'coupon_barcodes.export_full'), 'admin');
+        $this->assertStringContainsString('123456789012', $this->get(route('admin.coupons.index', ['export' => 'csv', 'full' => 1]))->streamedContent());
     }
 
     public function test_grids_render_and_never_show_qr_tokens(): void
