@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Models\ActivationOrder;
+use App\Models\AdminAuditLog;
 use App\Models\AdminUser;
 use App\Models\CouponBatch;
 use App\Models\Customer;
@@ -52,7 +53,7 @@ class CouponListController extends Controller
         $sort = self::SORTS[$f['sort'] ?? 'created'];
         $dir = ($f['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         if ($request->query('export') === 'csv') {
-            return $this->export($admin, $allowed, $f, $union);
+            return $this->export($request, $admin, $allowed, $f, $union);
         }
 
         $coupons = DB::query()->fromSub($union, 'c')->orderBy($sort, $dir)->orderByDesc('coupon_id')->paginate(25)->withQueryString();
@@ -98,7 +99,7 @@ class CouponListController extends Controller
     }
 
     /** Exporta a CSV (Excel lo abre directo) todos los cupones que cumplen los filtros, sin paginar. */
-    private function export(AdminUser $admin, $allowed, array $f, Builder $union)
+    private function export(Request $request, AdminUser $admin, $allowed, array $f, Builder $union)
     {
         // Solo los tipos exportables: cada tipo exige su propio permiso de exportación
         $exportable = $allowed->filter(fn ($t) => $admin->can(AdminRbac::actionPermissions(self::TYPES[$t]['screen'])['export']['permission'] ?? '__none__'));
@@ -113,18 +114,28 @@ class CouponListController extends Controller
         $batches = CouponBatch::query()->pluck('code', 'id');
         $customers = Customer::query()->pluck('name', 'id');
         $status = ['GENERATED' => 'Generado', 'ASSIGNED' => 'Asignado', 'ACTIVE' => 'Activo', 'INACTIVE' => 'Inactivo', 'VOID' => 'Anulado'];
+        // El número de un cupón de barras es un secreto al portador: sale enmascarado salvo permiso explícito
+        $fullBarcodes = $request->boolean('full') && $admin->can(AdminRbac::actionPermissions('coupon-barcodes')['export_full']['permission'] ?? '__none__');
+        $mask = fn (string $n, string $type) => $type === 'CODBAR' && ! $fullBarcodes ? str_repeat('*', max(0, strlen($n) - 4)).substr($n, -4) : $n;
         $date = fn ($v, $fmt) => $v ? Carbon::parse($v)->format($fmt) : '';
 
-        $rows = (function () use ($query, $batches, $customers, $status, $date) {
+        $rows = (function () use ($query, $batches, $customers, $status, $date, $mask) {
             foreach ($query->cursor() as $c) {
                 yield [
-                    $c->coupon_number, self::TYPES[$c->ctype]['label'], $status[$c->status] ?? $c->status,
+                    $mask((string) $c->coupon_number, $c->ctype), self::TYPES[$c->ctype]['label'], $status[$c->status] ?? $c->status,
                     $c->batch_id ? ($batches[$c->batch_id] ?? '') : '', $c->customer_id ? ($customers[$c->customer_id] ?? '') : '',
                     $date($c->coupon_date, 'Y-m-d'), $date($c->coupon_expire_date, 'Y-m-d'), $date($c->activated_at, 'Y-m-d H:i'),
                     number_format((float) $c->coupon_amount, 2, '.', ''), number_format((float) $c->coupon_balance, 2, '.', ''),
                 ];
             }
         })();
+
+        // Queda en la auditoría quién exportó, cuántas filas y si con números completos de barras
+        AdminAuditLog::record('export', 'coupons', null, [
+            'rows' => DB::query()->fromSub($union, 'c')->count(),
+            'barcode_numbers' => $fullBarcodes ? 'completos' : 'enmascarados',
+            'filters' => array_filter($f, fn ($v) => $v !== null && $v !== ''),
+        ], $admin);
 
         return $this->streamCsv('cupones-'.now()->format('Ymd-His').'.csv',
             ['Número', 'Tipo', 'Estado', 'Lote', 'Cliente', 'Emisión', 'Vence', 'Activado', 'Monto inicial', 'Saldo'], $rows);

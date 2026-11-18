@@ -60,7 +60,9 @@
             <div class="col-span-2 flex gap-2 sm:col-span-4 lg:col-span-8">
                 <button type="submit" class="snow-btn-primary">Filtrar</button>
                 <a href="{{ route('admin.coupons.index') }}" class="snow-btn-secondary">Limpiar</a>
-                @if($canExport)<a href="{{ request()->fullUrlWithQuery(['export' => 'csv', 'page' => null]) }}" class="snow-btn-secondary" title="Descarga todos los cupones que cumplen los filtros (se abre en Excel)">Exportar CSV</a>@endif
+                @if($canExport)@php $canFull = auth('admin')->user()->can('coupon_barcodes.export_full'); @endphp
+                @if($canFull)<a href="{{ request()->fullUrlWithQuery(['export' => 'csv', 'full' => 1, 'page' => null]) }}" class="snow-btn-secondary" title="Incluye los números completos de los cupones de barras: trátalos como secretos">CSV con números completos</a>@endif
+                <a href="{{ request()->fullUrlWithQuery(['export' => 'csv', 'page' => null]) }}" class="snow-btn-secondary" title="Descarga todos los cupones que cumplen los filtros (se abre en Excel)">Exportar CSV</a>@endif
                 <span class="ml-auto self-center text-xs text-slate-500">{{ number_format($coupons->total()) }} cupones</span>
             </div>
             @if($errors->any())<p class="col-span-full text-xs text-red-600">{{ $errors->first() }}</p>@endif
