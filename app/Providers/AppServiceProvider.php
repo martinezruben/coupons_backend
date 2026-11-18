@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Observers\AuditsModelChanges;
 use App\Observers\LocationContingencyObserver;
 use App\Support\AdminRbac;
+use App\Support\CouponSettings;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -52,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureCouponRateLimiting();
+        CouponSettings::apply();
 
         Paginator::defaultView('vendor.pagination.tailwind');
         Paginator::defaultSimpleView('vendor.pagination.simple-tailwind');

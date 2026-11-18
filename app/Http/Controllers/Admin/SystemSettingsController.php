@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminAuditLog;
 use App\Models\SystemParameter;
 use App\Support\AdminRbac;
+use App\Support\CouponSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +22,8 @@ class SystemSettingsController extends Controller
 
         return response()->view('admin.system-settings.edit', [
             'params' => $params,
+            'couponDefs' => collect(CouponSettings::definitions())->groupBy(fn ($d) => $d[0], true),
+            'couponValues' => CouponSettings::current(),
         ]);
     }
 
@@ -27,7 +31,7 @@ class SystemSettingsController extends Controller
     {
         $this->authorizeSettings('edit');
 
-        $validated = $request->validate([
+        $validated = $request->validate(CouponSettings::rules() + [
             'admin_password_min_length' => ['required', 'integer', 'min:6', 'max:128'],
             'pos_password_min_length' => ['required', 'integer', 'min:3', 'max:32'],
             'admin_max_failed_login_attempts' => ['required', 'integer', 'min:1', 'max:100'],
@@ -90,6 +94,9 @@ class SystemSettingsController extends Controller
             $validated['contingency_email_list'] = $emails;
         }
 
+        $this->saveCouponSettings($request, $validated);
+        unset($validated['coupon']);
+
         $params = SystemParameter::query()->firstOrFail();
         $params->update($validated);
 
@@ -100,6 +107,28 @@ class SystemSettingsController extends Controller
         return redirect()
             ->route('admin.system-settings.edit')
             ->with('status', 'Parámetros guardados correctamente.');
+    }
+
+    /** Guarda los parámetros de cupones que cambiaron y deja en la auditoría el antes y el después. */
+    private function saveCouponSettings(Request $request, array $validated): void
+    {
+        $changes = [];
+        $new = [];
+        foreach (CouponSettings::definitions() as $key => [, $type]) {
+            if (! array_key_exists(CouponSettings::field($key), $validated['coupon'] ?? [])) {
+                continue;
+            }
+            $value = CouponSettings::cast($validated['coupon'][CouponSettings::field($key)], $type);
+            $old = config("coupons.$key");
+            if ($value !== $old && ! ($type === 'decimal' && (float) $value === (float) $old)) {
+                $changes[$key] = ['antes' => $old, 'después' => $value];
+                $new[$key] = $value;
+            }
+        }
+        if ($new !== []) {
+            CouponSettings::save($new);
+            AdminAuditLog::record('update', 'coupon_settings', null, $changes);
+        }
     }
 
     private function authorizeSettings(string $action): void

@@ -139,11 +139,12 @@ class CouponService
                 $newBalance = $initial->minus($used);
                 $remaining = $remaining->minus($used);
 
+                $tx = null;
                 if ($used->isPositive()) {
                     $this->model::where('coupon_id', $coupon->coupon_id)
                         ->update(['coupon_balance' => $this->money($newBalance)]);
 
-                    CouponTransaction::create([
+                    $tx = CouponTransaction::create([
                         'coupon_id' => $coupon->coupon_id,
                         'coupon_number' => $coupon->coupon_number,
                         'transaction_amount' => $this->money($used),
@@ -160,13 +161,20 @@ class CouponService
 
                 $result[] = [
                     'coupon_number' => $coupon->coupon_number,
+                    'transaction_id' => $tx?->transaction_id,
                     'balance_initial' => $this->money($initial),
                     'balance' => $this->money($newBalance),
                     'transaction_amount' => $this->money($used),
                 ];
             }
 
+            $ids = array_values(array_filter(array_column($result, 'transaction_id')));
+
             return [
+                // Primer movimiento del cobro (comprobante) y todos los que lo componen; fecha ISO 8601
+                'transaction_id' => $ids[0] ?? null,
+                'transaction_ids' => $ids,
+                'date' => now()->toIso8601String(),
                 'coupons' => $result,
                 'sumbalance' => $this->money($sum),
                 'sumtransaction_amount' => $this->money($required),
@@ -416,18 +424,19 @@ class CouponService
     }
 
     /**
-     * Localidad del movimiento: la que envía el dispositivo Android en la transacción y, si no viene, la del
-     * dispositivo registrado. Devuelve [id, origen].
+     * Localidad del movimiento: la del dispositivo registrado (se ignora la que envíe el cliente) y, solo si no hay
+     * dispositivo, la que venga en la petición. Devuelve [id, origen].
      *
      * @return array{0: ?string, 1: ?string}
      */
     private static function locationFor(?string $requested, ?Device $device): array
     {
-        if ($requested !== null && $requested !== '') {
-            return [$requested, 'request'];
+        // Con un dispositivo registrado manda su localidad: lo que envíe el cliente se ignora.
+        if ($device?->location_id) {
+            return [(string) $device->location_id, 'device'];
         }
 
-        return $device?->location_id ? [(string) $device->location_id, 'device'] : [null, null];
+        return $requested !== null && $requested !== '' ? [$requested, 'request'] : [null, null];
     }
 
     /** Quién actúa: usuario de la app (UUID) o administrador del panel (ID entero). */

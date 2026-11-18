@@ -353,6 +353,34 @@
                 </div>
             </section>
 
+            <section>
+                <h2 class="mb-2 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Cupones: cobro, límites y alertas</h2>
+                <p class="mb-3 text-xs text-slate-500">Estos valores reemplazan a las variables COUPONS_* del servidor y se aplican de inmediato. Los cambios quedan en la auditoría.</p>
+                <div class="space-y-4">
+                    @foreach($couponDefs as $group => $defs)
+                        <div class="rounded-lg border border-slate-100 bg-white p-3 sm:p-4">
+                            <h3 class="mb-3 text-xs font-bold text-slate-700">{{ $group }}</h3>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach($defs as $key => [$g, $type, $label, $help])
+                                    @php $fk = \App\Support\CouponSettings::field($key); $field = 'coupon['.$fk.']'; $val = old('coupon.'.$fk, $couponValues[$key]); @endphp
+                                    <div class="flex flex-col gap-0.5">
+                                        @if($type === 'bool')
+                                            <input type="hidden" name="{{ $field }}" value="0">
+                                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="checkbox" name="{{ $field }}" value="1" @checked((bool) $val) class="rounded border-slate-300"> {{ $label }}</label>
+                                        @else
+                                            <label for="c-{{ $fk }}" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">{{ $label }}</label>
+                                            <input id="c-{{ $fk }}" name="{{ $field }}" value="{{ $val }}" type="{{ in_array($type, ['int', 'decimal'], true) ? 'number' : 'text' }}" @if($type === 'decimal') step="0.01" @endif @if($type === 'int') step="1" @endif @if($type !== 'string') min="0" @endif class="snow-input text-xs">
+                                        @endif
+                                        @if($help)<p class="text-2xs text-slate-500">{{ $help }}</p>@endif
+                                        @error('coupon.'.$fk)<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+
             <div class="flex justify-end border-t border-slate-100 pt-3">
                 <button
                     type="submit"

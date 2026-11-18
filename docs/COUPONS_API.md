@@ -158,3 +158,11 @@ Importa cupones QR y de barras (conserva `coupon_id`), `transactions` → `coupo
 - **Separación de funciones:** quien hizo un cobro no puede revertirlo (`COUPONS_SELF_REVERSE_ALLOWED`); pasadas `COUPONS_REVERSE_WINDOW_HOURS` (72) solo un ADMIN revierte. Fijar el saldo (`/restore` y «Ajustar saldo» del panel) crea una **solicitud** (API: 202 `pending_approval`) que aprueba otro administrador en Cupones → Ajustes de saldo (permiso `coupon_adjustments.approve`; nadie aprueba lo que pidió). `COUPONS_RESTORE_REQUIRES_APPROVAL=false` vuelve al ajuste inmediato.
 - **Alertas** (Cupones → Alertas de seguridad, `coupon_security_alerts.view/resolve`): cobro bloqueado por límite, cupón cobrado en dos localidades en pocos minutos, cobros fuera de horario (`COUPONS_ALERT_BUSINESS_HOURS="7-22"`), reversas repetidas, intentos de revertir lo propio, consultas fallidas seguidas (enumeración) y ajustes pendientes. Las de severidad alta se envían por correo a los super-administradores. Una misma alerta no se repite durante 10 minutos.
 - Permisos nuevos (sin asignar a ningún rol, solo super-admin): `coupon_adjustments.view/approve`, `coupon_security_alerts.view/resolve`.
+
+## Dispositivo, idempotencia y parámetros
+
+- **Obligatorios por defecto:** `Idempotency-Key` en cobros y recargas, y `Device-Fingerprint` de un dispositivo registrado, habilitado, con licencia y localidad activas. Un 401/403/429 no guarda la clave: se puede reintentar con la misma cuando se corrija.
+- **Localidad:** con dispositivo registrado se usa siempre la del dispositivo; el `location_id` que envíe el cliente se ignora (solo cuenta si no hay dispositivo).
+- **Usuario y localidad:** el usuario debe tener esa localidad (la principal o una de su lista de localidades); un ADMIN opera en cualquiera. Si no, 403 y alerta `user_wrong_location`.
+- **`POST /transaction` y `/transactioncb`** devuelven `transaction_id` (primer movimiento del cobro), `transaction_ids`, `date` (ISO 8601) y un `transaction_id` por cupón.
+- **Parámetros:** todos los `COUPONS_*` se editan en Parámetros del sistema → «Cupones: cobro, límites y alertas». Lo guardado allí pisa a `.env`, se aplica de inmediato y queda en la auditoría.
