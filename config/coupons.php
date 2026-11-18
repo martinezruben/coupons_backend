@@ -13,6 +13,12 @@ return [
     // dispositivo registrado, habilitado y con licencia activa, y el usuario debe pertenecer a su localidad.
     'require_device_binding' => (bool) env('COUPONS_REQUIRE_DEVICE_BINDING', true),
 
+    // Si es true, un cobro desde una localidad con surtidores debe indicar `dispenser` (1..N).
+    'require_dispenser' => (bool) env('COUPONS_REQUIRE_DISPENSER', false),
+
+    // Si es true y hay una versión mínima en Parámetros del sistema, la API responde 426 a las apps más viejas.
+    'enforce_min_app_version' => (bool) env('COUPONS_ENFORCE_MIN_APP_VERSION', true),
+
     'max_coupons_per_transaction' => (int) env('COUPONS_MAX_PER_TRANSACTION', 20),
 
     'max_amount' => env('COUPONS_MAX_AMOUNT', '100000.00'),

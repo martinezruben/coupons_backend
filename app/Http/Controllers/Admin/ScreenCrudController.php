@@ -406,7 +406,7 @@ class ScreenCrudController extends Controller
             } elseif (str_starts_with($field, 'is_')) {
                 $rules[$field] = ['nullable', 'boolean'];
             } elseif ($field === 'dispensers') {
-                $rules[$field] = ['required', 'integer', 'between:1,20'];
+                $rules[$field] = ['required', 'integer', 'between:0,20'];
             } elseif ($field === 'latitude') {
                 $rules[$field] = ['nullable', 'numeric', 'between:-90,90'];
             } elseif ($field === 'longitude') {

@@ -72,10 +72,12 @@ class CouponService
      * @param  list<string>  $numbers
      * @param  list<string|null>|null  $tokens  paralelo a $numbers (solo QR)
      */
-    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null): array
+    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null, ?int $dispenser = null): array
     {
+        $dispenser = self::resolveDispenser($dispenser, $device);
+
         try {
-            $result = $this->doRedeem($numbers, $tokens, $amount, $device, $user, $ip, $locationId);
+            $result = $this->doRedeem($numbers, $tokens, $amount, $device, $user, $ip, $locationId, $dispenser);
         } catch (CouponException $e) {
             // Los bloqueos por límite quedan como alerta (fuera de la transacción revertida)
             if (isset($e->extra()['limit'])) {
@@ -90,13 +92,13 @@ class CouponService
         return $result;
     }
 
-    private function doRedeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId): array
+    private function doRedeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId, ?int $dispenser): array
     {
         $required = BigDecimal::of($amount)->toScale(2, self::rounding());
 
         [$locId, $locSource] = self::locationFor($locationId, $device);
 
-        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip, $locId, $locSource) {
+        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip, $locId, $locSource, $dispenser) {
             // Orden fijo por numero => sin deadlocks entre cobros concurrentes.
             $rows = $this->model::whereIn('coupon_number', $numbers)
                 ->orderBy('coupon_number')
@@ -156,6 +158,7 @@ class CouponService
                         'location_id' => $locId,
                         'location_source' => $locSource,
                         'ip_address' => $ip,
+                        'dispenser' => $dispenser,
                     ]);
                 }
 
@@ -175,6 +178,7 @@ class CouponService
                 'transaction_id' => $ids[0] ?? null,
                 'transaction_ids' => $ids,
                 'date' => now()->toIso8601String(),
+                'dispenser' => $dispenser,
                 'coupons' => $result,
                 'sumbalance' => $this->money($sum),
                 'sumtransaction_amount' => $this->money($required),
@@ -212,7 +216,7 @@ class CouponService
         $this->audit('restore_request', $this->type, $number, $this->money($coupon->coupon_balance), $this->money($newBalance), $reason, $user, $ip);
         SecurityAlerts::raise('adjustment_requested', 'medium', "Solicitud de ajuste de saldo del cupón {$number} a {$this->money($newBalance)}: pendiente de aprobación.", $number, $user instanceof User ? (string) $user->getKey() : null);
 
-        return ['number' => $number, 'status' => 'pending_approval', 'request_id' => $request->id];
+        return ['coupon_number' => $number, 'number' => $number, 'status' => 'pending_approval', 'request_id' => $request->id];
     }
 
     /** Aprueba una solicitud de ajuste: debe hacerlo un administrador distinto de quien la pidió. */
@@ -264,7 +268,7 @@ class CouponService
 
             $this->audit('restore', $this->type, $number, $old, $this->money($newBalance), $reason, $user, $ip);
 
-            return ['number' => $number, 'balance' => $this->money($newBalance)];
+            return ['coupon_number' => $number, 'date' => now()->toIso8601String(), 'number' => $number, 'balance' => $this->money($newBalance)];
         });
     }
 
@@ -343,7 +347,10 @@ class CouponService
             DB::afterCommit(fn () => SecurityAlerts::afterReverse($user));
 
             return [
+                'transaction_id' => $compensation->transaction_id,
+                'original_transaction_id' => $tx->transaction_id,
                 'reversal_transaction_id' => $compensation->transaction_id,
+                'date' => now()->toIso8601String(),
                 'coupon_number' => $tx->coupon_number,
                 'balance' => $service->money($new),
             ];
@@ -415,6 +422,8 @@ class CouponService
             $this->audit('topup', $this->type, $number, $this->money($old), $this->money($new), 'Recarga de '.$this->money($amountDec).($note ? ': '.$note : ''), $actor, $ip);
 
             return [
+                'coupon_number' => $number,
+                'date' => now()->toIso8601String(),
                 'number' => $number,
                 'topup_amount' => $this->money($amountDec),
                 'balance' => $this->money($new),
@@ -437,6 +446,35 @@ class CouponService
         }
 
         return $requested !== null && $requested !== '' ? [$requested, 'request'] : [null, null];
+    }
+
+    /**
+     * Surtidor del cobro. Con un dispositivo cuya localidad tiene surtidores (> 0) debe estar entre 1 y ese número;
+     * si la localidad no usa surtidores (0) se ignora lo que envíe el cliente. `coupons.require_dispenser` lo hace obligatorio.
+     */
+    private static function resolveDispenser(?int $dispenser, ?Device $device): ?int
+    {
+        $location = $device?->location;
+        if ($location === null) {
+            return $dispenser;
+        }
+
+        $count = (int) $location->dispensers;
+        if ($count === 0) {
+            return null;
+        }
+        if ($dispenser === null) {
+            if (config('coupons.require_dispenser')) {
+                throw new CouponException('A dispenser is required for this location', 422, ['dispensers' => $count], 'dispenser_required');
+            }
+
+            return null;
+        }
+        if ($dispenser < 1 || $dispenser > $count) {
+            throw new CouponException('Invalid dispenser for this location', 422, ['dispensers' => $count], 'invalid_dispenser');
+        }
+
+        return $dispenser;
     }
 
     /** Quién actúa: usuario de la app (UUID) o administrador del panel (ID entero). */

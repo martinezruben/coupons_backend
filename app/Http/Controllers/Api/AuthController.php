@@ -190,6 +190,7 @@ class AuthController extends Controller
             'is_enabled' => $device->is_enabled,
             'license_id' => $device->activeLicense?->id,
             'license_key' => $device->activeLicense?->license_key,
+            'license_valid_to' => $device->activeLicense?->valid_to,
         ]);
     }
 

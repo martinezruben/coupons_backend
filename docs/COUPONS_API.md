@@ -198,3 +198,20 @@ Todos los errores de `/api/*` son JSON con `error` (texto en inglés, para perso
 | `validation_failed` | 422 | Datos inválidos |
 | `rate_limited` | 429 | Demasiadas peticiones |
 | `not_found` | 404 | Ruta o recurso inexistente |
+
+## Contrato de la app (v1.1.0 en adelante)
+
+**Cabeceras en toda petición de cupones:** `Authorization: Bearer <token del usuario>`, `Device-Fingerprint`, `App-Version` (p. ej. `1.1.0`) y, en cobros y recargas, `Idempotency-Key` (UUID, 8 a 100 caracteres `A-Za-z0-9._:-`).
+
+**426 por versión mínima.** Si en Parámetros del sistema hay una «Versión mínima de la app» y `App-Version` es menor, o no viene, `/login` y todas las rutas de cupones responden `426 {"error":"App update required","code":"app_update_required","min_app_version":"1.1.0","app_version":"1.0.4"}`. Sin versión mínima no se bloquea nada; se apaga con *Bloquear apps por debajo de la versión mínima*. No aplica a `/auth/*` (emparejar y renovar el dispositivo).
+
+**Surtidores.** `dispensers` (0 a 20) viaja tal cual: `0` = la localidad no usa surtidores. En `POST /transaction` y `/transactioncb` el campo opcional `dispenser` (entero) debe estar entre 1 y el número de surtidores de la localidad del dispositivo (si no: 422 `invalid_dispenser`); con 0 surtidores se ignora; con *Exigir el surtidor* activo y sin enviarlo: 422 `dispenser_required`. Queda guardado en el movimiento (columna «Surtidor» en Cobros de cupones) y se devuelve en la respuesta.
+
+| Operación | Ruta | Rol (habilidad) | Cuerpo | Respuesta 200 |
+|---|---|---|---|---|
+| Cobro | `POST /transaction`, `/transactioncb` | CASHIER+ (`coupon:redeem`) | `amount` (texto o número, 2 decimales), `coupons[]`, `tokens[]` (QR), `dispenser?` | `transaction_id`, `transaction_ids[]`, `date`, `dispenser`, `coupons[{coupon_number, transaction_id, balance_initial, balance, transaction_amount}]`, `sumbalance`, `sumtransaction_amount` |
+| Recarga | `POST /topup`, `/topupcb` | MANAGER+ (`coupon:topup`) | `coupon_number`, `coupon_token` (QR), `amount` | `coupon_number`, `date`, `topup_amount`, `balance`, `transaction_id` |
+| Reversa | `POST /transactions/{id}/reverse` | MANAGER+ (`coupon:reverse`) | `reason` (5 a 255) | `transaction_id` (la reversa), `original_transaction_id`, `date`, `coupon_number`, `balance` |
+| Fijar saldo | `POST /restore`, `/restorecb` | ADMIN (`coupon:restore`) | `coupon_number`, `coupon_amount` (el saldo nuevo, no mayor al monto del cupón), `reason` | Aprobación activa (por defecto): **202** `{coupon_number, status:"pending_approval", request_id}`; sin ella: `coupon_number`, `date`, `balance` |
+
+Reglas de las operaciones restringidas: quien hizo un cobro no lo revierte; pasadas 72 h solo un ADMIN revierte; una reversa solo se hace una vez (409 `transaction_already_reversed`); fijar saldo queda pendiente hasta que otro administrador del panel lo apruebe. Recargas y reversas siguen las reglas de recarga y los límites; los errores llevan `code` (ver *Errores de la API*).

@@ -97,7 +97,7 @@ class CouponAuthController extends Controller
             : null;
         $location ??= $user->location ?? $user->locations()->first();
 
-        return $location ? ['location' => $location->toApi(), 'dispensers' => (int) ($location->dispensers ?: 1)] : ['location' => null, 'dispensers' => null];
+        return $location ? ['location' => $location->toApi(), 'dispensers' => (int) $location->dispensers] : ['location' => null, 'dispensers' => null];
     }
 
     public function profile(Request $request): JsonResponse

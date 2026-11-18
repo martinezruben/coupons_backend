@@ -150,7 +150,7 @@
                     @error('min_app_version')
                         <p class="text-xs text-red-600">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-xs text-slate-500">Los dispositivos con una versión menor se marcan como desactualizados en el dashboard técnico. Déjalo vacío para no avisar. Solo informa: no bloquea la venta.</p>
+                    <p class="mt-1 text-xs text-slate-500">Los dispositivos con una versión menor se marcan como desactualizados en el dashboard técnico. Déjalo vacío para no avisar. Si «Bloquear apps por debajo de la versión mínima» está activo (sección Cupones), la API rechaza con 426 las apps más viejas; si no, solo informa.</p>
                 </div>
             </section>
 

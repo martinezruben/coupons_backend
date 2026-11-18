@@ -39,7 +39,7 @@ class Location extends Model
     /** Datos de la localidad que baja a la app por la API. */
     public function toApi(): array
     {
-        return ['location_id' => $this->id, 'location_name' => $this->name, 'dispensers' => (int) ($this->dispensers ?: 1)];
+        return ['location_id' => $this->id, 'location_name' => $this->name, 'dispensers' => (int) $this->dispensers];
     }
 
     public function devices()

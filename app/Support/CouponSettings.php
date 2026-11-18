@@ -25,6 +25,8 @@ final class CouponSettings
         return [
             'require_idempotency_key' => ['Cobro y dispositivos', 'bool', 'Exigir Idempotency-Key en cobros y recargas', 'Evita que un reintento por mala red cobre dos veces. La app actual ya la envía.'],
             'require_device_binding' => ['Cobro y dispositivos', 'bool', 'Exigir dispositivo registrado (Device-Fingerprint)', 'Los cobros y recargas solo se aceptan desde un dispositivo habilitado, con licencia y localidad activas, y de un usuario de esa localidad.'],
+            'require_dispenser' => ['Cobro y dispositivos', 'bool', 'Exigir el surtidor en cada cobro', 'Aplica a localidades con surtidores (> 0). Activa solo cuando la app ya envíe `dispenser`.'],
+            'enforce_min_app_version' => ['Cobro y dispositivos', 'bool', 'Bloquear apps por debajo de la versión mínima (426)', 'La versión mínima se fija arriba, en Parámetros del sistema. Sin versión mínima no se bloquea nada.'],
             'require_qr_token' => ['Cobro y dispositivos', 'bool', 'Exigir el token del cupón QR en cada cobro', 'Recomendado: déjalo activo.'],
             'token_ttl_minutes' => ['Cobro y dispositivos', 'int', 'Vida de la sesión de la app (minutos)', '720 = 12 horas. Aplica a los inicios de sesión nuevos.'],
             'login_max_attempts' => ['Cobro y dispositivos', 'int', 'Intentos de login fallidos antes de bloquear al usuario de la app', '0 = sin bloqueo. Se cuentan por cuenta; un login correcto los reinicia.'],

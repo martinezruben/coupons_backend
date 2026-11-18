@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceMinAppVersion;
 use App\Http\Middleware\EnsureAdminActive;
 use App\Http\Middleware\EnsureCouponUser;
 use App\Http\Middleware\EnsureDeviceOperational;
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'idempotent' => EnsureIdempotency::class,
+            'app.version' => EnforceMinAppVersion::class,
         ]);
 
         $middleware->appendToGroup('api', LogApiRequest::class);
