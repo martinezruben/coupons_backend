@@ -27,6 +27,8 @@ final class CouponSettings
             'require_device_binding' => ['Cobro y dispositivos', 'bool', 'Exigir dispositivo registrado (Device-Fingerprint)', 'Los cobros y recargas solo se aceptan desde un dispositivo habilitado, con licencia y localidad activas, y de un usuario de esa localidad.'],
             'require_qr_token' => ['Cobro y dispositivos', 'bool', 'Exigir el token del cupón QR en cada cobro', 'Recomendado: déjalo activo.'],
             'token_ttl_minutes' => ['Cobro y dispositivos', 'int', 'Vida de la sesión de la app (minutos)', '720 = 12 horas. Aplica a los inicios de sesión nuevos.'],
+            'login_max_attempts' => ['Cobro y dispositivos', 'int', 'Intentos de login fallidos antes de bloquear al usuario de la app', '0 = sin bloqueo. Se cuentan por cuenta; un login correcto los reinicia.'],
+            'login_lockout_minutes' => ['Cobro y dispositivos', 'int', 'Minutos de bloqueo de la cuenta', 'El administrador puede desbloquearla antes desde Usuarios de la app.'],
             'idempotency_ttl_hours' => ['Cobro y dispositivos', 'int', 'Vida de la clave de idempotencia (horas)', 'Tiempo durante el cual un reintento devuelve la respuesta original.'],
             'max_coupons_per_transaction' => ['Montos y límites', 'int', 'Máximo de cupones por cobro', ''],
             'max_amount' => ['Montos y límites', 'decimal', 'Monto máximo por cobro o recarga', ''],

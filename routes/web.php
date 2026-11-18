@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminTwoFactorController;
 use App\Http\Controllers\Admin\AdminUserSecurityController;
 use App\Http\Controllers\Admin\ApiRequestLogDetailController;
+use App\Http\Controllers\Admin\AppUserSecurityController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
@@ -66,6 +67,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/coupon-audit-logs/{id}', [CouponAuditDetailController::class, 'show'])->whereNumber('id')->name('coupon-audit-logs.show');
         Route::get('/audit-logs/{id}', [AuditLogDetailController::class, 'show'])->name('audit-logs.show');
 
+        Route::post('/android-users/{user}/revoke-sessions', [AppUserSecurityController::class, 'revokeSessions'])->name('android-users.revoke-sessions');
+        Route::post('/android-users/{user}/unlock', [AppUserSecurityController::class, 'unlock'])->name('android-users.unlock');
         Route::post('/admin-users/{adminUser}/reset-2fa', [AdminUserSecurityController::class, 'resetTwoFactor'])->name('admin-users.reset-2fa');
         Route::post('/admin-users/{adminUser}/revoke-sessions', [AdminUserSecurityController::class, 'revokeSessions'])->name('admin-users.revoke-sessions');
 

@@ -166,3 +166,11 @@ Importa cupones QR y de barras (conserva `coupon_id`), `transactions` → `coupo
 - **Usuario y localidad:** el usuario debe tener esa localidad (la principal o una de su lista de localidades); un ADMIN opera en cualquiera. Si no, 403 y alerta `user_wrong_location`.
 - **`POST /transaction` y `/transactioncb`** devuelven `transaction_id` (primer movimiento del cobro), `transaction_ids`, `date` (ISO 8601) y un `transaction_id` por cupón.
 - **Parámetros:** todos los `COUPONS_*` se editan en Parámetros del sistema → «Cupones: cobro, límites y alertas». Lo guardado allí pisa a `.env`, se aplica de inmediato y queda en la auditoría.
+
+## Dispensadores, sesiones y logs
+
+- **Dispensadores:** cada localidad tiene «Número de dispensadores» (entero de 1 a 20, 1 por defecto; se edita en Localidades). Baja a la app en `POST /api/login` y `GET /api/profile` del usuario (`dispensers` y `location`, con la localidad del dispositivo si viene `Device-Fingerprint`, o la del usuario) y en la API de dispositivos (`/auth/register-device`, `/auth/login`, `/auth/me`: `location_id`, `location_name`, `dispensers`).
+- **Usuarios del panel vs. usuarios de la app:** los administradores (`admin_users`, guard `admin`) usan el panel; los usuarios del POS (`users`, por localidad) usan la app y la API de cupones. Las sesiones se gestionan por separado: *Cerrar sus sesiones* en cada ficha.
+- **Bloqueo de cuenta (usuarios de la app):** tras `login_max_attempts` (5) intentos fallidos la cuenta se bloquea `login_lockout_minutes` (15) y se cierran sus sesiones; la respuesta sigue siendo un 401 genérico. Un login correcto reinicia el contador; el administrador desbloquea desde Usuarios de la app. Genera la alerta `user_locked`.
+- **Sesiones:** cambiar la contraseña o desactivar a un usuario de la app revoca sus tokens; también hay un botón *Cerrar sus sesiones*.
+- **Logs de peticiones:** los números de cupón (`coupon_number`, `coupons`) se guardan enmascarados (`********9012`).

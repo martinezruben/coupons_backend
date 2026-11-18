@@ -221,6 +221,8 @@
                             }
                         @endphp
                         <input id="f-{{ $field }}" type="datetime-local" name="{{ $field }}" value="{{ $dtVal }}" class="snow-input">
+                    @elseif($field === 'dispensers')
+                        <input id="f-{{ $field }}" type="number" name="{{ $field }}" value="{{ old($field, $item?->dispensers ?? 1) }}" min="1" max="20" step="1" required class="snow-input max-w-[8rem]">
                     @else
                         <input id="f-{{ $field }}" type="text" name="{{ $field }}" value="{{ old($field, $item?->{$field}) }}" class="snow-input">
                     @endif
@@ -274,6 +276,24 @@
             </div>
         </form>
 
+        @if($screen === 'android-users' && $item && auth('admin')->user()->can(\App\Support\AdminRbac::permissionsForScreen('android-users')['edit']))
+            <div class="mx-4 mb-4 border-t border-slate-100 pt-3">
+                <h2 class="snow-label">Seguridad de la cuenta</h2>
+                @if($item->locked_until && $item->locked_until->isFuture())
+                    <p class="mb-2 text-xs font-medium text-amber-800">Bloqueada por intentos fallidos hasta {{ $item->locked_until->format('d/m/Y H:i') }}.</p>
+                @endif
+                <div class="flex flex-wrap items-center gap-2">
+                    <form method="POST" action="{{ route('admin.android-users.revoke-sessions', $item) }}" onsubmit="return confirm('¿Cerrar todas las sesiones de este usuario en las tablets?');">
+                        @csrf
+                        <button type="submit" class="snow-btn-secondary">Cerrar sus sesiones ({{ $item->tokens()->count() }})</button>
+                    </form>
+                    @if($item->locked_until && $item->locked_until->isFuture())
+                        <form method="POST" action="{{ route('admin.android-users.unlock', $item) }}">@csrf<button type="submit" class="snow-btn-primary">Desbloquear cuenta</button></form>
+                    @endif
+                </div>
+                <p class="mt-1.5 text-xs text-slate-500">Cambiar la contraseña o desactivar la cuenta también cierra sus sesiones.</p>
+            </div>
+        @endif
         @if($screen === 'admin-users' && $item)
             @php
                 $isSelf = auth('admin')->id() === $item->getKey();

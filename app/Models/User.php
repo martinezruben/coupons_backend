@@ -38,6 +38,7 @@ class User extends Authenticatable
     {
         return [
             'is_active' => 'boolean',
+            'locked_until' => 'datetime',
             'pin4_enc' => 'encrypted',
         ];
     }

@@ -72,6 +72,7 @@
                     </div>
                     <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4 gap-y-2 text-sm">
                         <div><span class="eyebrow">Dirección</span><div class="mt-0.5 {{ $loc->address ? '' : 'text-slate-500' }}">{{ $loc->address ?: 'Sin dirección registrada' }}</div></div>
+                        <div><span class="eyebrow">Dispensadores</span><div class="mt-0.5 font-semibold">{{ $loc->dispensers ?? 1 }}</div></div>
                         <div><span class="eyebrow">Latitud · Longitud</span><div class="mt-0.5 font-mono text-sm {{ $loc->latitude !== null ? '' : 'text-slate-500 !font-sans !text-base' }}">{{ $loc->latitude !== null ? $loc->latitude.' · '.$loc->longitude : 'Sin coordenadas' }}</div></div>
                         <div><span class="eyebrow">Dispositivos</span><div class="mt-1">{{ $pin['enabledDevices'] }} activos @if($pin['staleDevices'] > 0)<span class="text-amber-800">· {{ $pin['staleDevices'] }} sin sincronizar</span>@endif</div></div>
                         <div><span class="eyebrow">Última sincronización</span><div class="mt-0.5 font-semibold {{ $pin['lastSyncHuman'] ? '' : 'text-amber-800' }}">{{ $pin['lastSyncHuman'] ?? 'Nunca' }}</div></div>

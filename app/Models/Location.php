@@ -14,6 +14,7 @@ class Location extends Model
     protected $fillable = [
         'name',
         'address',
+        'dispensers',
         'latitude',
         'longitude',
         'is_active',
@@ -26,12 +27,19 @@ class Location extends Model
     {
         return [
             'is_active' => 'boolean',
+            'dispensers' => 'integer',
             'last_sync_at' => 'datetime',
             'contingency_started_at' => 'datetime',
             'contingency_reminder_sent_at' => 'datetime',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
         ];
+    }
+
+    /** Datos de la localidad que baja a la app por la API. */
+    public function toApi(): array
+    {
+        return ['location_id' => $this->id, 'location_name' => $this->name, 'dispensers' => (int) ($this->dispensers ?: 1)];
     }
 
     public function devices()

@@ -27,7 +27,8 @@ return [
         'model' => Location::class,
         'label' => 'Localidades',
         'icon' => 'map-pin',
-        'fields' => ['name', 'address', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
+        'fields' => ['name', 'address', 'dispensers', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
+        'labels' => ['dispensers' => 'Número de dispensadores (1 a 20)'],
         'grid' => [
             'filters' => [
                 'is_active' => [
@@ -37,7 +38,7 @@ return [
                     'apply' => ['type' => 'column', 'column' => 'is_active'],
                 ],
             ],
-            'sortable' => ['name', 'address', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
+            'sortable' => ['name', 'address', 'dispensers', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
             'default_sort' => ['key' => 'name', 'direction' => 'asc'],
         ],
     ],
