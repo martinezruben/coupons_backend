@@ -263,3 +263,9 @@ El traslado **no es un cobro ni una recarga**: no aparece en el cierre de caja n
 - **Recibo:** nombre de la empresa y saludo al pie (globales) en Parámetros del sistema; **teléfono** y dirección en cada localidad (Localidades → Teléfono).
 - **Entrega a la app:** `POST /login` y `GET /profile` devuelven, tras autenticar, `app_settings: {url_unlock}` (el hash, o `null`) y `receipt: {company_name, footer, phone, address}` (teléfono y dirección de la localidad del terminal o, si no hay, la del usuario; sin nombre de empresa se usa el de la aplicación). Las tablets reciben un cambio de clave la próxima vez que inician sesión o abren el panel de inicio.
 - Seguridad: el hash sale solo a quien inició sesión en la app; una tablet rooteada podría intentar adivinarlo sin conexión, por eso se pide una clave larga y única. El costo de 100 000 vueltas se ajusta en `AppUnlockKey::ITERATIONS` (la app acepta hasta 1 000 000).
+
+## Actividad de los terminales
+
+Cada petición de cupones de un terminal registrado (y el inicio de sesión) marca su **Última actividad** (`devices.last_sync_at`, a lo sumo una vez por minuto) y la de su localidad (`locations.last_sync_at`), y anota la **versión de la app** (`App-Version`). Cada cobro marca su **Último cobro** (`devices.last_transaction_at`). Se ven en *Dispositivos* y en el mapa de *Localidades* (en línea / sin sincronizar). Una tablet con actividad reciente y sin «Último cobro» está consultando pero no vendiendo; una sin actividad no está llegando al servidor.
+
+Valores por defecto de producción: el token privado del terminal (`COUPONS_REQUIRE_DEVICE_TOKEN`) y el surtidor (`COUPONS_REQUIRE_DISPENSER`) son obligatorios; ambos se pueden apagar en Parámetros del sistema → Cupones. Con el token obligatorio, las sesiones anteriores deben iniciar sesión de nuevo.

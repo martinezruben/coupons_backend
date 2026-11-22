@@ -29,10 +29,9 @@ class ProcessContingencyReminders extends Command
         // Find locations in contingency that need a reminder
         $locationsNeedingReminder = Location::where('contingency_started_at', '!=', null)
             ->where(function ($query) use ($resendHours) {
+                // Fecha límite calculada aquí: el SQL propio de SQLite no existe en MySQL (producción)
                 $query->whereNull('contingency_reminder_sent_at')
-                    ->orWhereRaw(
-                        "contingency_reminder_sent_at < datetime('now', '-{$resendHours} hours')"
-                    );
+                    ->orWhere('contingency_reminder_sent_at', '<', now()->subHours((int) $resendHours));
             })
             ->get();
 
