@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\CouponBatchReportController;
 use App\Http\Controllers\Admin\CouponCustomerReportController;
 use App\Http\Controllers\Admin\CouponDetailController;
 use App\Http\Controllers\Admin\CouponListController;
+use App\Http\Controllers\Admin\CouponPrintController;
 use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
@@ -112,6 +113,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/coupons', [CouponListController::class, 'index'])->name('coupons.index');
         Route::get('/coupons/{type}/{id}', [CouponDetailController::class, 'show'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.show');
+        Route::get('/coupons/{type}/{id}/printed', [CouponPrintController::class, 'show'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->middleware('throttle:20,1')->name('coupons.printed');
         Route::post('/coupons/{type}/{id}/toggle', [CouponAdminController::class, 'toggle'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.toggle');
         Route::post('/coupons/{type}/{id}/topup', [CouponAdminController::class, 'topUp'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.topup');
         Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');

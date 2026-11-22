@@ -15,6 +15,81 @@
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
         <a href="{{ route('admin.coupons.index') }}" class="text-sm text-primary-600 hover:underline">← Volver a cupones</a>
         <div class="flex flex-wrap gap-2">
+            @if($can['printed'])
+                {{-- Cupón impreso: se pide al abrirlo (el código no viaja en esta página) y cada consulta queda en la auditoría --}}
+                <div
+                    x-data="{
+                        open: false, loading: false, error: '', c: null,
+                        async show() {
+                            this.open = true; this.loading = true; this.error = ''; this.c = null;
+                            try {
+                                const r = await fetch(@js(route('admin.coupons.printed', [$type, $coupon->getKey()])), { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                                if (!r.ok) throw new Error();
+                                this.c = await r.json();
+                            } catch (e) { this.error = 'No se pudo cargar el cupón. Inténtalo de nuevo.'; }
+                            this.loading = false;
+                        },
+                        close() { this.open = false; this.c = null; },
+                    }"
+                    @keydown.escape.window="close()"
+                >
+                    <button type="button" class="{{ $btn }}" @click="show()">Ver cupón</button>
+
+                    <div x-show="open" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/55 p-4 backdrop-blur-[2px]" @click.self="close()" role="dialog" aria-modal="true" aria-label="Cupón impreso">
+                        <div class="w-full max-w-[340px] drop-shadow-2xl" @click.stop>
+                            <div
+                                class="relative overflow-hidden rounded-[16px] bg-white text-slate-900"
+                                style="--stub: 74px; --notch: 12px;
+                                       -webkit-mask: radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000), radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000);
+                                       -webkit-mask-composite: source-in;
+                                       mask: radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000), radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000);
+                                       mask-composite: intersect;"
+                            >
+                                <div x-show="loading" class="px-5 py-16 text-center text-sm text-slate-500">Cargando cupón…</div>
+                                <p x-show="error" class="px-5 py-12 text-center text-sm text-red-600" x-text="error"></p>
+
+                                <template x-if="c">
+                                    <div>
+                                        <div class="flex items-center justify-between bg-slate-900 px-5 py-3 text-white">
+                                            <span class="text-base font-extrabold uppercase tracking-[0.14em]" x-text="c.brand"></span>
+                                            <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">Cupón prepago</span>
+                                        </div>
+
+                                        <div class="px-5 pb-4 pt-4 text-center">
+                                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Valor</p>
+                                            <p class="text-[38px] font-extrabold leading-none tabular-nums" x-text="c.amount"></p>
+
+                                            {{-- El código tal como se imprime --}}
+                                            <div class="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                                                <div x-show="c.svg" x-html="c.svg" :class="c.kind === 'qr' ? '[&>svg]:mx-auto [&>svg]:h-auto [&>svg]:w-[210px]' : '[&>svg]:h-auto [&>svg]:w-full'"></div>
+                                                <p x-show="c.note" class="rounded-md bg-amber-50 p-3 text-left text-xs leading-snug text-amber-900" x-text="c.note"></p>
+                                                <p class="mt-2 font-mono text-[13px] font-semibold tracking-[0.22em] text-slate-800" x-text="c.number"></p>
+                                            </div>
+
+                                            <p x-show="c.status !== 'ACTIVE'" class="mt-3 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
+                                                Estado: <span x-text="({GENERATED: 'Generado (aún no activo)', ASSIGNED: 'Asignado (aún no activo)', INACTIVE: 'Inactivo', VOID: 'Anulado'})[c.status] || c.status"></span> · no se puede cobrar
+                                            </p>
+                                        </div>
+
+                                        {{-- Talón --}}
+                                        <div class="absolute inset-x-5 border-t-2 border-dashed border-slate-300" style="bottom: var(--stub);" aria-hidden="true"></div>
+                                        <div class="flex items-center justify-between bg-slate-50 px-5" style="height: var(--stub);">
+                                            <div>
+                                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Válido hasta</p>
+                                                <p class="text-lg font-bold tabular-nums" x-text="c.expire || 'Sin vencimiento'"></p>
+                                            </div>
+                                            <button type="button" class="snow-btn-primary" @click="close()">Cerrar</button>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div x-show="error || loading" class="border-t border-slate-100 bg-slate-50 px-5 py-3 text-right"><button type="button" class="snow-btn-secondary" @click="close()">Cerrar</button></div>
+                            </div>
+                            <p class="mt-2 text-center text-[11px] text-white/80">Este código permite cobrar el cupón: la consulta queda registrada en la auditoría.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
             @php $isActive = $coupon->status === 'ACTIVE'; @endphp
             @if(($isActive ? $can['deactivate'] : $can['activate']) && in_array($coupon->status, ['ACTIVE', 'INACTIVE'], true))
                 <form method="POST" action="{{ route('admin.coupons.toggle', [$type, $coupon->getKey()]) }}"
