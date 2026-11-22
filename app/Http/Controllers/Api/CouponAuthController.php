@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponLoginRequest;
 use App\Models\Device;
 use App\Models\User;
+use App\Services\DeviceBinding;
 use App\Services\SecurityAlerts;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,9 @@ class CouponAuthController extends Controller
 
             return response()->json(['error' => 'Unauthorized', 'code' => 'invalid_credentials'], 401);
         }
+
+        // La terminal debe estar registrada y el usuario pertenecer a su localidad (solo se evalúa con la clave ya verificada)
+        DeviceBinding::resolve($request, $user);
 
         if ($user->failed_login_attempts > 0 || $user->locked_until) {
             $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();

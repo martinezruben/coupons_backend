@@ -178,6 +178,11 @@ class CouponService
                 'transaction_id' => $ids[0] ?? null,
                 'transaction_ids' => $ids,
                 'date' => now()->toIso8601String(),
+                'created_at' => now()->toIso8601String(),
+                // Datos de la venta para el ticket y la conciliación
+                'amount' => $this->money($required),
+                'location_id' => $locId,
+                'location_name' => $device?->location?->name,
                 'dispenser' => $dispenser,
                 'coupons' => $result,
                 'sumbalance' => $this->money($sum),

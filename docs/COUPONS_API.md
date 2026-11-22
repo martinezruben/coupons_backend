@@ -215,3 +215,9 @@ Todos los errores de `/api/*` son JSON con `error` (texto en inglés, para perso
 | Fijar saldo | `POST /restore`, `/restorecb` | ADMIN (`coupon:restore`) | `coupon_number`, `coupon_amount` (el saldo nuevo, no mayor al monto del cupón), `reason` | Aprobación activa (por defecto): **202** `{coupon_number, status:"pending_approval", request_id}`; sin ella: `coupon_number`, `date`, `balance` |
 
 Reglas de las operaciones restringidas: quien hizo un cobro no lo revierte; pasadas 72 h solo un ADMIN revierte; una reversa solo se hace una vez (409 `transaction_already_reversed`); fijar saldo queda pendiente hasta que otro administrador del panel lo apruebe. Recargas y reversas siguen las reglas de recarga y los límites; los errores llevan `code` (ver *Errores de la API*).
+
+## Login con dispositivo y datos de la venta
+
+- **`POST /login`** (con `COUPONS_REQUIRE_DEVICE_BINDING` activo) exige `Device-Fingerprint` de una terminal registrada, habilitada y con licencia, y que el usuario pertenezca a su localidad (su localidad principal o una de su lista; un ADMIN entra en cualquiera). Se evalúa solo con la clave ya verificada, así que una clave incorrecta sigue dando el 401 genérico. Errores: 403 `device_not_authorized` o 403 `user_wrong_location`.
+- **`GET /auth/me`** devuelve `location_id`, `location_name`, `dispensers`, `license_valid_to`; una terminal bloqueada recibe 403 con `code: DEVICE_BLOCKED`.
+- **`POST /transaction` y `/transactioncb`** devuelven además `amount` (monto de la venta), `created_at`, `location_id` y `location_name` (de la terminal), para el ticket y la conciliación.
