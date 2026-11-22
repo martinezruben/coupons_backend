@@ -218,7 +218,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -280,7 +280,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['export' => 'Exportar cupones a CSV', 'export_full' => 'Exportar números completos (son secretos: quien los vea puede cobrar)', 'detail' => 'Ver historial completo del cupón', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'export_full' => 'Exportar números completos (son secretos: quien los vea puede cobrar)', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [

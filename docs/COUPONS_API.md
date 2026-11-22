@@ -232,3 +232,9 @@ La huella (`Device-Fingerprint`) solo **identifica** al terminal: cualquiera que
 - **Revocación:** bloquear un terminal, re-emparejarlo o renovarlo con su licencia invalida su token anterior.
 - **Interruptor** «Exigir el token privado del terminal» (Parámetros del sistema → Cupones, `COUPONS_REQUIRE_DEVICE_TOKEN`; apagado por defecto): apagado, una petición sin `Device-Token` se acepta por huella (modo de transición); encendido, es 403 `device_token_required` y las sesiones anteriores sin `device:<id>` se rechazan (hay que iniciar sesión otra vez).
 - **Cómo activarlo sin cortar a nadie:** publicar la app que envía `Device-Token`, fijar esa versión como mínima (426 a las anteriores) y entonces encender el interruptor.
+
+## Ver el cupón impreso (panel)
+
+En el detalle de un cupón, el botón **Ver cupón** (permiso `coupons.view_printed` / `coupon_barcodes.view_printed`, además de ver y de «Ver historial completo»; sin asignar a ningún rol por defecto) abre el cupón como se imprime: QR (`@coupon=<número>@token=<token>`, igual que el archivo del lote) o código de barras (Code 128 con el número), con valor, vencimiento y número. El código es un dato que permite cobrar: no viaja en la página de detalle, se pide al abrir el modal (`GET /admin/coupons/{qr|barcode}/{id}/printed`, límite de 20 por minuto, sin caché) y cada consulta queda en la auditoría («Vio el cupón impreso»).
+
+Limitación: los cupones QR nuevos solo guardan el hash del token, así que su QR **no se puede volver a dibujar** (el modal lo explica); solo los QR con token heredado en claro se dibujan. Los cupones de barras siempre se dibujan.

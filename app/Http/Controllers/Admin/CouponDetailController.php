@@ -193,6 +193,7 @@ class CouponDetailController extends Controller
                 'deactivate' => $admin->can(AdminRbac::actionPermissions($screen)['deactivate']['permission'] ?? '-'),
                 'adjust' => $admin->can(AdminRbac::actionPermissions($screen)['adjust']['permission'] ?? '-'),
                 'topup' => $admin->can(AdminRbac::actionPermissions($screen)['topup']['permission'] ?? '-'),
+                'printed' => $admin->can(AdminRbac::actionPermissions($screen)['view_printed']['permission'] ?? '-'),
             ],
         ]);
     }

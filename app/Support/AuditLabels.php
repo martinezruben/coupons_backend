@@ -10,6 +10,7 @@ class AuditLabels
 {
     public const ACTIONS = [
         'view' => 'Consulta',
+        'view_printed' => 'Vio el cupón impreso',
         'submit' => 'Acción',
         'created' => 'Creación',
         'updated' => 'Edición',
