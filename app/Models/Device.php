@@ -14,13 +14,14 @@ class Device extends Model implements AuthenticatableContract
 {
     use AuthenticatableTrait, HasApiTokens, HasFactory, HasUuidPrimaryKey, SoftDeletes;
 
-    protected $fillable = ['location_id', 'device_fingerprint', 'app_version', 'app_version_seen_at', 'name', 'is_enabled', 'disabled_reason', 'disabled_at', 'disabled_by', 'last_sync_at', 'registered_at'];
+    protected $fillable = ['location_id', 'device_fingerprint', 'app_version', 'app_version_seen_at', 'name', 'is_enabled', 'disabled_reason', 'disabled_at', 'disabled_by', 'last_sync_at', 'last_transaction_at', 'registered_at'];
 
     protected function casts(): array
     {
         return [
             'is_enabled' => 'boolean',
             'last_sync_at' => 'datetime',
+            'last_transaction_at' => 'datetime',
             'registered_at' => 'datetime',
             'disabled_at' => 'datetime',
             'app_version_seen_at' => 'datetime',

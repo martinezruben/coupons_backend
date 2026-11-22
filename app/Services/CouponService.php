@@ -87,6 +87,7 @@ class CouponService
             throw $e;
         }
 
+        DeviceActivity::transacted($device);
         SecurityAlerts::afterRedeem($numbers, self::locationFor($locationId, $device)[0], $user?->getKey(), $amount);
 
         return $result;

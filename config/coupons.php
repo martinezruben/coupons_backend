@@ -15,11 +15,11 @@ return [
 
     // Vínculo real con el terminal: si es true, toda petición de cupones debe traer `Device-Token` (el token privado del
     // terminal, no copiable como la huella) y la sesión del usuario debe haberse iniciado en ese mismo terminal.
-    // Actívalo cuando todas las tablets tengan la app que lo envía (ver versión mínima).
-    'require_device_token' => (bool) env('COUPONS_REQUIRE_DEVICE_TOKEN', false),
+    // La app (desde su versión 1.1) ya lo envía; las sesiones iniciadas antes deben iniciar sesión de nuevo.
+    'require_device_token' => (bool) env('COUPONS_REQUIRE_DEVICE_TOKEN', true),
 
     // Si es true, un cobro desde una localidad con surtidores debe indicar `dispenser` (1..N).
-    'require_dispenser' => (bool) env('COUPONS_REQUIRE_DISPENSER', false),
+    'require_dispenser' => (bool) env('COUPONS_REQUIRE_DISPENSER', true),
 
     // Si es true y hay una versión mínima en Parámetros del sistema, la API responde 426 a las apps más viejas.
     'enforce_min_app_version' => (bool) env('COUPONS_ENFORCE_MIN_APP_VERSION', true),

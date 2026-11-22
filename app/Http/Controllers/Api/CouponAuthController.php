@@ -8,6 +8,7 @@ use App\Models\Device;
 use App\Models\Location;
 use App\Models\SystemParameter;
 use App\Models\User;
+use App\Services\DeviceActivity;
 use App\Services\DeviceBinding;
 use App\Services\SecurityAlerts;
 use Illuminate\Http\JsonResponse;
@@ -46,6 +47,7 @@ class CouponAuthController extends Controller
 
         // La terminal debe estar registrada y el usuario pertenecer a su localidad (solo se evalúa con la clave ya verificada)
         $boundDevice = DeviceBinding::resolve($request, $user);
+        DeviceActivity::seen($boundDevice, $request);
 
         if ($user->failed_login_attempts > 0 || $user->locked_until) {
             $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
