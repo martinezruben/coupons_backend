@@ -150,7 +150,7 @@ class CouponBatchGenerator
     }
 
     /** @return list<string> números únicos en ambas tablas de cupones y dentro del propio lote */
-    private function freshNumbers(int $count, string $prefix): array
+    public function freshNumbers(int $count, string $prefix): array
     {
         $numbers = [];
         while (count($numbers) < $count) {

@@ -14,6 +14,7 @@ class CouponAuditLog extends Model
         'assign' => 'Asignación', 'schedule' => 'Activación programada', 'activate' => 'Activación', 'cancel_activation' => 'Activación cancelada',
         'unassign' => 'Liberación', 'deactivate' => 'Desactivación', 'void_batch' => 'Lote anulado',
         'topup' => 'Recarga', 'restore' => 'Ajuste de saldo', 'restore_request' => 'Ajuste solicitado', 'reverse' => 'Reversa',
+        'replace_request' => 'Reemplazo solicitado', 'replace_out' => 'Cupón reemplazado', 'replace_in' => 'Cupón de reemplazo', 'replace_reject' => 'Reemplazo rechazado',
     ];
 
     public const DESCRIPTIONS = [
@@ -23,6 +24,7 @@ class CouponAuditLog extends Model
         'schedule' => 'Se programó la activación de cupones para una fecha.', 'activate' => 'Cupones del lote se activaron para un cliente.', 'cancel_activation' => 'Se canceló una activación programada.',
         'unassign' => 'Cupones asignados volvieron a estar libres.', 'deactivate' => 'Un cupón se desactivó y no se puede cobrar.', 'void_batch' => 'Se anularon los cupones aún no activos del lote.',
         'topup' => 'Se sumó saldo a un cupón.', 'restore' => 'Un administrador fijó el saldo de un cupón a otro valor.', 'restore_request' => 'Se pidió fijar el saldo de un cupón; falta que otro administrador lo apruebe.', 'reverse' => 'Se revirtió un cobro y el saldo volvió al cupón.',
+        'replace_request' => 'Se pidió reemplazar un cupón perdido; falta que otro administrador lo apruebe.', 'replace_out' => 'El cupón se anuló y su saldo pasó a un cupón nuevo.', 'replace_in' => 'Cupón creado con el saldo de otro cupón perdido.', 'replace_reject' => 'Se rechazó el reemplazo del cupón.',
     ];
 
     protected $guarded = [];

@@ -246,3 +246,11 @@ En el detalle de un cupón, el botón **Ver cupón** (permiso `coupons.view_prin
 - **Qué muestra:** cobros (n.º), cobrado, reversado, **neto** (cobrado − reversado) y recargado, por cajero y por surtidor, con primer y último movimiento. Las recargas van aparte. Una reversa cuenta en el periodo en que se hizo y se atribuye al **cajero del cobro original**, así el neto de cada cajero cuadra con lo que vendió; conserva el surtidor del cobro.
 - **Cerrar caja:** guarda una foto inmutable (totales y detalle por cajero y surtidor, quién cerró y nota opcional). No se puede editar ni borrar; no admite periodos que se crucen con otro cierre de la misma localidad ni que terminen en el futuro; queda en la auditoría. Un administrador con alcance recortado a ciertos clientes no puede cerrar (la foto saldría incompleta).
 - **CSV** del turno o de un cierre, y página de cierre imprimible.
+
+## Reemplazo de un cupón perdido (panel)
+
+En el detalle de un cupón **activo o inactivo con saldo**, el botón **Reemplazar (perdido)** (permiso `coupons.replace` / `coupon_barcodes.replace`) pide trasladar su saldo a un cupón nuevo. Por defecto **lo aprueba otro administrador** en *Cupones → Reemplazos de cupón* (`coupon_replacements.view / .approve`; quien lo pidió no puede aprobarlo; se apaga con «El reemplazo de un cupón perdido requiere aprobación» en Parámetros del sistema).
+
+Al aprobar, en una sola transacción: se crea un cupón nuevo **activo** (mismo tipo, cliente, lote y vencimiento; monto y saldo = el saldo vigente del viejo; para QR con su token nuevo, hash + cifrado, así que se puede ver e imprimir con **Ver cupón**), y el viejo queda **anulado con saldo 0**: quien lo encuentre ya no puede cobrarlo. Una sola solicitud pendiente por cupón.
+
+El traslado **no es un cobro ni una recarga**: no aparece en el cierre de caja ni en los reportes de canjes; queda en la línea de tiempo de ambos cupones (con enlaces entre sí) y en la auditoría de cupones (`replace_request`, `replace_out`, `replace_in`, `replace_reject`). Genera alertas de seguridad (solicitud: media; aplicado: baja).

@@ -218,7 +218,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'replace' => 'Reemplazar un cupón perdido (pasa el saldo a uno nuevo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -280,7 +280,7 @@ return [
             'batch_id' => ['relation' => 'batch', 'attribute' => 'code', 'header' => 'Lote'],
             'customer_id' => ['relation' => 'customer', 'attribute' => 'name', 'header' => 'Cliente'],
         ],
-        'actions' => ['export' => 'Exportar cupones a CSV', 'export_full' => 'Exportar números completos (son secretos: quien los vea puede cobrar)', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
+        'actions' => ['export' => 'Exportar cupones a CSV', 'export_full' => 'Exportar números completos (son secretos: quien los vea puede cobrar)', 'detail' => 'Ver historial completo del cupón', 'view_printed' => 'Ver el cupón impreso (QR o barras: quien lo vea puede cobrarlo)', 'replace' => 'Reemplazar un cupón perdido (pasa el saldo a uno nuevo)', 'activate' => 'Activar cupón', 'deactivate' => 'Desactivar cupón', 'topup' => 'Recargar cupón', 'adjust' => 'Ajustar saldo del cupón'],
         'grid' => [
             'filters' => [
                 'status' => [
@@ -632,6 +632,7 @@ return [
     'coupon-adjustments' => ['label' => 'Ajustes de saldo', 'description' => 'Solicitudes de fijar el saldo de un cupón: las aprueba otro administrador', 'icon' => 'scale', 'readonly' => true, 'rbac' => true, 'route' => 'admin.adjustments.index', 'active_pattern' => 'admin.adjustments.*', 'actions' => ['approve' => 'Aprobar o rechazar ajustes de saldo']],
     'coupon-security-alerts' => ['label' => 'Alertas de seguridad', 'description' => 'Cobros bloqueados, usos sospechosos y reversas repetidas', 'icon' => 'bell', 'readonly' => true, 'rbac' => true, 'route' => 'admin.security-alerts.index', 'active_pattern' => 'admin.security-alerts.*', 'actions' => ['resolve' => 'Marcar alertas como revisadas']],
     'coupon-cash-close' => ['label' => 'Cierre de caja', 'description' => 'Lo cobrado, reversado y recargado por localidad, cajero y surtidor; se cierra por turno', 'icon' => 'calculator', 'readonly' => true, 'rbac' => true, 'route' => 'admin.cash-close.index', 'active_pattern' => 'admin.cash-close.*', 'actions' => ['close' => 'Cerrar la caja de una localidad', 'export' => 'Exportar CSV']],
+    'coupon-replacements' => ['label' => 'Reemplazos de cupón', 'description' => 'Cupones perdidos: el saldo pasa a uno nuevo con la aprobación de otro administrador', 'icon' => 'arrows-right-left', 'readonly' => true, 'rbac' => true, 'route' => 'admin.replacements.index', 'active_pattern' => 'admin.replacements.*', 'actions' => ['approve' => 'Aprobar o rechazar reemplazos de cupón']],
     'coupon-batch-report' => ['label' => 'Reporte de lotes', 'description' => 'Estado, saldo y cobrado por lote', 'icon' => 'rectangle-stack', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.batches', 'active_pattern' => 'admin.reports.batches', 'actions' => ['export' => 'Exportar CSV']],
     'coupon-customer-report' => ['label' => 'Reporte de clientes', 'description' => 'Cupones, saldo y cobrado por cliente', 'icon' => 'building-storefront', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.customers', 'active_pattern' => 'admin.reports.customers', 'actions' => ['export' => 'Exportar CSV']],
     'coupon-reports' => ['label' => 'Reportes de canjes', 'description' => 'Cobrado, reversado y recargado por periodo', 'icon' => 'chart-bar', 'readonly' => true, 'rbac' => true, 'route' => 'admin.reports.redemptions', 'active_pattern' => 'admin.reports.redemptions', 'actions' => ['export' => 'Exportar CSV']],

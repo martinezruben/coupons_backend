@@ -10,6 +10,7 @@ use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Models\CouponAuditLog;
 use App\Models\CouponBatch;
+use App\Models\CouponReplacement;
 use App\Models\CouponTransaction;
 use App\Models\Customer;
 use App\Models\Device;
@@ -34,6 +35,7 @@ class CouponDetailController extends Controller
     private const AUDIT_TITLES = [
         'restore' => 'Saldo ajustado por un administrador', 'activate' => 'Cupón activado', 'deactivate' => 'Cupón desactivado',
         'topup' => 'Auditoría de la recarga', 'reverse' => 'Auditoría de la reversa', 'void' => 'Cupón anulado', 'unassign' => 'Cupón liberado',
+        'replace_request' => 'Reemplazo solicitado (cupón perdido)', 'replace_out' => 'Cupón reemplazado: saldo trasladado a otro cupón', 'replace_in' => 'Cupón creado como reemplazo de otro perdido', 'replace_reject' => 'Reemplazo rechazado',
         'assign' => 'Cupón asignado', 'schedule' => 'Activación programada', 'batch_void' => 'Cupón anulado con el lote',
     ];
 
@@ -130,14 +132,14 @@ class CouponDetailController extends Controller
 
         foreach ($audits as $a) {
             $events[] = [
-                'at' => Carbon::parse($a->created_at), 'order' => 4, 'kind' => $a->action === 'restore' ? 'adjust' : 'status', 'title' => self::AUDIT_TITLES[$a->action] ?? ucfirst($a->action),
+                'at' => Carbon::parse($a->created_at), 'order' => 4, 'kind' => in_array($a->action, ['restore', 'replace_out'], true) ? 'adjust' : 'status', 'title' => self::AUDIT_TITLES[$a->action] ?? ucfirst($a->action),
                 'lines' => array_values(array_filter([
                     ($a->old_value !== null || $a->new_value !== null) ? 'Antes: '.($a->old_value ?? '—').' → Después: '.($a->new_value ?? '—') : null,
                     $a->reason ? 'Motivo: '.$a->reason : null,
                     $a->ip_address ? 'IP: '.$a->ip_address : null,
                 ])),
                 'actor' => $a->admin_user_id ? ($auditAdmins[$a->admin_user_id] ?? 'Administrador') : ($a->user_id ? ($auditUsers[$a->user_id] ?? 'Usuario de la app').' (app)' : null),
-                'set_balance' => $a->action === 'restore' && is_numeric($a->new_value) ? (float) $a->new_value : null,
+                'set_balance' => in_array($a->action, ['restore', 'replace_out'], true) && is_numeric($a->new_value) ? (float) $a->new_value : null,
             ];
         }
 
@@ -187,6 +189,11 @@ class CouponDetailController extends Controller
                 'last_use' => $transactions->where('kind', 'REDEEM')->last()?->created_at,
             ],
             'balanceCheck' => abs($running - (float) $coupon->coupon_balance) < 0.005,
+            'replacement' => [
+                'replaces' => CouponReplacement::where('coupon_type', $couponType)->where('new_coupon_id', $id)->where('status', 'APPROVED')->first(),
+                'replacedBy' => CouponReplacement::where('coupon_type', $couponType)->where('old_coupon_id', $id)->where('status', 'APPROVED')->first(),
+                'pending' => CouponReplacement::where('coupon_type', $couponType)->where('old_coupon_id', $id)->where('status', 'PENDING')->exists(),
+            ],
             'truncated' => $transactions->count() >= self::MAX_EVENTS || $audits->count() >= self::MAX_EVENTS,
             'can' => [
                 'activate' => $admin->can(AdminRbac::actionPermissions($screen)['activate']['permission'] ?? '-'),
@@ -194,6 +201,7 @@ class CouponDetailController extends Controller
                 'adjust' => $admin->can(AdminRbac::actionPermissions($screen)['adjust']['permission'] ?? '-'),
                 'topup' => $admin->can(AdminRbac::actionPermissions($screen)['topup']['permission'] ?? '-'),
                 'printed' => $admin->can(AdminRbac::actionPermissions($screen)['view_printed']['permission'] ?? '-'),
+                'replace' => $admin->can(AdminRbac::actionPermissions($screen)['replace']['permission'] ?? '-'),
             ],
         ]);
     }

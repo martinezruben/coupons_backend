@@ -105,6 +105,13 @@
                     <button type="submit" class="{{ $btn }}">Recargar</button>
                 </form>
             @endif
+            @if($can['replace'] && in_array($coupon->status, ['ACTIVE', 'INACTIVE'], true) && (float) $coupon->coupon_balance > 0 && ! $replacement['pending'])
+                <form method="POST" action="{{ route('admin.coupons.replace', [$type, $coupon->getKey()]) }}"
+                      onsubmit="if (!confirm('El cupón quedará anulado y su saldo ({{ $money($coupon->coupon_balance) }}) pasará a un cupón nuevo cuando otro administrador lo apruebe. ¿Continuar?')) return false; const r = prompt('Motivo (p. ej. cupón perdido, robado, dañado):'); if (!r || r.trim().length < 5) return false; this.reason.value = r;">
+                    @csrf<input type="hidden" name="reason" value="">
+                    <button type="submit" class="{{ $btn }}">Reemplazar (perdido)</button>
+                </form>
+            @endif
             @if($can['adjust'])
                 <form method="POST" action="{{ route('admin.coupons.adjust', [$type, $coupon->getKey()]) }}"
                       onsubmit="const b = prompt('Nuevo saldo (máx. {{ number_format((float) $coupon->coupon_amount, 2, '.', '') }}):', '{{ number_format((float) $coupon->coupon_balance, 2, '.', '') }}'); if (b === null || b === '') return false; const r = prompt('Motivo del ajuste:'); if (!r || r.trim().length < 5) return false; this.balance.value = b; this.reason.value = r;">
@@ -114,6 +121,20 @@
             @endif
         </div>
     </div>
+
+    @if(session('status'))<p class="mb-3 rounded border border-green-100 bg-green-50 px-4 py-2 text-sm text-green-800">{{ session('status') }}</p>@endif
+    @if($errors->has('coupon'))<p class="mb-3 rounded border border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{{ $errors->first('coupon') }}</p>@endif
+    @if($replacement['replacedBy'])
+        <p class="mb-3 rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Este cupón se dio por perdido y fue reemplazado por
+            <a class="font-mono font-semibold underline" href="{{ route('admin.coupons.show', [$replacement['replacedBy']->routeType(), $replacement['replacedBy']->new_coupon_id]) }}">{{ $replacement['replacedBy']->new_coupon_number }}</a>: ya no se puede cobrar.</p>
+    @endif
+    @if($replacement['replaces'])
+        <p class="mb-3 rounded border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-900">Cupón de reemplazo: recibió el saldo del cupón
+            <a class="font-mono font-semibold underline" href="{{ route('admin.coupons.show', [$replacement['replaces']->routeType(), $replacement['replaces']->old_coupon_id]) }}">{{ $replacement['replaces']->old_coupon_number }}</a>, que se dio por perdido.</p>
+    @endif
+    @if($replacement['pending'])
+        <p class="mb-3 rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Hay un reemplazo de este cupón pendiente de aprobación (Cupones → Reemplazos de cupón).</p>
+    @endif
 
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div class="space-y-4 lg:col-span-1">

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\CouponCustomerReportController;
 use App\Http\Controllers\Admin\CouponDetailController;
 use App\Http\Controllers\Admin\CouponListController;
 use App\Http\Controllers\Admin\CouponPrintController;
+use App\Http\Controllers\Admin\CouponReplacementController;
 use App\Http\Controllers\Admin\CouponReportController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeviceAccessController;
@@ -117,6 +118,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/coupons/{type}/{id}/printed', [CouponPrintController::class, 'show'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->middleware('throttle:20,1')->name('coupons.printed');
         Route::post('/coupons/{type}/{id}/toggle', [CouponAdminController::class, 'toggle'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.toggle');
         Route::post('/coupons/{type}/{id}/topup', [CouponAdminController::class, 'topUp'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.topup');
+        Route::post('/coupons/{type}/{id}/replace', [CouponAdminController::class, 'replace'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.replace');
+        Route::get('/replacements', [CouponReplacementController::class, 'index'])->name('replacements.index');
+        Route::post('/replacements/{id}/approve', [CouponReplacementController::class, 'approve'])->whereNumber('id')->name('replacements.approve');
+        Route::post('/replacements/{id}/reject', [CouponReplacementController::class, 'reject'])->whereNumber('id')->name('replacements.reject');
         Route::post('/coupons/{type}/{id}/adjust', [CouponAdminController::class, 'adjust'])->whereIn('type', ['qr', 'barcode'])->whereNumber('id')->name('coupons.adjust');
         Route::post('/coupon-transactions/{id}/reverse', [CouponAdminController::class, 'reverse'])->whereNumber('id')->name('coupon-transactions.reverse');
 
