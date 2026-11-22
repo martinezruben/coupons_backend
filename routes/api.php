@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CouponAuthController;
 use App\Http\Controllers\Api\CouponsCodbarController;
 use App\Http\Controllers\Api\CouponsController;
 use App\Http\Controllers\Api\CouponTransactionsController;
+use App\Http\Controllers\Api\SalesController;
 use Illuminate\Support\Facades\Route;
 
 // --- Dispositivos (emparejamiento y licencia) ---
@@ -27,6 +28,10 @@ Route::middleware(['app.version', 'auth:sanctum', 'coupon.user', 'throttle:coupo
         ->name('balance')->middleware(['coupon.device', 'abilities:coupon:read', 'throttle:coupon-lookup']);
     Route::post('/transaction', [CouponsController::class, 'transaction'])
         ->middleware(['coupon.device', 'abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
+
+    // Ventas recientes (reimprimir, conciliar, recuperar una venta cuya respuesta se perdió)
+    Route::get('/sales/recent', [SalesController::class, 'recent'])
+        ->name('sales.recent')->middleware(['coupon.device', 'abilities:coupon:redeem', 'throttle:coupon-lookup']);
 
     // Código de barras
     Route::get('/balancecb', [CouponsCodbarController::class, 'balance'])

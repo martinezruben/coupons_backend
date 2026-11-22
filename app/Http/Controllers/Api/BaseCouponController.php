@@ -44,6 +44,7 @@ abstract class BaseCouponController extends Controller
             $request->ip(),
             $request->input('location_id'),
             $request->filled('dispenser') ? (int) $request->input('dispenser') : null,
+            $request->header('Idempotency-Key'),
         ));
     }
 

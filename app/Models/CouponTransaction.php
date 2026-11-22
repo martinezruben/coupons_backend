@@ -36,6 +36,8 @@ class CouponTransaction extends Model
         'legacy_site_id',
         'ip_address',
         'dispenser',
+        'sale_ref',
+        'balance_after',
         'reversed_of',
         'kind',
     ];
