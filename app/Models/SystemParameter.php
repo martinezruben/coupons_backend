@@ -38,7 +38,12 @@ class SystemParameter extends Model
         'contingency_enabled',
         'contingency_email_list',
         'contingency_resend_hours',
+        'receipt_company_name',
+        'receipt_footer',
     ];
+
+    /** El hash de la clave de la app solo sale por la API de la app; nunca en JSON del modelo. */
+    protected $hidden = ['app_unlock_hash'];
 
     protected function casts(): array
     {

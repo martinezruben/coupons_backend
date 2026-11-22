@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponLoginRequest;
 use App\Models\Device;
+use App\Models\Location;
+use App\Models\SystemParameter;
 use App\Models\User;
 use App\Services\DeviceBinding;
 use App\Services\SecurityAlerts;
@@ -102,7 +104,29 @@ class CouponAuthController extends Controller
             : null;
         $location ??= $user->location ?? $user->locations()->first();
 
-        return $location ? ['location' => $location->toApi(), 'dispensers' => (int) $location->dispensers] : ['location' => null, 'dispensers' => null];
+        return ($location ? ['location' => $location->toApi(), 'dispensers' => (int) $location->dispensers] : ['location' => null, 'dispensers' => null])
+            + $this->appConfigPayload($location);
+    }
+
+    /**
+     * Lo que la app baja del servidor y no se edita en el equipo: los datos del recibo (empresa y saludo globales; teléfono y
+     * dirección de la localidad) y el hash de la clave de administración (cambiar la URL del API, salir del kiosco).
+     *
+     * @return array<string, mixed>
+     */
+    private function appConfigPayload(?Location $location): array
+    {
+        $params = SystemParameter::query()->first();
+
+        return [
+            'receipt' => [
+                'company_name' => $params?->receipt_company_name ?: config('app.name'),
+                'footer' => $params?->receipt_footer,
+                'phone' => $location?->phone,
+                'address' => $location?->address,
+            ],
+            'app_settings' => ['url_unlock' => $params?->app_unlock_hash ?: null],
+        ];
     }
 
     public function profile(Request $request): JsonResponse

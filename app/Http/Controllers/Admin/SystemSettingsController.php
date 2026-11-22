@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminAuditLog;
 use App\Models\SystemParameter;
 use App\Support\AdminRbac;
+use App\Support\AppUnlockKey;
 use App\Support\CouponSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,9 @@ class SystemSettingsController extends Controller
             'office365_client_id' => ['nullable', 'string', 'max:255'],
             'office365_client_secret' => ['nullable', 'string'],
             'office365_scopes' => ['nullable', 'string'],
+            'receipt_company_name' => ['nullable', 'string', 'max:120'],
+            'receipt_footer' => ['nullable', 'string', 'max:255'],
+            'app_unlock_key' => ['nullable', 'string', 'min:'.AppUnlockKey::MIN_LENGTH, 'max:100', 'confirmed'],
             'min_app_version' => ['nullable', 'string', 'max:30', 'regex:/^\d+(\.\d+){0,3}$/'],
             'contingency_enabled' => ['boolean'],
             'contingency_email_list' => ['nullable', 'string'],
@@ -97,8 +101,22 @@ class SystemSettingsController extends Controller
         $this->saveCouponSettings($request, $validated);
         unset($validated['coupon']);
 
+        // Clave de administración de la app: solo el super-admin la cambia; se guarda únicamente como hash
+        $newKey = (string) ($validated['app_unlock_key'] ?? '');
+        unset($validated['app_unlock_key']);
+        foreach (['receipt_company_name', 'receipt_footer'] as $f) {
+            if (array_key_exists($f, $validated)) {
+                $validated[$f] = trim((string) $validated[$f]) ?: null;
+            }
+        }
+
         $params = SystemParameter::query()->firstOrFail();
         $params->update($validated);
+        if ($newKey !== '') {
+            abort_unless(AdminRbac::isSuperAdmin(auth('admin')->user()), 403);
+            $params->forceFill(['app_unlock_hash' => AppUnlockKey::make($newKey), 'app_unlock_set_at' => now()])->save();
+            AdminAuditLog::record('update', 'app_unlock_key', null, ['clave_de_la_app' => ['(anterior)', '(nueva, solo se guarda su hash)']]);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'Parámetros guardados correctamente.']);

@@ -254,3 +254,12 @@ En el detalle de un cupón **activo o inactivo con saldo**, el botón **Reemplaz
 Al aprobar, en una sola transacción: se crea un cupón nuevo **activo** (mismo tipo, cliente, lote y vencimiento; monto y saldo = el saldo vigente del viejo; para QR con su token nuevo, hash + cifrado, así que se puede ver e imprimir con **Ver cupón**), y el viejo queda **anulado con saldo 0**: quien lo encuentre ya no puede cobrarlo. Una sola solicitud pendiente por cupón.
 
 El traslado **no es un cobro ni una recarga**: no aparece en el cierre de caja ni en los reportes de canjes; queda en la línea de tiempo de ambos cupones (con enlaces entre sí) y en la auditoría de cupones (`replace_request`, `replace_out`, `replace_in`, `replace_reject`). Genera alertas de seguridad (solicitud: media; aplicado: baja).
+
+## Clave de la app y datos del recibo
+
+**Parámetros del sistema → App de las tablets** (la clave solo la cambia un super-administrador).
+
+- **Clave de administración de la app:** una sola para todas las tablets; permite **cambiar la URL del API** y **salir del modo kiosco**. Mínimo 10 caracteres, con confirmación. Solo se guarda su hash `pbkdf2_sha256$100000$<sal hex>$<hash hex>` (PBKDF2-HMAC-SHA256, 32 bytes, sal aleatoria por clave; el panel nunca la vuelve a mostrar y el cambio queda en la auditoría sin el valor). Es el formato que verifica la app sin conexión (con 5 intentos y 5 minutos de bloqueo); los vectores de prueba de la app están en `AppUnlockKeyAndReceiptTest`. Sin clave configurada, en producción nadie sale del kiosco.
+- **Recibo:** nombre de la empresa y saludo al pie (globales) en Parámetros del sistema; **teléfono** y dirección en cada localidad (Localidades → Teléfono).
+- **Entrega a la app:** `POST /login` y `GET /profile` devuelven, tras autenticar, `app_settings: {url_unlock}` (el hash, o `null`) y `receipt: {company_name, footer, phone, address}` (teléfono y dirección de la localidad del terminal o, si no hay, la del usuario; sin nombre de empresa se usa el de la aplicación). Las tablets reciben un cambio de clave la próxima vez que inician sesión o abren el panel de inicio.
+- Seguridad: el hash sale solo a quien inició sesión en la app; una tablet rooteada podría intentar adivinarlo sin conexión, por eso se pide una clave larga y única. El costo de 100 000 vueltas se ajusta en `AppUnlockKey::ITERATIONS` (la app acepta hasta 1 000 000).

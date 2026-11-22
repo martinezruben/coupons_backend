@@ -27,8 +27,8 @@ return [
         'model' => Location::class,
         'label' => 'Localidades',
         'icon' => 'map-pin',
-        'fields' => ['name', 'address', 'dispensers', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
-        'labels' => ['dispensers' => 'Número de surtidores (0 a 20; 0 = la localidad no usa surtidores)'],
+        'fields' => ['name', 'address', 'phone', 'dispensers', 'latitude', 'longitude', 'is_active', 'last_sync_at'],
+        'labels' => ['phone' => 'Teléfono (sale en el recibo)', 'dispensers' => 'Número de surtidores (0 a 20; 0 = la localidad no usa surtidores)'],
         'grid' => [
             'filters' => [
                 'is_active' => [
