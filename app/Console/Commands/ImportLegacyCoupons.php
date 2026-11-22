@@ -88,11 +88,18 @@ class ImportLegacyCoupons extends Command
         $total = $imported = 0;
 
         $source->table($table)->orderBy('coupon_id')->chunk((int) $this->option('chunk'), function ($chunk) use ($table, $cols, $dry, &$total, &$imported) {
-            $data = $chunk->map(function ($r) use ($cols) {
+            $data = $chunk->map(function ($r) use ($cols, $table) {
                 $row = collect((array) $r)->only($cols)->all();
-                // El token en claro nunca entra a esta base: se guarda su hash (validan igual).
+                // El token en claro nunca entra a esta base: se guarda su hash (validan igual) y, si venía en claro,
+                // también cifrado para poder volver a dibujar el QR impreso.
+                if ($table === 'coupons') {
+                    $row['coupon_token_enc'] = null;
+                }
                 if (isset($row['coupon_token']) && $row['coupon_token'] !== '') {
-                    $row['coupon_token'] = CouponToken::isHashed($row['coupon_token']) ? $row['coupon_token'] : CouponToken::hash($row['coupon_token']);
+                    if (! CouponToken::isHashed($row['coupon_token'])) {
+                        $row['coupon_token_enc'] = CouponToken::seal($row['coupon_token']);
+                        $row['coupon_token'] = CouponToken::hash($row['coupon_token']);
+                    }
                 }
                 $row['status'] = (int) ($row['coupon_active'] ?? 1) === 1 ? 'ACTIVE' : 'INACTIVE';
 

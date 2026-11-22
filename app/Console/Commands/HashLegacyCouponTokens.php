@@ -6,12 +6,12 @@ use App\Support\CouponToken;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-/** Reemplaza los tokens QR en claro (cupones importados) por su hash. Irreversible: el valor en claro se pierde. */
+/** Reemplaza los tokens QR en claro (cupones importados) por su hash y los conserva cifrados (`coupon_token_enc`). */
 class HashLegacyCouponTokens extends Command
 {
     protected $signature = 'coupons:hash-tokens {--force : No pedir confirmación}';
 
-    protected $description = 'Guarda como hash los tokens QR que aún están en claro';
+    protected $description = 'Guarda como hash (y cifrados) los tokens QR que aún están en claro';
 
     public function handle(): int
     {
@@ -21,7 +21,7 @@ class HashLegacyCouponTokens extends Command
 
             return self::SUCCESS;
         }
-        if (! $this->option('force') && ! $this->confirm("Se convertirán {$pending} tokens a hash. No se puede deshacer. ¿Continuar?")) {
+        if (! $this->option('force') && ! $this->confirm("Se convertirán {$pending} tokens a hash; el valor en claro solo se conserva cifrado. ¿Continuar?")) {
             return self::FAILURE;
         }
 
@@ -29,7 +29,7 @@ class HashLegacyCouponTokens extends Command
         DB::table('coupons')->whereNotNull('coupon_token')->where('coupon_token', 'not like', 'h1:%')->orderBy('coupon_id')
             ->chunkById(1000, function ($rows) use (&$done) {
                 foreach ($rows as $row) {
-                    DB::table('coupons')->where('coupon_id', $row->coupon_id)->update(['coupon_token' => CouponToken::hash($row->coupon_token)]);
+                    DB::table('coupons')->where('coupon_id', $row->coupon_id)->update(['coupon_token' => CouponToken::hash($row->coupon_token), 'coupon_token_enc' => $row->coupon_token_enc ?? CouponToken::seal($row->coupon_token)]);
                     $done++;
                 }
             }, 'coupon_id');

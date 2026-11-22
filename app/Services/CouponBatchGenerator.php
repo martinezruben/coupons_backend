@@ -103,6 +103,7 @@ class CouponBatchGenerator
                     ];
                     if ($isQr) {
                         $row['coupon_token'] = CouponToken::hash($token);
+                        $row['coupon_token_enc'] = CouponToken::seal($token);
                     }
                     $rows[] = $row;
                     $csv[] = $isQr
