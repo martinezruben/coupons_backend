@@ -18,6 +18,7 @@ use Brick\Math\RoundingMode;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Logica de cupones (QR y codigo de barras). Todas las operaciones que mueven saldo
@@ -72,12 +73,14 @@ class CouponService
      * @param  list<string>  $numbers
      * @param  list<string|null>|null  $tokens  paralelo a $numbers (solo QR)
      */
-    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null, ?int $dispenser = null): array
+    public function redeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId = null, ?int $dispenser = null, ?string $saleRef = null): array
     {
         $dispenser = self::resolveDispenser($dispenser, $device);
+        // La venta se identifica con la Idempotency-Key de la app (si es válida); si no, con un UUID propio
+        $saleRef = is_string($saleRef) && preg_match('/^[A-Za-z0-9._:-]{8,100}$/', $saleRef) ? $saleRef : (string) Str::uuid();
 
         try {
-            $result = $this->doRedeem($numbers, $tokens, $amount, $device, $user, $ip, $locationId, $dispenser);
+            $result = $this->doRedeem($numbers, $tokens, $amount, $device, $user, $ip, $locationId, $dispenser, $saleRef);
         } catch (CouponException $e) {
             // Los bloqueos por límite quedan como alerta (fuera de la transacción revertida)
             if (isset($e->extra()['limit'])) {
@@ -93,13 +96,13 @@ class CouponService
         return $result;
     }
 
-    private function doRedeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId, ?int $dispenser): array
+    private function doRedeem(array $numbers, ?array $tokens, string $amount, ?Device $device, ?User $user, ?string $ip, ?string $locationId, ?int $dispenser, string $saleRef): array
     {
         $required = BigDecimal::of($amount)->toScale(2, self::rounding());
 
         [$locId, $locSource] = self::locationFor($locationId, $device);
 
-        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip, $locId, $locSource, $dispenser) {
+        return DB::transaction(function () use ($numbers, $tokens, $required, $device, $user, $ip, $locId, $locSource, $dispenser, $saleRef) {
             // Orden fijo por numero => sin deadlocks entre cobros concurrentes.
             $rows = $this->model::whereIn('coupon_number', $numbers)
                 ->orderBy('coupon_number')
@@ -160,6 +163,8 @@ class CouponService
                         'location_source' => $locSource,
                         'ip_address' => $ip,
                         'dispenser' => $dispenser,
+                        'sale_ref' => $saleRef,
+                        'balance_after' => $this->money($newBalance),
                     ]);
                 }
 
@@ -176,6 +181,7 @@ class CouponService
 
             return [
                 // Primer movimiento del cobro (comprobante) y todos los que lo componen; fecha ISO 8601
+                'sale_id' => $saleRef,
                 'transaction_id' => $ids[0] ?? null,
                 'transaction_ids' => $ids,
                 'date' => now()->toIso8601String(),
@@ -344,6 +350,8 @@ class CouponService
                 ...self::actor($user),
                 'ip_address' => $ip,
                 'reversed_of' => $tx->transaction_id,
+                'sale_ref' => $tx->sale_ref,
+                'balance_after' => $service->money($new),
                 'kind' => CouponTransaction::KIND_REVERSAL,
                 'customer_id' => $tx->customer_id ?? $coupon->customer_id,
             ]);
@@ -424,6 +432,7 @@ class CouponService
                 'location_id' => $locId,
                 'location_source' => $locSource,
                 'ip_address' => $ip,
+                'balance_after' => $this->money($new),
             ]);
 
             $this->audit('topup', $this->type, $number, $this->money($old), $this->money($new), 'Recarga de '.$this->money($amountDec).($note ? ': '.$note : ''), $actor, $ip);

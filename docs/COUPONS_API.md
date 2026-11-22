@@ -269,3 +269,22 @@ El traslado **no es un cobro ni una recarga**: no aparece en el cierre de caja n
 Cada petición de cupones de un terminal registrado (y el inicio de sesión) marca su **Última actividad** (`devices.last_sync_at`, a lo sumo una vez por minuto) y la de su localidad (`locations.last_sync_at`), y anota la **versión de la app** (`App-Version`). Cada cobro marca su **Último cobro** (`devices.last_transaction_at`). Se ven en *Dispositivos* y en el mapa de *Localidades* (en línea / sin sincronizar). Una tablet con actividad reciente y sin «Último cobro» está consultando pero no vendiendo; una sin actividad no está llegando al servidor.
 
 Valores por defecto de producción: el token privado del terminal (`COUPONS_REQUIRE_DEVICE_TOKEN`) y el surtidor (`COUPONS_REQUIRE_DISPENSER`) son obligatorios; ambos se pueden apagar en Parámetros del sistema → Cupones. Con el token obligatorio, las sesiones anteriores deben iniciar sesión de nuevo.
+
+## Ventas recientes (`GET /api/sales/recent`)
+
+Para reimprimir un recibo, conciliar con el servidor y **recuperar una venta cuya respuesta se perdió**. Requiere `coupon:redeem`, `Device-Fingerprint` + `Device-Token` (como cualquier ruta de cupones) y no se guarda en caché.
+
+| Parámetro | Valores | Por defecto |
+|---|---|---|
+| `scope` | `mine` (ventas del usuario) · `location` (todas las de la localidad del terminal; solo roles con `coupon:reverse`, si no 403 `forbidden`) | `mine` |
+| `limit` | 1–50 | 20 |
+| `hours` | 1–168 (ventana hacia atrás) | 24 |
+| `key` | la `Idempotency-Key` de esa venta | — |
+
+Respuesta: `{scope, count, sales: [{sale_id, transaction_id, transaction_ids[], date (ISO 8601), amount, dispenser, location_id, location_name, cashier, status, coupons: [{coupon_number, transaction_id, applied, balance, reversed}]}]}`.
+
+- **Una venta** agrupa los movimientos de un mismo cobro (un cobro repartido en varios cupones). `sale_id` es la `Idempotency-Key` de la app (o un UUID propio si no la envió) y también se devuelve en la respuesta de `POST /transaction`. Las ventas anteriores a este cambio no tienen `sale_id` ni `balance` (`null`); cada movimiento cuenta como una venta.
+- **`status`:** `completed`, `partially_reversed` o `reversed`.
+- **`balance`** es el saldo del cupón justo después de esa venta.
+- Los **números de cupón salen enmascarados** (últimos 4 dígitos): el de barras es un secreto al portador. Nunca se devuelve un token.
+- **Recuperación:** si la app no recibió la respuesta de un cobro y el cajero no reintentó, `GET /api/sales/recent?key=<Idempotency-Key>` devuelve esa venta (o `count: 0` si el servidor no llegó a cobrarla).
