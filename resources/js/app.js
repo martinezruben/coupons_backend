@@ -45,6 +45,7 @@ document.addEventListener('alpine:init', () => {
         locationId: null,
         locationName: '',
         remainingLabel: '15:00',
+        remainingSeconds: 900,
         _interval: null,
 
         csrfToken() {
@@ -150,6 +151,7 @@ document.addEventListener('alpine:init', () => {
         tick() {
             if (!this.expiresAt) {
                 this.remainingLabel = '—';
+                this.remainingSeconds = 0;
                 return;
             }
             const endMs = this.expiresAt * 1000;
@@ -158,9 +160,11 @@ document.addEventListener('alpine:init', () => {
                 this.code = '';
                 this.expiresAt = null;
                 this.remainingLabel = 'Caducado';
+                this.remainingSeconds = 0;
                 this.stopTimer();
                 return;
             }
+            this.remainingSeconds = sec;
             const m = Math.floor(sec / 60);
             const s = sec % 60;
             this.remainingLabel = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
