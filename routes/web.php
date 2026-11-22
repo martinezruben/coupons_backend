@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AppUserSecurityController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CashCloseController;
 use App\Http\Controllers\Admin\CouponAdjustmentController;
 use App\Http\Controllers\Admin\CouponAdminController;
 use App\Http\Controllers\Admin\CouponAuditDetailController;
@@ -125,6 +126,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/adjustments/{id}/reject', [CouponAdjustmentController::class, 'reject'])->whereNumber('id')->name('adjustments.reject');
         Route::get('/security-alerts', [SecurityAlertController::class, 'index'])->name('security-alerts.index');
         Route::post('/security-alerts/{id}/resolve', [SecurityAlertController::class, 'resolve'])->whereNumber('id')->name('security-alerts.resolve');
+
+        // Cierre de caja por localidad
+        Route::get('/cash-close', [CashCloseController::class, 'index'])->name('cash-close.index');
+        Route::post('/cash-close', [CashCloseController::class, 'close'])->name('cash-close.close');
+        Route::get('/cash-close/{closing}', [CashCloseController::class, 'show'])->whereNumber('closing')->name('cash-close.show');
 
         // Reportes de canjes
         Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');

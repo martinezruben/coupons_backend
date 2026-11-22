@@ -11,6 +11,7 @@ class AuditLabels
     public const ACTIONS = [
         'view' => 'Consulta',
         'view_printed' => 'Vio el cupón impreso',
+        'cash_close' => 'Cierre de caja',
         'submit' => 'Acción',
         'created' => 'Creación',
         'updated' => 'Edición',
