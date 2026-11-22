@@ -8,7 +8,6 @@ use App\Models\AdminUser;
 use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Support\AdminRbac;
-use App\Support\CouponToken;
 use App\Support\Format;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -46,11 +45,12 @@ class CouponPrintController extends Controller
         $svg = null;
         $note = null;
         if ($isQr) {
-            // Los tokens nuevos solo se guardan como hash: no se puede reconstruir el QR impreso
-            if (CouponToken::isHashed($coupon->coupon_token) || empty($coupon->coupon_token)) {
-                $note = 'El token de este cupón QR no se guarda en claro (solo su huella), así que el código impreso no se puede volver a dibujar. Está en el archivo del lote que se descargó al generarlo.';
+            // El token se conserva cifrado (APP_KEY); los cupones anteriores a esa versión solo tienen su hash
+            $token = $coupon->plainToken();
+            if ($token === null) {
+                $note = 'Este cupón QR se generó antes de que el token se guardara cifrado (o cambió la clave de la aplicación): solo se conserva su huella y el código impreso no se puede volver a dibujar. Está en el archivo del lote que se descargó al generarlo.';
             } else {
-                $svg = $this->qr("@coupon={$number}@token={$coupon->coupon_token}");
+                $svg = $this->qr("@coupon={$number}@token={$token}");
             }
         } else {
             $svg = (new BarcodeGeneratorSVG)->getBarcode($number, BarcodeGeneratorSVG::TYPE_CODE_128, 2, 90);

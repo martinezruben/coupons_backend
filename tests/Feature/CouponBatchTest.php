@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AdminUser;
+use App\Models\Coupon;
 use App\Models\CouponBatch;
 use App\Models\CouponPrefix;
 use App\Models\Customer;
@@ -97,6 +98,15 @@ class CouponBatchTest extends TestCase
         $stored = DB::table('coupons')->where('coupon_number', $first['numero'])->value('coupon_token');
         $this->assertTrue(CouponToken::matches($stored, $first['token']));
         $this->assertFalse(CouponToken::matches($stored, 'otro'));
+
+        // Además se conserva cifrado (APP_KEY) para volver a dibujar el QR: nunca en claro en la base
+        $sealed = DB::table('coupons')->where('coupon_number', $first['numero'])->value('coupon_token_enc');
+        $this->assertNotNull($sealed);
+        $this->assertStringNotContainsString($first['token'], $sealed);
+        $this->assertSame($first['token'], CouponToken::reveal($sealed));
+        $coupon = Coupon::where('coupon_number', $first['numero'])->first();
+        $this->assertSame($first['token'], $coupon->plainToken());
+        $this->assertArrayNotHasKey('coupon_token_enc', $coupon->toArray());
         $this->assertNotNull($batch->export_expires_at);
         $this->assertDatabaseHas('coupon_audit_logs', ['action' => 'batch_generate', 'batch_id' => $batch->id]);
     }
@@ -309,6 +319,7 @@ class CouponBatchTest extends TestCase
         $stored = DB::table('coupons')->where('coupon_number', 'L1')->value('coupon_token');
         $this->assertStringStartsWith('h1:', $stored);
         $this->assertTrue(CouponToken::matches($stored, 'plain-token'));
+        $this->assertSame('plain-token', Coupon::where('coupon_number', 'L1')->first()->plainToken()); // se conserva cifrado
         $this->artisan('coupons:hash-tokens', ['--force' => true])->expectsOutput('No hay tokens en claro.')->assertSuccessful();
     }
 

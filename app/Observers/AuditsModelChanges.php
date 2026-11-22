@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AuditsModelChanges
 {
-    public const SENSITIVE = ['password', 'pin_sha384', 'pin4', 'pin4_enc', 'remember_token', 'coupon_token', 'totp_secret', 'totp_recovery_codes'];
+    public const SENSITIVE = ['password', 'pin_sha384', 'pin4', 'pin4_enc', 'remember_token', 'coupon_token', 'coupon_token_enc', 'totp_secret', 'totp_recovery_codes'];
 
     /** Cambios operacionales que generan ruido (se actualizan por sync, no por un admin). */
     public const NOISY = ['last_sync_at'];

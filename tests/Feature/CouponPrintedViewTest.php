@@ -53,9 +53,17 @@ class CouponPrintedViewTest extends TestCase
         $res = $this->getJson(route('admin.coupons.printed', ['qr', $legacy]))->assertOk()->assertJsonPath('kind', 'qr')->assertJsonPath('note', null);
         $this->assertStringContainsString('<svg', $res->json('svg'));
 
-        DB::table('coupons')->where('coupon_id', $legacy)->update(['coupon_token' => CouponToken::hash('abc')]);
+        // Cupón nuevo: hash para validar + token cifrado para dibujar; el QR lleva exactamente el contenido impreso
+        DB::table('coupons')->where('coupon_id', $legacy)->update(['coupon_token' => CouponToken::hash('abc'), 'coupon_token_enc' => CouponToken::seal('abc')]);
+        $this->getJson(route('admin.coupons.printed', ['qr', $legacy]))->assertOk()->assertJsonPath('note', null)
+            ->assertJsonPath('svg', fn ($svg) => str_contains((string) $svg, '<svg'));
+
+        // Anterior a guardar el token cifrado (solo hash), o con otra APP_KEY: no se puede dibujar y se explica
+        DB::table('coupons')->where('coupon_id', $legacy)->update(['coupon_token_enc' => null]);
         $this->getJson(route('admin.coupons.printed', ['qr', $legacy]))->assertOk()->assertJsonPath('svg', null)
-            ->assertJsonPath('note', fn ($n) => str_contains($n, 'no se guarda en claro'));
+            ->assertJsonPath('note', fn ($n) => str_contains($n, 'antes de que el token se guardara cifrado'));
+        DB::table('coupons')->where('coupon_id', $legacy)->update(['coupon_token_enc' => 'basura-que-no-descifra']);
+        $this->getJson(route('admin.coupons.printed', ['qr', $legacy]))->assertOk()->assertJsonPath('svg', null);
     }
 
     public function test_without_the_permission_there_is_no_button_and_no_code(): void
