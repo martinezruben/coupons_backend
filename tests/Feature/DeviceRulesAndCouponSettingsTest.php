@@ -127,4 +127,32 @@ class DeviceRulesAndCouponSettingsTest extends TestCase
         $this->put(route('admin.system-settings.update'), $base + ['coupon' => ['alerts__business_hours' => 'de 7 a 22', 'max_amount' => '-1']])
             ->assertSessionHasErrors(['coupon.alerts__business_hours', 'coupon.max_amount']);
     }
+
+    public function test_login_requires_a_registered_device_and_a_user_of_its_location(): void
+    {
+        $home = Location::factory()->create(['is_active' => true]);
+        $other = Location::factory()->create(['is_active' => true]);
+        User::factory()->create(['username' => 'caja@example.com', 'password' => 'Correct-Horse-9!', 'role' => 'CASHIER', 'location_id' => $home->id]);
+        User::factory()->create(['username' => 'jefe@example.com', 'password' => 'Correct-Horse-9!', 'role' => 'ADMIN', 'location_id' => $other->id]);
+        $login = fn (string $user, ?Device $device) => $this->postJson('/api/login', ['username' => $user, 'password' => 'Correct-Horse-9!'], $device ? ['Device-Fingerprint' => $device->device_fingerprint] : []);
+
+        $login('caja@example.com', null)->assertStatus(403)->assertJsonPath('code', 'device_not_authorized');
+        $login('caja@example.com', $this->device($other))->assertStatus(403)->assertJsonPath('code', 'user_wrong_location');
+        $login('caja@example.com', $this->device($home))->assertOk()->assertJsonStructure(['token', 'dispensers', 'location']);
+        $login('jefe@example.com', $this->device($home))->assertOk(); // un ADMIN entra en cualquier localidad
+
+        // Una clave incorrecta no revela nada del dispositivo: sigue siendo el mismo 401
+        $this->postJson('/api/login', ['username' => 'caja@example.com', 'password' => 'mal'])->assertStatus(401)->assertJsonPath('code', 'invalid_credentials');
+    }
+
+    public function test_transaction_returns_the_sale_data_for_the_ticket(): void
+    {
+        $home = Location::factory()->create(['is_active' => true, 'name' => 'Zona 1']);
+        $this->user('CASHIER', $home);
+        $this->coupon();
+
+        $this->pay($this->device($home))->assertOk()
+            ->assertJsonPath('amount', '10.00')->assertJsonPath('location_name', 'Zona 1')->assertJsonPath('location_id', $home->id)
+            ->assertJsonStructure(['transaction_id', 'date', 'created_at']);
+    }
 }
