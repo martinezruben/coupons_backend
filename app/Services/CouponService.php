@@ -336,6 +336,7 @@ class CouponService
                 'device_id' => $tx->device_id,
                 'location_id' => $tx->location_id,
                 'location_source' => $tx->location_source,
+                'dispenser' => $tx->dispenser,
                 'legacy_device_id' => $tx->legacy_device_id,
                 'legacy_site_id' => $tx->legacy_site_id,
                 'coupon_type' => $tx->coupon_type,
