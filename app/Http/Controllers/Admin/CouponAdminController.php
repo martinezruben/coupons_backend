@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BarcodeCoupon;
 use App\Models\Coupon;
 use App\Models\CouponTransaction;
+use App\Services\CouponReplacementService;
 use App\Services\CouponService;
 use App\Support\AdminRbac;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,29 @@ class CouponAdminController extends Controller
 
         return $this->run(fn () => $this->service($type)->restore($number, (string) $data['balance'], $data['reason'], $request->user('admin'), $request->ip()),
             $screen, config('coupons.restore_requires_approval') ? 'Solicitud de ajuste creada: otro administrador debe aprobarla en Cupones → Ajustes de saldo.' : 'Saldo ajustado.');
+    }
+
+    /** Cupón perdido: pide trasladar su saldo a un cupón nuevo (y anular el viejo). Lo aprueba otro administrador. */
+    public function replace(Request $request, string $type, int $id): RedirectResponse
+    {
+        $screen = $this->screenFor($type);
+        $this->authorizeAction($screen, 'replace');
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:255']], [], ['reason' => 'motivo']);
+
+        $model = $type === 'qr' ? Coupon::class : BarcodeCoupon::class;
+        abort_unless($model::query()->visibleTo($request->user('admin'))->where('coupon_id', $id)->exists(), 404);
+
+        try {
+            $rep = CouponReplacementService::request($type === 'qr' ? 'QRCODE' : 'CODBAR', $id, $data['reason'], $request->user('admin'), $request->ip());
+        } catch (CouponException $e) {
+            return back()->withErrors(['coupon' => $e->getMessage()]);
+        }
+
+        if ($rep->status === 'APPROVED') {
+            return redirect()->route('admin.coupons.show', [$type, $rep->new_coupon_id])->with('status', "Cupón reemplazado. Este es el nuevo cupón ({$rep->new_coupon_number}); el anterior quedó anulado.");
+        }
+
+        return back()->with('status', 'Solicitud de reemplazo creada: otro administrador debe aprobarla en Cupones → Reemplazos de cupón.');
     }
 
     public function topUp(Request $request, string $type, int $id): RedirectResponse

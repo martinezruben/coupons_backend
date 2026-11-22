@@ -43,6 +43,7 @@ final class CouponSettings
             'self_reverse_allowed' => ['Reversas y ajustes', 'bool', 'Permitir revertir un cobro propio', 'Apagado: quien hizo el cobro no puede revertirlo.'],
             'reverse_window_hours' => ['Reversas y ajustes', 'int', 'Ventana para revertir (horas)', 'Pasado este plazo solo un ADMIN revierte. 0 = sin plazo.'],
             'restore_requires_approval' => ['Reversas y ajustes', 'bool', 'Los ajustes de saldo requieren aprobación', 'Otro administrador aprueba en Cupones → Ajustes de saldo.'],
+            'replace_requires_approval' => ['Reversas y ajustes', 'bool', 'El reemplazo de un cupón perdido requiere aprobación', 'Otro administrador aprueba en Cupones → Reemplazos de cupón. Apagado, se aplica al pedirlo.'],
             'separation_of_duties' => ['Reversas y ajustes', 'bool', 'Quien genera un lote no lo asigna ni lo activa', ''],
             'export_ttl_hours' => ['Reversas y ajustes', 'int', 'Horas de vida del archivo CSV de un lote', 'Se borra tras su primera descarga o al pasar este plazo.'],
             'alerts.enabled' => ['Alertas', 'bool', 'Alertas de seguridad activas', ''],

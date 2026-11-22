@@ -67,6 +67,9 @@ return [
     // Fijar el saldo crea una solicitud que debe aprobar otro administrador.
     'restore_requires_approval' => (bool) env('COUPONS_RESTORE_REQUIRES_APPROVAL', true),
 
+    // Reemplazar un cupón perdido crea una solicitud que debe aprobar otro administrador.
+    'replace_requires_approval' => (bool) env('COUPONS_REPLACE_REQUIRES_APPROVAL', true),
+
     // Alertas de seguridad.
     'alerts' => [
         'enabled' => (bool) env('COUPONS_ALERTS_ENABLED', true),
