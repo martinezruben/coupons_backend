@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\CouponException;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnsureCouponDevice;
 use App\Http\Requests\BalanceRequest;
 use App\Http\Requests\RedeemRequest;
 use App\Http\Requests\RestoreRequest;
@@ -75,9 +76,12 @@ abstract class BaseCouponController extends Controller
         return response()->json($result, ($result['status'] ?? null) === 'pending_approval' ? 202 : 200);
     }
 
-    /** Dispositivo de la petición (ver DeviceBinding): valida el dispositivo y que el usuario sea de su localidad. */
+    /** Terminal de la petición: lo deja resuelto el middleware `coupon.device` (ver DeviceBinding). */
     protected function resolveDevice(Request $request): ?Device
     {
+        if ($request->attributes->has(EnsureCouponDevice::ATTRIBUTE)) {
+            return $request->attributes->get(EnsureCouponDevice::ATTRIBUTE);
+        }
         $user = $request->user();
 
         return DeviceBinding::resolve($request, $user instanceof User ? $user : null);

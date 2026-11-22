@@ -13,6 +13,11 @@ return [
     // dispositivo registrado, habilitado y con licencia activa, y el usuario debe pertenecer a su localidad.
     'require_device_binding' => (bool) env('COUPONS_REQUIRE_DEVICE_BINDING', true),
 
+    // Vínculo real con el terminal: si es true, toda petición de cupones debe traer `Device-Token` (el token privado del
+    // terminal, no copiable como la huella) y la sesión del usuario debe haberse iniciado en ese mismo terminal.
+    // Actívalo cuando todas las tablets tengan la app que lo envía (ver versión mínima).
+    'require_device_token' => (bool) env('COUPONS_REQUIRE_DEVICE_TOKEN', false),
+
     // Si es true, un cobro desde una localidad con surtidores debe indicar `dispenser` (1..N).
     'require_dispenser' => (bool) env('COUPONS_REQUIRE_DISPENSER', false),
 

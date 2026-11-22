@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnforceMinAppVersion;
 use App\Http\Middleware\EnsureAdminActive;
+use App\Http\Middleware\EnsureCouponDevice;
 use App\Http\Middleware\EnsureCouponUser;
 use App\Http\Middleware\EnsureDeviceOperational;
 use App\Http\Middleware\EnsureIdempotency;
@@ -49,6 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'device.operational' => EnsureDeviceOperational::class,
             'admin.active' => EnsureAdminActive::class,
             'coupon.user' => EnsureCouponUser::class,
+            'coupon.device' => EnsureCouponDevice::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'idempotent' => EnsureIdempotency::class,
