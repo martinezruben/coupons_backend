@@ -24,29 +24,29 @@ Route::middleware(['app.version', 'auth:sanctum', 'coupon.user', 'throttle:coupo
 
     // QR
     Route::get('/balance', [CouponsController::class, 'balance'])
-        ->name('balance')->middleware(['abilities:coupon:read', 'throttle:coupon-lookup']);
+        ->name('balance')->middleware(['coupon.device', 'abilities:coupon:read', 'throttle:coupon-lookup']);
     Route::post('/transaction', [CouponsController::class, 'transaction'])
-        ->middleware(['abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
+        ->middleware(['coupon.device', 'abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
 
     // Código de barras
     Route::get('/balancecb', [CouponsCodbarController::class, 'balance'])
-        ->name('balancecb')->middleware(['abilities:coupon:read', 'throttle:coupon-lookup']);
+        ->name('balancecb')->middleware(['coupon.device', 'abilities:coupon:read', 'throttle:coupon-lookup']);
     Route::post('/transactioncb', [CouponsCodbarController::class, 'transaction'])
-        ->middleware(['abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
+        ->middleware(['coupon.device', 'abilities:coupon:redeem', 'throttle:coupon-redeem', 'idempotent']);
 
     // Recargas (TOP-UP) sujetas a las reglas de topup_rules (MANAGER / ADMIN)
     Route::post('/topup', [CouponsController::class, 'topUp'])
-        ->name('topup')->middleware(['abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
+        ->name('topup')->middleware(['coupon.device', 'abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
     Route::post('/topupcb', [CouponsCodbarController::class, 'topUp'])
-        ->name('topupcb')->middleware(['abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
+        ->name('topupcb')->middleware(['coupon.device', 'abilities:coupon:topup', 'throttle:coupon-redeem', 'idempotent']);
 
     // Reversa auditada (MANAGER / ADMIN)
     Route::post('/transactions/{transaction}/reverse', [CouponTransactionsController::class, 'reverse'])
-        ->middleware(['abilities:coupon:reverse', 'throttle:coupon-restricted']);
+        ->middleware(['coupon.device', 'abilities:coupon:reverse', 'throttle:coupon-restricted']);
 
     // Fijar saldo manualmente (solo ADMIN, con motivo y auditoría)
     Route::post('/restore', [CouponsController::class, 'restore'])
-        ->middleware(['abilities:coupon:restore', 'throttle:coupon-restricted']);
+        ->middleware(['coupon.device', 'abilities:coupon:restore', 'throttle:coupon-restricted']);
     Route::post('/restorecb', [CouponsCodbarController::class, 'restore'])
-        ->middleware(['abilities:coupon:restore', 'throttle:coupon-restricted']);
+        ->middleware(['coupon.device', 'abilities:coupon:restore', 'throttle:coupon-restricted']);
 });

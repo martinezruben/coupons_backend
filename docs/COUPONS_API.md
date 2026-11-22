@@ -221,3 +221,14 @@ Reglas de las operaciones restringidas: quien hizo un cobro no lo revierte; pasa
 - **`POST /login`** (con `COUPONS_REQUIRE_DEVICE_BINDING` activo) exige `Device-Fingerprint` de una terminal registrada, habilitada y con licencia, y que el usuario pertenezca a su localidad (su localidad principal o una de su lista; un ADMIN entra en cualquiera). Se evalúa solo con la clave ya verificada, así que una clave incorrecta sigue dando el 401 genérico. Errores: 403 `device_not_authorized` o 403 `user_wrong_location`.
 - **`GET /auth/me`** devuelve `location_id`, `location_name`, `dispensers`, `license_valid_to`; una terminal bloqueada recibe 403 con `code: DEVICE_BLOCKED`.
 - **`POST /transaction` y `/transactioncb`** devuelven además `amount` (monto de la venta), `created_at`, `location_id` y `location_name` (de la terminal), para el ticket y la conciliación.
+
+## Vínculo real con el terminal (Device-Token)
+
+La huella (`Device-Fingerprint`) solo **identifica** al terminal: cualquiera que la conozca puede copiarla. Lo que **prueba** que la petición sale del terminal registrado es el `Device-Token`, el token privado que el servidor entrega al terminal al emparejarlo (`/auth/register-device`) o renovarlo con su licencia (`/auth/login`) y que la app guarda cifrado.
+
+- **Cabeceras:** toda petición de cupones (`/balance*`, `/transaction*`, `/topup*`, reversa y fijar saldo) lleva `Device-Fingerprint` y `Device-Token`.
+- **Siempre estricto:** si llega un `Device-Token`, debe ser el de un terminal y coincidir con la huella; si no, 403 `device_token_invalid` y una alerta de severidad alta (posible clonación). Un token de persona no vale como token de terminal.
+- **Sesión atada al terminal:** al iniciar sesión el token del usuario recibe la habilidad `device:<id>` del terminal. Con el vínculo activo, usarlo desde otro equipo da 403 `session_device_mismatch`. La sesión va atada al terminal, no al token: renovar el token del terminal no la cierra.
+- **Revocación:** bloquear un terminal, re-emparejarlo o renovarlo con su licencia invalida su token anterior.
+- **Interruptor** «Exigir el token privado del terminal» (Parámetros del sistema → Cupones, `COUPONS_REQUIRE_DEVICE_TOKEN`; apagado por defecto): apagado, una petición sin `Device-Token` se acepta por huella (modo de transición); encendido, es 403 `device_token_required` y las sesiones anteriores sin `device:<id>` se rechazan (hay que iniciar sesión otra vez).
+- **Cómo activarlo sin cortar a nadie:** publicar la app que envía `Device-Token`, fijar esa versión como mínima (426 a las anteriores) y entonces encender el interruptor.
