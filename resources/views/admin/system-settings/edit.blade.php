@@ -354,6 +354,56 @@
             </section>
 
             <section>
+                <h2 class="mb-2 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">App de las tablets</h2>
+                <div class="space-y-4 rounded-lg border border-slate-100 bg-white p-3 sm:p-4">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-700">Clave de administración de la app</h3>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Una sola clave para todas las tablets: permite <strong>cambiar la URL del API</strong> y <strong>salir del modo kiosco</strong>.
+                            Solo se guarda su hash; la clave en claro no se puede volver a ver. Las tablets reciben el cambio al iniciar sesión.
+                            Sin clave configurada nadie puede salir del kiosco en las tablets de producción.
+                        </p>
+                        <p class="mt-2 text-xs font-semibold {{ $params->app_unlock_hash ? 'text-green-700' : 'text-amber-700' }}">
+                            {{ $params->app_unlock_hash ? 'Configurada el '.$params->app_unlock_set_at?->format('d/m/Y H:i') : 'Sin configurar' }}
+                        </p>
+                        @if(\App\Support\AdminRbac::isSuperAdmin(auth('admin')->user()))
+                            <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                                <div class="flex flex-col gap-0.5">
+                                    <label for="app_unlock_key" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">{{ $params->app_unlock_hash ? 'Nueva clave' : 'Clave' }} (mínimo {{ \App\Support\AppUnlockKey::MIN_LENGTH }} caracteres)</label>
+                                    <input id="app_unlock_key" name="app_unlock_key" type="password" autocomplete="new-password" minlength="{{ \App\Support\AppUnlockKey::MIN_LENGTH }}" class="snow-input text-xs" placeholder="Déjalo vacío para no cambiarla">
+                                    @error('app_unlock_key')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                                <div class="flex flex-col gap-0.5">
+                                    <label for="app_unlock_key_confirmation" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">Repite la clave</label>
+                                    <input id="app_unlock_key_confirmation" name="app_unlock_key_confirmation" type="password" autocomplete="new-password" class="snow-input text-xs">
+                                </div>
+                            </div>
+                            <p class="mt-1 text-2xs text-slate-500">Usa una clave larga y distinta a las demás: el hash viaja a las tablets y quien tenga una rooteada podría intentar adivinarla.</p>
+                        @else
+                            <p class="mt-2 text-xs text-slate-500">Solo un super-administrador puede cambiarla.</p>
+                        @endif
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-3">
+                        <h3 class="text-xs font-bold text-slate-700">Recibo impreso</h3>
+                        <p class="mt-1 text-xs text-slate-500">La empresa y el saludo son iguales en todas las localidades; el teléfono y la dirección se editan en cada localidad.</p>
+                        <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                            <div class="flex flex-col gap-0.5">
+                                <label for="receipt_company_name" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">Nombre de la empresa</label>
+                                <input id="receipt_company_name" name="receipt_company_name" type="text" maxlength="120" value="{{ old('receipt_company_name', $params->receipt_company_name) }}" class="snow-input text-xs" placeholder="{{ config('app.name') }}">
+                                @error('receipt_company_name')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="flex flex-col gap-0.5">
+                                <label for="receipt_footer" class="text-2xs font-bold uppercase tracking-[0.04em] text-slate-500">Saludo al pie</label>
+                                <input id="receipt_footer" name="receipt_footer" type="text" maxlength="255" value="{{ old('receipt_footer', $params->receipt_footer) }}" class="snow-input text-xs" placeholder="¡Gracias por su compra!">
+                                @error('receipt_footer')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
                 <h2 class="mb-2 text-xs font-bold uppercase tracking-[0.04em] text-slate-500">Cupones: cobro, límites y alertas</h2>
                 <p class="mb-3 text-xs text-slate-500">Estos valores reemplazan a las variables COUPONS_* del servidor y se aplican de inmediato. Los cambios quedan en la auditoría.</p>
                 <div class="space-y-4">
