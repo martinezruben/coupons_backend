@@ -293,3 +293,14 @@ Respuesta: `{scope, count, sales: [{sale_id, transaction_id, transaction_ids[], 
 - **`balance`** es el saldo del cupón justo después de esa venta.
 - Los **números de cupón salen enmascarados** (últimos 4 dígitos): el de barras es un secreto al portador. Nunca se devuelve un token.
 - **Recuperación:** si la app no recibió la respuesta de un cobro y el cajero no reintentó, `GET /api/sales/recent?key=<Idempotency-Key>` devuelve esa venta (o `count: 0` si el servidor no llegó a cobrarla).
+
+## Reporte «Transacciones por localidad» (panel)
+
+**Reportes → Transacciones por localidad** (`coupon_location_transactions.view / .export`; sin asignar a ningún rol, solo super-admin). Muestra todo lo consumido (cobros, reversas y recargas) en la **localidad elegida en el selector de la barra superior**, o en todas las del permiso del administrador si no eligió ninguna; nunca fuera de su alcance por localidad ni por clientes.
+
+- **Periodo:** hoy (por defecto), ayer, últimos 7 y 30 días, este mes o personalizado (desde/hasta con hora).
+- **Filtros:** estado (cobros vigentes, cobros revertidos, reversas, recargas), tipo de cupón, turno, cajero, dispositivo, surtidor (o «sin surtidor»), cliente y monto desde/hasta.
+- **Buscador:** n.º de cupón, n.º de transacción, referencia de la venta o cajero.
+- **Totales de lo filtrado** (no solo de la página): movimientos, cobrado, reversado, neto y recargado. Columnas ordenables (fecha, n.º, monto, cupón), 25/50/100 por página.
+- **Exportar CSV:** descarga todo lo filtrado, sin paginar (hasta 200 000 filas), con las mismas columnas más saldo después, turno y referencia de la venta; las celdas que parecen fórmulas se neutralizan y cada exportación queda en la auditoría con los filtros.
+- Los **números de cupón de barras salen enmascarados** (últimos 4 dígitos) en pantalla y CSV, salvo con el permiso «Exportar números completos» (`coupon_barcodes.export_full`).

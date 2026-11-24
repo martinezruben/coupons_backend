@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\DeviceRegistrationController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
 use App\Http\Controllers\Admin\LocationPairingTokenController;
 use App\Http\Controllers\Admin\LocationSwitchController;
+use App\Http\Controllers\Admin\LocationTransactionsReportController;
 use App\Http\Controllers\Admin\MailTestController;
 use App\Http\Controllers\Admin\MenuEditorController;
 use App\Http\Controllers\Admin\RoleManagementController;
@@ -141,6 +142,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/shifts/location/{location}', [ShiftController::class, 'location'])->whereUuid('location')->name('shifts.location');
         Route::post('/shifts/location/{location}/close', [ShiftController::class, 'close'])->whereUuid('location')->name('shifts.close');
         Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->whereNumber('shift')->name('shifts.show');
+
+        // Transacciones por localidad (reporte con filtros, buscador, paginación y exportación)
+        Route::get('/reports/location-transactions', [LocationTransactionsReportController::class, 'index'])->name('reports.location-transactions');
 
         // Reportes de canjes
         Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');
