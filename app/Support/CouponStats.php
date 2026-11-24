@@ -44,6 +44,7 @@ final class CouponStats
     {
         return DB::table('coupon_transactions')
             ->when($admin?->allowedCustomerIds() !== null, fn ($q) => $q->whereIn('customer_id', $admin->allowedCustomerIds()))
+            ->when(AdminLocationScope::effective($admin) !== null, fn ($q) => $q->whereIn('location_id', AdminLocationScope::effective($admin)))
             ->when($customerId, fn ($q) => $q->where('customer_id', $customerId));
     }
 

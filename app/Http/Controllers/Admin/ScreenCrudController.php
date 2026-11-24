@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\AdminUserGuard;
 use App\Support\AdminGridCell;
 use App\Support\AdminGridQuery;
+use App\Support\AdminLocationScope;
 use App\Support\AdminRbac;
 use App\Support\LocationMapSyncPins;
 use App\Support\PasswordPolicy;
@@ -123,10 +124,10 @@ class ScreenCrudController extends Controller
         $active = data_get($request->query('filter'), 'is_active', '');
 
         // Estado de todas las localidades (para los contadores y el filtro por sincronización)
-        $pins = collect(LocationMapSyncPins::build(Location::query()->withCount(['devices as active_devices_count' => fn ($d) => $d->where('is_enabled', true)])
+        $pins = collect(LocationMapSyncPins::build(Location::query()->visibleToLocations(auth('admin')->user())->withCount(['devices as active_devices_count' => fn ($d) => $d->where('is_enabled', true)])
             ->get(['id', 'name', 'latitude', 'longitude', 'is_active', 'last_sync_at', 'contingency_started_at']), $canEdit))->keyBy('id');
 
-        $query = Location::query()
+        $query = Location::query()->visibleToLocations(auth('admin')->user())
             ->when(in_array((string) $active, ['0', '1'], true), fn ($w) => $w->where('is_active', (bool) $active))
             ->when(mb_strlen($q) >= 3, fn ($w) => $w->where(fn ($x) => $x->where('name', 'like', '%'.addcslashes($q, '%_\\').'%')->orWhere('address', 'like', '%'.addcslashes($q, '%_\\').'%')))
             ->when($period, fn ($w) => $w->whereIn('id', $pins->filter(fn ($p) => $p['syncInPeriod'][$period] ?? false)->keys()))
@@ -175,6 +176,9 @@ class ScreenCrudController extends Controller
         abort_if(! empty($cfg['disable_create']), 404);
         $data = $this->validatedData($request, $cfg, false, $screen);
 
+        // Crear localidades nuevas es de quien trabaja con todas
+        abort_if($screen === 'locations' && AdminLocationScope::allowed(auth('admin')->user()) !== null, 403);
+
         $model = $cfg['model'];
         $created = $model::create($data);
         if ($created instanceof AdminUser) {
@@ -184,6 +188,7 @@ class ScreenCrudController extends Controller
                 AdminAuditLog::record('updated', 'AdminUser', (string) $created->getKey(), ['roles' => ['', implode(', ', $names)]]);
             }
             $this->syncCustomerScope($request, $created);
+            $this->syncLocationScope($request, $created);
         }
         if ($screen === 'android-users' && $created instanceof User) {
             $this->syncAndroidUserLocationPivot($created, $data['location_id'] ?? null);
@@ -287,6 +292,7 @@ class ScreenCrudController extends Controller
         $item->update($data);
         $item->syncRoles($newRoles);
         $this->syncCustomerScope($request, $item);
+        $this->syncLocationScope($request, $item);
 
         sort($newRoles);
         if ($oldRoles !== $newRoles) {
@@ -468,6 +474,10 @@ class ScreenCrudController extends Controller
             $rules['customer_scope'] = ['sometimes', Rule::in(['all', 'selected'])];
             $rules['customer_ids'] = ['nullable', 'array', 'required_if:customer_scope,selected'];
             $rules['customer_ids.*'] = ['uuid', Rule::exists('customers', 'id')->whereNull('deleted_at')];
+            // Alcance por localidad: todas, o solo las seleccionadas (al menos una)
+            $rules['location_scope'] = ['sometimes', Rule::in(['all', 'selected'])];
+            $rules['location_ids'] = ['nullable', 'array', 'required_if:location_scope,selected'];
+            $rules['location_ids.*'] = ['uuid', Rule::exists('locations', 'id')->whereNull('deleted_at')];
         }
 
         if ($screen === 'customers') {
@@ -518,7 +528,7 @@ class ScreenCrudController extends Controller
         }
 
         // Los roles se sincronizan aparte (no son columnas de admin_users)
-        unset($data['role_names'], $data['customer_ids']);
+        unset($data['role_names'], $data['customer_ids'], $data['location_ids']);
 
         if (isset($data['password']) && $data['password'] !== '') {
             if ($screen === 'admin-users') {
@@ -564,6 +574,11 @@ class ScreenCrudController extends Controller
             $data['guard_name'] = 'admin';
         }
 
+        // Un administrador con alcance por localidad solo puede asignar registros a las suyas
+        if (! empty($data['location_id']) && ! AdminLocationScope::permits(auth('admin')->user(), (string) $data['location_id'])) {
+            throw ValidationException::withMessages(['location_id' => 'Esa localidad está fuera de tu alcance.']);
+        }
+
         return $data;
     }
 
@@ -584,7 +599,30 @@ class ScreenCrudController extends Controller
     /** Alcance por cliente: un administrador restringido solo llega a los registros de sus clientes. */
     private function scoped($query, string $model)
     {
-        return method_exists($model, 'scopeVisibleTo') ? $query->visibleTo(auth('admin')->user()) : $query;
+        $admin = auth('admin')->user();
+        if (method_exists($model, 'scopeVisibleTo')) {
+            $query->visibleTo($admin);
+        }
+        if (method_exists($model, 'scopeVisibleToLocations')) {
+            $query->visibleToLocations($admin);
+        }
+
+        return $query;
+    }
+
+    /** Guarda el alcance por localidad de un administrador y deja rastro del cambio en la auditoría. */
+    private function syncLocationScope(Request $request, AdminUser $admin): void
+    {
+        $before = $admin->locations()->pluck('locations.id')->sort()->values()->all();
+        $ids = $admin->location_scope === 'selected' ? array_values(array_unique($request->input('location_ids', []))) : [];
+        $admin->locations()->sync($ids);
+        sort($ids);
+
+        if ($before !== $ids || $admin->wasChanged('location_scope')) {
+            AdminAuditLog::record('updated', 'AdminUser', (string) $admin->getKey(), [
+                'location_scope' => [count($before).' localidades', $admin->location_scope === 'selected' ? count($ids).' localidades seleccionadas' : 'todas'],
+            ]);
+        }
     }
 
     /** Guarda el alcance por cliente de un administrador y deja rastro del cambio en la auditoría. */

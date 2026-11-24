@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\HasUuidPrimaryKey;
+use App\Support\AdminLocationScope;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -130,6 +131,14 @@ class User extends Authenticatable
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /** Alcance por localidad (usuarios de la app): los de su localidad principal o de su lista, dentro de la selección vigente. */
+    public function scopeVisibleToLocations(Builder $query, ?AdminUser $admin): Builder
+    {
+        $ids = AdminLocationScope::effective($admin);
+
+        return $ids === null ? $query : $query->where(fn ($w) => $w->whereIn('users.location_id', $ids)->orWhereHas('locations', fn ($l) => $l->whereIn('locations.id', $ids)));
     }
 
     public function locations()

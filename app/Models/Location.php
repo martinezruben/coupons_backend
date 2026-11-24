@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToLocations;
 use App\Models\Traits\HasUuidPrimaryKey;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Location extends Model
 {
-    use HasFactory, HasUuidPrimaryKey, SoftDeletes;
+    use HasFactory, HasUuidPrimaryKey, ScopedToLocations, SoftDeletes;
+
+    protected string $locationColumn = 'id';
 
     protected $fillable = [
         'name',

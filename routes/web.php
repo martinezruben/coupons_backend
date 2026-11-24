@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\DeviceAccessController;
 use App\Http\Controllers\Admin\DeviceRegistrationController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
 use App\Http\Controllers\Admin\LocationPairingTokenController;
+use App\Http\Controllers\Admin\LocationSwitchController;
 use App\Http\Controllers\Admin\MailTestController;
 use App\Http\Controllers\Admin\MenuEditorController;
 use App\Http\Controllers\Admin\RoleManagementController;
@@ -131,6 +132,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/adjustments/{id}/reject', [CouponAdjustmentController::class, 'reject'])->whereNumber('id')->name('adjustments.reject');
         Route::get('/security-alerts', [SecurityAlertController::class, 'index'])->name('security-alerts.index');
         Route::post('/security-alerts/{id}/resolve', [SecurityAlertController::class, 'resolve'])->whereNumber('id')->name('security-alerts.resolve');
+
+        // Localidad con la que trabaja el administrador (selector de la barra superior)
+        Route::post('/location', [LocationSwitchController::class, 'update'])->name('location.switch');
 
         // Cierre de caja por localidad
         Route::get('/cash-close', [CashCloseController::class, 'index'])->name('cash-close.index');

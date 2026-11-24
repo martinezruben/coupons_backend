@@ -32,7 +32,7 @@ final class LocationMapSyncPins
     public static function forRequest(Request $request, bool $canEdit): array
     {
         $cfg = config('admin_screens.locations');
-        $query = Location::query();
+        $query = Location::query()->visibleToLocations(auth('admin')->user());
         AdminGridQuery::apply($query, $request, 'locations', $cfg);
         $query->withCount(['devices as active_devices_count' => fn ($q) => $q->where('is_enabled', true)]);
 

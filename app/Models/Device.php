@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToLocations;
 use App\Models\Traits\HasUuidPrimaryKey;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -12,7 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Device extends Model implements AuthenticatableContract
 {
-    use AuthenticatableTrait, HasApiTokens, HasFactory, HasUuidPrimaryKey, SoftDeletes;
+    use AuthenticatableTrait, HasApiTokens, HasFactory, HasUuidPrimaryKey, ScopedToLocations, SoftDeletes;
 
     protected $fillable = ['location_id', 'device_fingerprint', 'app_version', 'app_version_seen_at', 'name', 'is_enabled', 'disabled_reason', 'disabled_at', 'disabled_by', 'last_sync_at', 'last_transaction_at', 'registered_at'];
 

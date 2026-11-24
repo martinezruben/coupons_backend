@@ -5,12 +5,21 @@ namespace Tests\Feature;
 use App\Models\AdminUser;
 use App\Models\Location;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class LocationsListTest extends TestCase
 {
     use RefreshDatabase;
+
+    /** Solo el contenido de la página: la barra superior lista todas las localidades en su selector. */
+    private function main(TestResponse $res): string
+    {
+        $html = $res->assertOk()->getContent();
+
+        return substr($html, (int) strpos($html, '<main'), (int) strpos($html, '</main>') - (int) strpos($html, '<main'));
+    }
 
     private function viewer(): AdminUser
     {
@@ -28,9 +37,16 @@ class LocationsListTest extends TestCase
         }
         $this->actingAs($this->viewer(), 'admin');
 
-        $first = $this->get(route('admin.screens.index', 'locations'))->assertOk()->assertSee('Sede 01')->assertSee('Sede 10')->assertDontSee('Sede 11')->assertSee('25 localidades')->getContent();
-        $this->assertStringContainsString('Mostrando 1–10 de 25', $first);
-        $this->get(route('admin.screens.index', ['locations', 'page' => 3]))->assertOk()->assertSee('Sede 21')->assertSee('Sede 25')->assertDontSee('Sede 20')->assertSee('Mostrando 21–25 de 25');
+        $first = $this->main($this->get(route('admin.screens.index', 'locations')));
+        foreach (['Sede 01', 'Sede 10', '25 localidades', 'Mostrando 1–10 de 25'] as $t) {
+            $this->assertStringContainsString($t, $first);
+        }
+        $this->assertStringNotContainsString('Sede 11', $first);
+        $third = $this->main($this->get(route('admin.screens.index', ['locations', 'page' => 3])));
+        foreach (['Sede 21', 'Sede 25', 'Mostrando 21–25 de 25'] as $t) {
+            $this->assertStringContainsString($t, $third);
+        }
+        $this->assertStringNotContainsString('Sede 20', $third);
     }
 
     public function test_search_runs_on_the_whole_list_from_three_letters(): void
@@ -42,7 +58,10 @@ class LocationsListTest extends TestCase
         $this->actingAs($this->viewer(), 'admin');
 
         // Encuentra una localidad que está en otra página
-        $this->get(route('admin.screens.index', ['locations', 'q' => 'far']))->assertOk()->assertSee('Farmacia Norte')->assertDontSee('Sede 01')->assertSee('1 localidad');
+        $far = $this->main($this->get(route('admin.screens.index', ['locations', 'q' => 'far'])));
+        $this->assertStringContainsString('Farmacia Norte', $far);
+        $this->assertStringContainsString('1 localidad', $far);
+        $this->assertStringNotContainsString('Sede 01', $far);
         // También por dirección
         $this->get(route('admin.screens.index', ['locations', 'q' => 'libertad']))->assertOk()->assertSee('Farmacia Norte');
         // Con menos de 3 letras no filtra y avisa
@@ -61,6 +80,8 @@ class LocationsListTest extends TestCase
 
         $html = $this->get(route('admin.screens.index', 'locations'))->assertOk()->getContent();
         $this->assertStringContainsString('$el.value.length >= 3', $html);
-        $this->get(route('admin.screens.index', ['locations', 'filter' => ['is_active' => '0']]))->assertOk()->assertSee('Cerrada Dos')->assertDontSee('Activa Uno');
+        $inactive = $this->main($this->get(route('admin.screens.index', ['locations', 'filter' => ['is_active' => '0']])));
+        $this->assertStringContainsString('Cerrada Dos', $inactive);
+        $this->assertStringNotContainsString('Activa Uno', $inactive);
     }
 }

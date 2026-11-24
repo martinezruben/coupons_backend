@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Traits\HasUuidPrimaryKey;
+use App\Support\AdminLocationScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,6 +13,14 @@ class License extends Model
     use HasFactory, HasUuidPrimaryKey;
 
     protected $fillable = ['device_id', 'valid_from', 'valid_to', 'status'];
+
+    /** Alcance por localidad: las licencias de los terminales de las localidades vigentes. */
+    public function scopeVisibleToLocations(Builder $query, ?AdminUser $admin): Builder
+    {
+        $ids = AdminLocationScope::effective($admin);
+
+        return $ids === null ? $query : $query->whereHas('device', fn ($d) => $d->withTrashed()->whereIn('location_id', $ids));
+    }
 
     protected function casts(): array
     {

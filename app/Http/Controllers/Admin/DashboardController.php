@@ -106,7 +106,7 @@ class DashboardController extends Controller
             ],
             'topCustomers' => $topCustomers,
             'upcoming' => (clone $pending)->with(['batch', 'customer'])->orderBy('activate_at')->limit(5)->get(),
-            'recent' => CouponTransaction::query()->visibleTo($admin)->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            'recent' => CouponTransaction::query()->visibleTo($admin)->visibleToLocations($admin)->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
                 ->with(['user', 'location'])->latest('transaction_id')->limit(8)->get(),
         ]);
     }

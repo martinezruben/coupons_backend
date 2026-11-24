@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Concerns\StreamsCsv;
 use App\Http\Controllers\Controller;
 use App\Models\CouponBatch;
 use App\Models\Location;
+use App\Support\AdminLocationScope;
 use App\Support\AdminRbac;
 use App\Support\CouponStats;
 use Carbon\Carbon;
@@ -54,6 +55,7 @@ class CouponBatchReportController extends Controller
             DB::table('coupon_transactions as t')->join("{$table} as c", 'c.coupon_id', '=', 't.coupon_id')
                 ->where('t.coupon_type', $type)->whereIn('c.batch_id', $ids)->whereIn('t.kind', ['REDEEM', 'REVERSAL'])
                 ->when($allowed !== null, fn ($q) => $q->whereIn('t.customer_id', $allowed))
+                ->when(AdminLocationScope::effective($admin) !== null, fn ($q) => $q->whereIn('t.location_id', AdminLocationScope::effective($admin)))
                 ->selectRaw('c.batch_id, SUM(t.transaction_amount) as v')->groupBy('c.batch_id')->get()
                 ->each(function ($r) use (&$net) {
                     $net[$r->batch_id] = (float) $r->v;
@@ -70,6 +72,7 @@ class CouponBatchReportController extends Controller
             DB::table('coupon_transactions as t')->join("{$table} as c", 'c.coupon_id', '=', 't.coupon_id')
                 ->where('t.coupon_type', $type)->whereIn('c.batch_id', $ids)->whereIn('t.kind', ['REDEEM', 'REVERSAL'])
                 ->when($allowed !== null, fn ($q) => $q->whereIn('t.customer_id', $allowed))
+                ->when(AdminLocationScope::effective($admin) !== null, fn ($q) => $q->whereIn('t.location_id', AdminLocationScope::effective($admin)))
                 ->selectRaw('c.batch_id, t.location_id, SUM(t.transaction_amount) as v')->groupBy('c.batch_id', 't.location_id')->get()
                 ->each(function ($r) use (&$perLocation) {
                     $perLocation[$r->batch_id][$r->location_id ?? ''] = round((float) $r->v, 2);

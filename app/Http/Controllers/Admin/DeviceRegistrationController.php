@@ -29,7 +29,7 @@ class DeviceRegistrationController extends Controller
         $this->authorizeRegister($request);
 
         return view('admin.devices.register', [
-            'locations' => Location::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'locations' => Location::query()->visibleToLocations($request->user('admin'))->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'approvers' => $this->approvers(),
             'required' => $this->required(),
         ]);
@@ -80,7 +80,8 @@ class DeviceRegistrationController extends Controller
             AdminMfa::consume($a['admin'], $a['code']);
         }
 
-        $location = Location::query()->findOrFail($data['location_id']);
+        // Solo en las localidades que el permiso del administrador alcanza
+        $location = Location::query()->visibleToLocations($actor)->findOrFail($data['location_id']);
         $device = DB::transaction(function () use ($data, $location) {
             $device = Device::create([
                 'location_id' => $location->id,

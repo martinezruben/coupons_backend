@@ -6,6 +6,8 @@
     $admin = auth('admin')->user();
     $groups = array_values(array_filter(\App\Support\AdminNavigation::groups($admin), fn ($g) => $g['items'] !== []));
     $dashActive = request()->routeIs('admin.dashboard');
+    $locationOptions = \App\Support\AdminLocationScope::options($admin);
+    $currentLocation = \App\Support\AdminLocationScope::selected($admin);
     $appName = config('app.name', 'Coupify');
     $initials = collect(explode(' ', $admin?->name ?? '?'))->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('');
 @endphp
@@ -49,6 +51,18 @@
         </nav>
 
         <div class="ml-auto flex items-center gap-3">
+            {{-- Localidad con la que trabaja: todas las pantallas actúan sobre ella (solo si tiene más de una para elegir) --}}
+            @if($locationOptions->count() > 1)
+                <form method="POST" action="{{ route('admin.location.switch') }}" class="flex items-center gap-1.5" title="Todas las pantallas actúan sobre la localidad elegida">
+                    @csrf
+                    <x-admin.snow.icon name="map-pin" class="hidden h-4 w-4 text-slate-500 sm:block" />
+                    <label for="nav-location" class="sr-only">Localidad</label>
+                    <select id="nav-location" name="location_id" class="snow-input !h-9 !py-0 text-xs font-semibold {{ $currentLocation ? 'ring-2 ring-primary-500' : '' }}" onchange="this.form.submit()">
+                        <option value="">{{ $admin?->allowedLocationIds() === null ? 'Todas las localidades' : 'Todas mis localidades' }}</option>
+                        @foreach($locationOptions as $opt)<option value="{{ $opt->id }}" @selected($currentLocation === (string) $opt->id)>{{ $opt->name }}</option>@endforeach
+                    </select>
+                </form>
+            @endif
             {{-- Abre el buscador del panel (admin.partials.command-palette) --}}
             <button type="button" x-on:click="$dispatch('open-palette')" class="snow-btn-secondary hidden sm:inline-flex" aria-label="Buscar en el panel">
                 <x-admin.snow.icon name="magnifying-glass" class="h-5 w-5 text-slate-500" />

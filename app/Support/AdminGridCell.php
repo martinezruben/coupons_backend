@@ -71,6 +71,9 @@ class AdminGridCell
         if (method_exists($modelClass, 'scopeVisibleTo')) {
             $query->visibleTo(auth('admin')->user());
         }
+        if (method_exists($modelClass, 'scopeVisibleToLocations')) {
+            $query->visibleToLocations(auth('admin')->user());
+        }
 
         $query->orderBy($meta['attribute']);
 

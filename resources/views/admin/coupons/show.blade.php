@@ -124,6 +124,7 @@
 
     @if(session('status'))<p class="mb-3 rounded border border-green-100 bg-green-50 px-4 py-2 text-sm text-green-800">{{ session('status') }}</p>@endif
     @if($errors->has('coupon'))<p class="mb-3 rounded border border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{{ $errors->first('coupon') }}</p>@endif
+    @if($locationFiltered)<p class="mb-3 rounded border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700">Solo se muestran los movimientos de la localidad seleccionada; el cupón puede tener otros en las demás.</p>@endif
     @if($replacement['replacedBy'])
         <p class="mb-3 rounded border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Este cupón se dio por perdido y fue reemplazado por
             <a class="font-mono font-semibold underline" href="{{ route('admin.coupons.show', [$replacement['replacedBy']->routeType(), $replacement['replacedBy']->new_coupon_id]) }}">{{ $replacement['replacedBy']->new_coupon_number }}</a>: ya no se puede cobrar.</p>
