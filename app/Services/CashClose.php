@@ -3,14 +3,12 @@
 namespace App\Services;
 
 use App\Models\AdminUser;
-use App\Models\CashClosing;
 use App\Models\CouponTransaction;
-use App\Models\Location;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cierre de caja de una localidad: lo cobrado, reversado y recargado en un periodo, por cajero y por surtidor.
+ * Resumen de un periodo de una localidad (lo que entra en un turno): lo cobrado, reversado y recargado, por cajero y por surtidor. El periodo es [desde, hasta): lo que ocurre justo a la hora de corte entra en el turno siguiente.
  * Cobrado = cobros; neto = cobrado menos reversas; las recargas se muestran aparte. Una reversa cuenta en el periodo
  * en que se hizo y se atribuye al cajero del cobro original (así el neto de cada cajero cuadra con lo que vendió).
  */
@@ -24,7 +22,7 @@ class CashClose
         $t = 'coupon_transactions';
         $base = fn () => CouponTransaction::query()->visibleTo($scopeFor)->from($t)
             ->leftJoin("$t as o", 'o.transaction_id', '=', 'coupon_transactions.reversed_of')
-            ->where('coupon_transactions.location_id', $locationId)->whereBetween('coupon_transactions.created_at', [$from, $to]);
+            ->where('coupon_transactions.location_id', $locationId)->where('coupon_transactions.created_at', '>=', $from)->where('coupon_transactions.created_at', '<', $to);
 
         $redeem = "CASE WHEN coupon_transactions.kind = 'REDEEM' THEN coupon_transactions.transaction_amount ELSE 0 END";
         $reverse = "CASE WHEN coupon_transactions.kind = 'REVERSAL' THEN -coupon_transactions.transaction_amount ELSE 0 END";
@@ -75,46 +73,5 @@ class CashClose
             'cashiers' => $cashiers,
             'dispensers' => $dispensers,
         ];
-    }
-
-    /** Fin del último cierre de la localidad: el siguiente turno empieza ahí. */
-    public static function lastClosedAt(string $locationId): ?Carbon
-    {
-        $v = CashClosing::query()->where('location_id', $locationId)->max('period_to');
-
-        return $v ? Carbon::parse($v) : null;
-    }
-
-    /**
-     * Guarda el cierre. No admite periodos que se crucen con otro cierre de la misma localidad ni que terminen en el futuro.
-     *
-     * @throws \InvalidArgumentException con el motivo, para mostrarlo
-     */
-    public static function close(Location $location, Carbon $from, Carbon $to, ?string $note, AdminUser $admin): CashClosing
-    {
-        if ($to->isFuture()) {
-            throw new \InvalidArgumentException('El periodo no puede terminar en el futuro.');
-        }
-        if ($to->lte($from)) {
-            throw new \InvalidArgumentException('La hora final debe ser posterior a la inicial.');
-        }
-
-        return DB::transaction(function () use ($location, $from, $to, $note, $admin) {
-            // Bloquea la localidad para que dos cierres simultáneos no se crucen
-            Location::query()->whereKey($location->getKey())->lockForUpdate()->first();
-            $overlap = CashClosing::query()->where('location_id', $location->getKey())->where('period_from', '<', $to)->where('period_to', '>', $from)->first();
-            if ($overlap) {
-                throw new \InvalidArgumentException('Ya existe un cierre de esta localidad que cubre parte de ese periodo ('.$overlap->period_from->format('d/m/Y H:i').' a '.$overlap->period_to->format('d/m/Y H:i').').');
-            }
-
-            $s = self::summarize($location->getKey(), $from, $to);
-
-            return CashClosing::create([
-                'location_id' => $location->getKey(), 'period_from' => $from, 'period_to' => $to,
-                'redeemed' => $s['totals']['redeemed'], 'reversed' => $s['totals']['reversed'], 'net' => $s['totals']['net'], 'topups' => $s['totals']['topups'],
-                'redemptions' => $s['totals']['redemptions'], 'details' => ['cashiers' => $s['cashiers'], 'dispensers' => $s['dispensers']],
-                'note' => $note, 'closed_by_admin_id' => $admin->getKey(), 'created_at' => now(),
-            ]);
-        });
     }
 }

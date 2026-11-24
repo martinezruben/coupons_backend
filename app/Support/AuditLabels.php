@@ -12,6 +12,7 @@ class AuditLabels
         'view' => 'Consulta',
         'view_printed' => 'Vio el cupón impreso',
         'cash_close' => 'Cierre de caja',
+        'shift_close' => 'Cierre de turno',
         'submit' => 'Acción',
         'created' => 'Creación',
         'updated' => 'Edición',

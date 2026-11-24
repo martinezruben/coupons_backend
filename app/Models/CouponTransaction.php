@@ -38,6 +38,7 @@ class CouponTransaction extends Model
         'ip_address',
         'dispenser',
         'sale_ref',
+        'shift_id',
         'balance_after',
         'reversed_of',
         'kind',

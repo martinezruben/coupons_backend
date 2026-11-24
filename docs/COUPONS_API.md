@@ -239,13 +239,18 @@ En el detalle de un cupón, el botón **Ver cupón** (permiso `coupons.view_prin
 
 **Token QR cifrado:** el cobro se valida con el hash de `coupon_token`; aparte, el token se conserva cifrado con `APP_KEY` en `coupon_token_enc` (oculto en el modelo, fuera de los logs y de la auditoría) solo para volver a dibujar el QR. Se guarda al generar un lote, al importar cupones heredados y al convertir tokens en claro con `coupons:hash-tokens`. Los cupones generados antes de esta versión solo tienen el hash: su QR no se puede redibujar (el modal lo explica). **Si cambia `APP_KEY`, los tokens cifrados dejan de poder leerse** (el cobro sigue funcionando porque usa el hash); guarda la clave igual que cualquier secreto de producción. Los cupones de barras siempre se dibujan.
 
-## Cierre de caja (panel)
+## Turnos por localidad (panel)
 
-**Cupones → Cierre de caja** (`coupon_cash_close.view / .close / .export`; solo el super-admin los tiene hasta asignarlos). Elige una localidad y un turno: por defecto empieza donde terminó el último cierre de esa localidad (o a las 00:00 de hoy) y llega hasta ahora; se puede ajustar desde/hasta.
+**Cupones → Turnos** (permisos `coupon_cash_close.view / .close / .export`, los mismos de antes; solo el super-admin los tiene hasta asignarlos). Cada localidad tiene **siempre un turno abierto**; todo movimiento (cobro, reversa, recarga) queda guardado en el turno abierto de su localidad (`coupon_transactions.shift_id`).
 
-- **Qué muestra:** cobros (n.º), cobrado, reversado, **neto** (cobrado − reversado) y recargado, por cajero y por surtidor, con primer y último movimiento. Las recargas van aparte. Una reversa cuenta en el periodo en que se hizo y se atribuye al **cajero del cobro original**, así el neto de cada cajero cuadra con lo que vendió; conserva el surtidor del cobro.
-- **Cerrar caja:** guarda una foto inmutable (totales y detalle por cajero y surtidor, quién cerró y nota opcional). No se puede editar ni borrar; no admite periodos que se crucen con otro cierre de la misma localidad ni que terminen en el futuro; queda en la auditoría. Un administrador con alcance recortado a ciertos clientes no puede cerrar (la foto saldría incompleta).
-- **CSV** del turno o de un cierre, y página de cierre imprimible.
+- **Cerrar el turno:** eliges la **hora de corte**. Lo anterior a esa hora (sin incluirla) queda en el turno que se cierra; lo de ahí en adelante pasa al turno siguiente, que se abre en ese mismo instante. Se puede cerrar **tantas veces como se quiera**; cada cierre exige una hora posterior al inicio del turno y no futura. Antes de cerrar, la pantalla muestra **qué entra** (cobros, cobrado, reversado, neto y recargado **por cajero y por surtidor**) y **qué queda para el turno siguiente**.
+- **Qué guarda un cierre:** número de turno, periodo, quién cerró y nota, totales y el detalle por cajero y por surtidor: una foto inmutable (no se edita ni se borra; queda en la auditoría). Neto = cobrado − reversado; las recargas van aparte. Una reversa cuenta en el turno en que se hace y se atribuye al cajero del cobro original.
+- **Primer turno de una localidad:** empieza en su primer movimiento; el historial que ya existía entra en él. Los cierres de caja anteriores pasaron a ser turnos cerrados.
+- Un administrador con alcance recortado a ciertos clientes no puede cerrar (la foto saldría incompleta). CSV por turno y página imprimible.
+
+## Alcance por localidad de los administradores
+
+Al crear o editar un administrador (Usuarios administradores) se elige **Todas las localidades** o **Una o varias localidades** (al menos una). Las pantallas del panel actúan sobre la **localidad elegida en el selector de la barra superior** (si tiene más de una para elegir: una concreta, o todas las suyas) y nunca fuera de las asignadas: localidades, dispositivos, licencias, usuarios de la app, cobros de cupones, bitácora de la API, panel de inicio, reportes (canjes, lotes, clientes), turnos y los movimientos del detalle de un cupón. En los reportes, el filtro de localidad solo lista las permitidas y un filtro por URL fuera del permiso se ignora. Un administrador restringido no crea localidades nuevas ni asigna usuarios o terminales a una localidad ajena; el super-admin nunca está restringido. Los cupones en sí no pertenecen a una localidad: su lista se rige por el alcance por clientes; lo que se limita por localidad son sus movimientos.
 
 ## Reemplazo de un cupón perdido (panel)
 
