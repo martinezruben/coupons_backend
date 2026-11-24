@@ -4,6 +4,8 @@
     $selectedRole = old('role_names.0', $currentRoles[0] ?? '');
     $scope = old('customer_scope', $item->customer_scope ?? 'all');
     $scopeIds = old('customer_ids', $item ? $item->customers()->pluck('customers.id')->all() : []);
+    $locScope = old('location_scope', $item->location_scope ?? 'all');
+    $locScopeIds = old('location_ids', $item ? $item->locations()->pluck('locations.id')->all() : []);
     $isActive = (bool) old('is_active', $item ? $item->is_active : true);
     $minLen = max(14, (int) (\App\Models\SystemParameter::query()->value('admin_password_min_length') ?? 8));
     $initial = mb_strtoupper(mb_substr($item?->name ?? 'N', 0, 1));
@@ -118,6 +120,27 @@
                         </div>
                         <p class="text-[13px] text-slate-500">Con «solo seleccionados», este usuario únicamente ve y opera los cupones, activaciones y reportes de esos clientes. El super-admin nunca está restringido.</p>
                         @error('customer_scope')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    </section>
+
+                    <section class="snow-card flex flex-col gap-4 px-7 py-6" x-data="{ scope: '{{ $locScope }}' }">
+                        <h2>Alcance por localidad</h2>
+                        <div role="radiogroup" aria-label="Alcance por localidad" class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
+                            <label class="rcard"><input type="radio" name="location_scope" value="all" x-model="scope"><span class="font-semibold">Todas las localidades</span></label>
+                            <label class="rcard"><input type="radio" name="location_scope" value="selected" x-model="scope"><span class="font-semibold">Una o varias localidades</span></label>
+                        </div>
+                        <div x-show="scope === 'selected'" x-cloak>
+                            <label class="snow-label" for="location-ids">Localidades permitidas</label>
+                            <select id="location-ids" name="location_ids[]" multiple class="snow-input min-h-[8rem]" :disabled="scope !== 'selected'">
+                                @foreach(\App\Models\Location::query()->orderBy('name')->get(['id', 'name']) as $loc)
+                                    <option value="{{ $loc->id }}" @selected(in_array($loc->id, $locScopeIds, true))>{{ $loc->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1.5 text-[13px] text-slate-500">Cmd/Ctrl + clic para elegir varias.</p>
+                            @error('location_ids')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                            @error('location_ids.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <p class="text-[13px] text-slate-500">Todas las pantallas (reportes, operaciones, cupones, turnos) actúan sobre la localidad que este usuario elige en el selector de la barra superior, y solo entre las permitidas aquí. Si tiene varias, puede alternar entre ellas o ver el conjunto. El super-admin nunca está restringido.</p>
+                        @error('location_scope')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                     </section>
 
                     <div class="flex flex-wrap gap-2.5">

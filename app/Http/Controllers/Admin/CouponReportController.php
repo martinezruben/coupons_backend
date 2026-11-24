@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CouponTransaction;
-use App\Models\Location;
+use App\Support\AdminLocationScope;
 use App\Support\AdminRbac;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -40,7 +40,10 @@ class CouponReportController extends Controller
         $to = Carbon::parse($filters['to'] ?? now()->toDateString())->endOfDay();
         $group = $filters['group'] ?? 'day';
 
-        $rows = $this->rows($group, $from, $to, $filters['coupon_type'] ?? null, $filters['location_id'] ?? null);
+        // El filtro de localidad solo admite las del permiso; fuera de él se ignora y rige la selección vigente
+        $requested = $filters['location_id'] ?? null;
+        $requested = $requested !== null && AdminLocationScope::permits($user, $requested) ? $requested : null;
+        $rows = $this->rows($group, $from, $to, $filters['coupon_type'] ?? null, $requested, $user);
         $totals = [
             'redeemed' => $rows->sum('redeemed'),
             'reversed' => $rows->sum('reversed'),
@@ -63,18 +66,18 @@ class CouponReportController extends Controller
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'couponType' => $filters['coupon_type'] ?? '',
-            'locationId' => $filters['location_id'] ?? '',
-            'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'locationId' => $requested ?? '',
+            'locations' => AdminLocationScope::options($user),
             'maxNet' => max(1.0, (float) $rows->max(fn ($r) => abs($r->net))),
             'exportUrl' => route('admin.reports.redemptions', array_merge($request->query(), ['export' => 'csv'])),
         ]);
     }
 
     /** @return Collection<int, object{label: string, redeemed: float, reversed: float, net: float, topups: float, redemptions: int}> */
-    private function rows(string $group, Carbon $from, Carbon $to, ?string $couponType, ?string $locationId)
+    private function rows(string $group, Carbon $from, Carbon $to, ?string $couponType, ?string $locationId, $admin = null)
     {
         $t = 'coupon_transactions';
-        $query = CouponTransaction::query()->whereBetween("$t.created_at", [$from, $to]);
+        $query = CouponTransaction::query()->visibleToLocations($admin)->whereBetween("$t.created_at", [$from, $to]);
 
         if ($couponType) {
             $query->where("$t.coupon_type", $couponType);

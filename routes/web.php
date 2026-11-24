@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\AppUserSecurityController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\AuditLogDetailController;
 use App\Http\Controllers\Admin\AuthController;
-use App\Http\Controllers\Admin\CashCloseController;
 use App\Http\Controllers\Admin\CouponAdjustmentController;
 use App\Http\Controllers\Admin\CouponAdminController;
 use App\Http\Controllers\Admin\CouponAuditDetailController;
@@ -24,12 +23,14 @@ use App\Http\Controllers\Admin\DeviceAccessController;
 use App\Http\Controllers\Admin\DeviceRegistrationController;
 use App\Http\Controllers\Admin\LocationMapStatusController;
 use App\Http\Controllers\Admin\LocationPairingTokenController;
+use App\Http\Controllers\Admin\LocationSwitchController;
 use App\Http\Controllers\Admin\MailTestController;
 use App\Http\Controllers\Admin\MenuEditorController;
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Admin\RoleRbacMatrixController;
 use App\Http\Controllers\Admin\ScreenCrudController;
 use App\Http\Controllers\Admin\SecurityAlertController;
+use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\UserPermissionController;
 use App\Http\Middleware\AuditAdminActivity;
@@ -132,10 +133,14 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/security-alerts', [SecurityAlertController::class, 'index'])->name('security-alerts.index');
         Route::post('/security-alerts/{id}/resolve', [SecurityAlertController::class, 'resolve'])->whereNumber('id')->name('security-alerts.resolve');
 
-        // Cierre de caja por localidad
-        Route::get('/cash-close', [CashCloseController::class, 'index'])->name('cash-close.index');
-        Route::post('/cash-close', [CashCloseController::class, 'close'])->name('cash-close.close');
-        Route::get('/cash-close/{closing}', [CashCloseController::class, 'show'])->whereNumber('closing')->name('cash-close.show');
+        // Localidad con la que trabaja el administrador (selector de la barra superior)
+        Route::post('/location', [LocationSwitchController::class, 'update'])->name('location.switch');
+
+        // Turnos por localidad: turno vigente, cierre a una hora de corte e historial
+        Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
+        Route::get('/shifts/location/{location}', [ShiftController::class, 'location'])->whereUuid('location')->name('shifts.location');
+        Route::post('/shifts/location/{location}/close', [ShiftController::class, 'close'])->whereUuid('location')->name('shifts.close');
+        Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->whereNumber('shift')->name('shifts.show');
 
         // Reportes de canjes
         Route::get('/reports/redemptions', [CouponReportController::class, 'redemptions'])->name('reports.redemptions');

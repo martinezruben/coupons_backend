@@ -108,7 +108,7 @@
                             <span class="avatar shrink-0">{{ collect(explode(' ', $account->name))->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('') }}</span>
                             <span class="min-w-0">
                                 <span class="block truncate font-medium text-slate-800">{{ $account->name }}</span>
-                                <span class="block truncate text-xs text-slate-500">{{ $account->email }} · {{ $account->customer_scope === 'selected' ? 'solo clientes seleccionados' : 'todos los clientes' }}@unless($account->is_active) · inactiva @endunless</span>
+                                <span class="block truncate text-xs text-slate-500">{{ $account->email }} · {{ $account->customer_scope === 'selected' ? 'solo clientes seleccionados' : 'todos los clientes' }} · {{ $account->location_scope === 'selected' ? 'localidades seleccionadas' : 'todas las localidades' }}@unless($account->is_active) · inactiva @endunless</span>
                             </span>
                         </span>
                         <a href="{{ route('admin.rbac.users.edit', $account) }}" class="snow-btn-secondary snow-btn-sm ml-auto">Permisos propios</a>

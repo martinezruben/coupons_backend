@@ -16,7 +16,7 @@ class AdminUser extends Authenticatable
 
     protected $guard_name = 'admin';
 
-    protected $fillable = ['name', 'email', 'password', 'is_active', 'customer_scope'];
+    protected $fillable = ['name', 'email', 'password', 'is_active', 'customer_scope', 'location_scope'];
 
     protected $hidden = ['password', 'remember_token', 'totp_secret', 'totp_recovery_codes'];
 
@@ -50,6 +50,27 @@ class AdminUser extends Authenticatable
     public function isCustomerRestricted(): bool
     {
         return ($this->customer_scope ?? 'all') === 'selected' && ! $this->isSuperAdmin();
+    }
+
+    public function locations(): BelongsToMany
+    {
+        return $this->belongsToMany(Location::class, 'admin_user_locations', 'admin_user_id', 'location_id');
+    }
+
+    /** ¿Solo opera con las localidades que se le asignaron? El super-admin nunca está restringido. */
+    public function isLocationRestricted(): bool
+    {
+        return ($this->location_scope ?? 'all') === 'selected' && ! $this->isSuperAdmin();
+    }
+
+    /** @return list<string>|null IDs de localidades permitidas; null = todas */
+    public function allowedLocationIds(): ?array
+    {
+        if (! $this->isLocationRestricted()) {
+            return null;
+        }
+
+        return $this->locations()->pluck('locations.id')->map(fn ($id) => (string) $id)->all();
     }
 
     /** @return list<string>|null IDs de clientes permitidos; null = todos */

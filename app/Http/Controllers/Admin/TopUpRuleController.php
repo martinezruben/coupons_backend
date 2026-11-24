@@ -198,7 +198,7 @@ class TopUpRuleController extends Controller
 
     private function locations()
     {
-        return Location::query()->orderBy('name')->get(['id', 'name']);
+        return Location::query()->visibleToLocations(auth('admin')->user())->orderBy('name')->get(['id', 'name']);
     }
 
     private function authorizeEdit(): void

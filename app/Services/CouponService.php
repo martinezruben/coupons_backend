@@ -165,6 +165,7 @@ class CouponService
                         'dispenser' => $dispenser,
                         'sale_ref' => $saleRef,
                         'balance_after' => $this->money($newBalance),
+                        'shift_id' => Shifts::currentId($locId),
                     ]);
                 }
 
@@ -352,6 +353,7 @@ class CouponService
                 'reversed_of' => $tx->transaction_id,
                 'sale_ref' => $tx->sale_ref,
                 'balance_after' => $service->money($new),
+                'shift_id' => Shifts::currentId($tx->location_id),
                 'kind' => CouponTransaction::KIND_REVERSAL,
                 'customer_id' => $tx->customer_id ?? $coupon->customer_id,
             ]);
@@ -433,6 +435,7 @@ class CouponService
                 'location_source' => $locSource,
                 'ip_address' => $ip,
                 'balance_after' => $this->money($new),
+                'shift_id' => Shifts::currentId($locId),
             ]);
 
             $this->audit('topup', $this->type, $number, $this->money($old), $this->money($new), 'Recarga de '.$this->money($amountDec).($note ? ': '.$note : ''), $actor, $ip);

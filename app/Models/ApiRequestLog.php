@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopedToLocations;
 use App\Models\Traits\HasUuidPrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApiRequestLog extends Model
 {
-    use HasUuidPrimaryKey;
+    use HasUuidPrimaryKey, ScopedToLocations;
 
     protected $table = 'api_request_logs';
 

@@ -17,6 +17,7 @@ use App\Models\Device;
 use App\Models\Location;
 use App\Models\TopUpRule;
 use App\Models\User;
+use App\Support\AdminLocationScope;
 use App\Support\AdminRbac;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -55,7 +56,8 @@ class CouponDetailController extends Controller
         $customer = $coupon->customer_id ? Customer::withTrashed()->find($coupon->customer_id) : null;
         $order = $coupon->activation_order_id ? ActivationOrder::find($coupon->activation_order_id) : null;
 
-        $transactions = CouponTransaction::query()->where('coupon_id', $id)->where('coupon_type', $couponType)
+        $locationFiltered = AdminLocationScope::effective($admin) !== null;
+        $transactions = CouponTransaction::query()->visibleToLocations($admin)->where('coupon_id', $id)->where('coupon_type', $couponType)
             ->orderByDesc('created_at')->orderByDesc('transaction_id')->limit(self::MAX_EVENTS)->get()->sortBy([['created_at', 'asc'], ['transaction_id', 'asc']])->values();
         $locations = Location::query()->whereIn('id', $transactions->pluck('location_id')->filter()->unique())->pluck('name', 'id');
         $devices = Device::query()->whereIn('id', $transactions->pluck('device_id')->filter()->unique())->get(['id', 'name', 'device_fingerprint'])->keyBy('id');
@@ -188,7 +190,8 @@ class CouponDetailController extends Controller
                 'locations' => $transactions->pluck('location_id')->filter()->unique()->map(fn ($l) => $locations[$l] ?? null)->filter()->values()->all(),
                 'last_use' => $transactions->where('kind', 'REDEEM')->last()?->created_at,
             ],
-            'balanceCheck' => abs($running - (float) $coupon->coupon_balance) < 0.005,
+            'balanceCheck' => $locationFiltered || abs($running - (float) $coupon->coupon_balance) < 0.005,
+            'locationFiltered' => $locationFiltered,
             'replacement' => [
                 'replaces' => CouponReplacement::where('coupon_type', $couponType)->where('new_coupon_id', $id)->where('status', 'APPROVED')->first(),
                 'replacedBy' => CouponReplacement::where('coupon_type', $couponType)->where('old_coupon_id', $id)->where('status', 'APPROVED')->first(),
